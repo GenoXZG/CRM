@@ -52,7 +52,7 @@ Accesorio_stock.belongsToMany(Unidad, {
 });
 
 
-// Exportar todos los modelos
+
 module.exports = {
   sequelize,
   Cliente,
@@ -67,3 +67,4 @@ module.exports = {
   Unidad_stock,
   Unidad_Accesorio
 };
+
