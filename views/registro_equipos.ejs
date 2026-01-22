@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Equipos | CRM TSV</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item"><a href="/" class="sidebar-link"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Crear Ticket</span></a></li>
+                <li class="sidebar-item"><a href="/estado_tickets" class="sidebar-link"><i class="lni lni-stats-up"></i><span>Estado de Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+                
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item"><a href="/asignacion_unidades" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignar Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/asignacion_equipos" class="sidebar-link"><i class="lni lni-network"></i><span>Asignar Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/registro_equipos" class="sidebar-link active"><i class="lni lni-pencil-alt"></i><span>Registro Equipos</span></a></li>
+                
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/equipos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogo Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/unidades" class="sidebar-link"><i class="lni lni-car"></i><span>Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/accesorios" class="sidebar-link"><i class="lni lni-plug"></i><span>Accesorios</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger"><i class="lni lni-exit"></i><span>Salir</span></a>
+            </div>
+        </aside>
+
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+                <span class="ms-3 fw-bold text-secondary">Operativo / Equipos</span>
+            </nav>
+
+            <main class="p-4">
+                <div class="container-fluid">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="mb-1">Registro de Equipos</h1>
+                            <p class="text-muted">Da de alta nuevos dispositivos GPS o accesorios en el inventario.</p>
+                        </div>
+                    </div>
+
+                    <div class="soft-card mb-5">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 text-primary">
+                                <i class="bi bi-cpu-fill fs-5"></i>
+                            </div>
+                            <h5 class="mb-0">Nuevo Dispositivo</h5>
+                        </div>
+
+                        <form action="/add_equipo" method="POST">
+                            <input type="hidden" name="id_equipo_modelo" id="id_equipo_modelo">
+                            
+                            <div class="row g-4 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label text-muted small fw-bold">Modelo del Equipo - </label>
+                                    <small class="text-muted" id="marca_display">Marca: ---</small>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control bg-light" id="modelo_equipo" name="modelo_equipo" readonly placeholder="Seleccione del catálogo..." style="border-right: 0;">
+                                        <input type="hidden" id="marca_equipo" name="marca_equipo"> <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalCatalogo" style="border-left: 0; background-color: var(--pastel-blue-bg);">
+                                            <i class="bi bi-search"></i> Buscar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label for="imei" class="form-label text-muted small fw-bold">IMEI / Serie</label>
+                                    <input type="text" class="form-control bg-light border-0" name="imei" id="imei" placeholder="Ej: 865432..." required>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label for="id_modem" class="form-label text-muted small fw-bold">ID Módem</label>
+                                    <input type="text" class="form-control bg-light border-0" name="id_modem" id="id_modem" placeholder="Ej: M-101" required>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm btn_registrar_equipo" 
+                                            style="background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); border:none;">
+                                        <i class="bi bi-plus-lg me-1"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="soft-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="mb-0">Inventario Registrado</h5>
+                            <span class="badge bg-light text-dark border">Total: <%= equiposAsignados.length %></span>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID</th>
+                                        <th class="border-0">Marca</th>
+                                        <th class="border-0">Modelo</th>
+                                        <th class="border-0">IMEI</th>
+                                        <th class="border-0">ID Módem</th>
+                                        <th class="border-0">Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if(equiposAsignados.length > 0) { %>
+                                        <% equiposAsignados.forEach(equipo => { %>
+                                            <tr>
+                                                <td class="ps-3 fw-bold text-muted">#<%= equipo.ID_equipo %></td>
+                                                <td><%= equipo.Equipo_stock.Marca_equipo %></td>
+                                                <td><span class="fw-medium text-dark"><%= equipo.Equipo_stock.Modelo_equipo %></span></td>
+                                                <td class="font-monospace text-primary"><%= equipo.IMEI %></td>
+                                                <td class="font-monospace"><%= equipo.ID_modem %></td>
+                                                <td>
+                                                    <% if(equipo.Estatus_equipo === 'Disponible') { %>
+                                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">Disponible</span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3"><%= equipo.Estatus_equipo %></span>
+                                                    <% } %>
+                                                </td>
+
+                                            </tr>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr><td colspan="7" class="text-center py-5 text-muted">No hay equipos registrados en el inventario.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCatalogo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold ms-2">Catálogo de Modelos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input type="text" class="form-control rounded-pill bg-light border-0" placeholder="Buscar modelo..." id="buscadorModal">
+                    </div>
+
+                    <div class="table-responsive rounded-3 border" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th class="ps-3 py-3">Marca</th>
+                                    <th>Modelo</th>
+                                    <th class="text-end pe-3">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(equipos_stock && equipos_stock.length > 0) { %>
+                                    <% equipos_stock.forEach(equipo => { %>
+                                        <tr>
+                                            <td class="ps-3"><%= equipo.Marca_equipo %></td>
+                                            <td class="fw-bold text-dark"><%= equipo.Modelo_equipo %></td>
+                                            <td class="text-end pe-3">
+                                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill btn_confirmar_modelo"
+                                                        data-id="<%= equipo.ID_equipo_modelo %>"
+                                                        data-nombre="<%= equipo.Marca_equipo %>"
+                                                        data-modelo="<%= equipo.Modelo_equipo %>"
+                                                        data-bs-dismiss="modal">
+                                                    Seleccionar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">Catálogo vacío.</td></tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/scripts/sidebar.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Lógica de Selección del Modal
+            document.querySelectorAll('.btn_confirmar_modelo').forEach(boton => {
+                boton.addEventListener('click', () => {
+                    const id = boton.dataset.id;
+                    const nombre = boton.dataset.nombre;
+                    const modelo = boton.dataset.modelo;
+
+                    // Llenar inputs principales
+                    document.getElementById('id_equipo_modelo').value = id;
+                    document.getElementById('modelo_equipo').value = modelo;
+                    document.getElementById('marca_equipo').value = nombre;
+                    
+                    // Actualizar el texto visual de ayuda
+                    document.getElementById('marca_display').textContent = 'Marca: ' + nombre;
+                    document.getElementById('marca_display').className = 'text-primary small fw-bold';
+                });
+            });
+
+            // Buscador simple en el modal
+            const buscador = document.getElementById('buscadorModal');
+            if(buscador){
+                buscador.addEventListener('keyup', function() {
+                    const value = this.value.toLowerCase();
+                    const filas = document.querySelectorAll('#modalCatalogo tbody tr');
+                    filas.forEach(fila => {
+                        const texto = fila.innerText.toLowerCase();
+                        fila.style.display = texto.includes(value) ? '' : 'none';
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

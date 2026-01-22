@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Tickets | CRM TSV</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item">
+                    <a href="/" class="sidebar-link"> 
+                        <i class="lni lni-grid-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Gestión de Servicios</li>
+
+                <li class="sidebar-item">
+                    <a href="/tickets" class="sidebar-link"> 
+                        <i class="lni lni-ticket-alt"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/estado_tickets" class="sidebar-link active"> 
+                        <i class="lni lni-stats-up"></i>
+                        <span>Estado de Tickets</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/clientes" class="sidebar-link"> 
+                        <i class="lni lni-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Operativo</li>
+
+                <li class="sidebar-item">
+                    <a href="/asignacion_unidades" class="sidebar-link"> 
+                        <i class="lni lni-delivery"></i>
+                        <span>Asignar Unidades</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/asignacion_equipos" class="sidebar-link"> 
+                        <i class="lni lni-network"></i>
+                        <span>Asignar Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/registro_equipos" class="sidebar-link"> 
+                        <i class="lni lni-pencil-alt"></i>
+                        <span>Registro Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Recursos</li>
+
+                <li class="sidebar-item">
+                    <a href="/tecnicos" class="sidebar-link"> 
+                        <i class="lni lni-helmet"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/equipos" class="sidebar-link"> 
+                        <i class="lni lni-display-alt"></i>
+                        <span>Catálogo Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/unidades" class="sidebar-link"> 
+                        <i class="lni lni-car"></i>
+                        <span>Unidades</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a href="/accesorios" class="sidebar-link"> 
+                        <i class="lni lni-plug"></i>
+                        <span>Accesorios</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger">
+                    <i class="lni lni-exit"></i>
+                    <span>Salir</span>
+                </a>
+            </div>
+        </aside>
+
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <span class="ms-3 fw-bold text-secondary">Gestion de Servicios</span>
+            </nav>
+
+            <main class="p-4">
+                <div class="container-fluid">
+                    
+                    <div class="mb-5">
+                        <h1 class="mb-1">Flujo de Trabajo</h1>
+                        <p class="text-muted">Vista general del estado actual de todos los servicios.</p>
+                    </div>
+
+                    <div class="soft-card mb-4 border-start border-4 border-warning">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3 me-3 text-warning">
+                                <i class="bi bi-hourglass-split fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">Tickets en Espera</h4>
+                                <small class="text-muted">Requieren asignación o inicio de labores</small>
+                            </div>
+                            <span class="ms-auto badge bg-warning text-dark rounded-pill px-3">Total: <%= ticketsEspera.length %></span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID</th>
+                                        <th class="border-0">Cliente</th>
+                                        <th class="border-0">Técnico</th>
+                                        <th class="border-0">Unidades</th>
+                                        <th class="border-0">Servicio</th>
+                                        <th class="pe-3 border-0 rounded-end text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if(ticketsEspera.length > 0) { %>
+                                        <% ticketsEspera.forEach(ticket => { %> 
+                                            <tr>
+                                                <td class="ps-3 fw-bold text-dark">#<%= ticket.ID_ticket %></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="rounded-circle bg-light p-1 me-2"><i class="bi bi-building"></i></div>
+                                                        <%= ticket.Cliente.Nombre_empresa %>
+                                                    </div>
+                                                </td>
+                                                <td><span class="text-muted"><%= ticket.Tecnico?.Nombre_tecnico || '---' %></span></td>
+                                                <td><%= ticket.Numero_unidades %></td>
+                                                <td><span class="badge bg-light text-dark border"><%= ticket.Tipo_servicio %></span></td>
+                                                <td class="text-end pe-3">
+                                                    <a href="/detalle_ticket/<%= ticket.ID_ticket %>" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold">
+                                                        Gestionar <i class="bi bi-arrow-right"></i>
+                                                    </a>
+                                                </td>
+                                            </tr> 
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center py-4 text-muted fst-italic">No hay tickets en espera. ¡Buen trabajo!</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="soft-card mb-4 border-start border-4 border-primary">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3 text-primary">
+                                <i class="bi bi-tools fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">En Seguimiento</h4>
+                                <small class="text-muted">Servicios actualmente en proceso</small>
+                            </div>
+                            <span class="ms-auto badge bg-primary rounded-pill px-3">Total: <%= ticketsSeguimiento.length %></span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID</th>
+                                        <th class="border-0">Cliente</th>
+                                        <th class="border-0">Técnico</th>
+                                        <th class="border-0">Unidades</th>
+                                        <th class="border-0">Servicio</th>
+                                        <th class="pe-3 border-0 rounded-end text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if(ticketsSeguimiento.length > 0) { %>
+                                        <% ticketsSeguimiento.forEach(ticket => { %> 
+                                            <tr>
+                                                <td class="ps-3 fw-bold text-primary">#<%= ticket.ID_ticket %></td>
+                                                <td><%= ticket.Cliente.Nombre_empresa %></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <img src="https://ui-avatars.com/api/?name=<%= ticket.Tecnico?.Nombre_tecnico %>&background=random&size=24" class="rounded-circle">
+                                                        <%= ticket.Tecnico?.Nombre_tecnico %>
+                                                    </div>
+                                                </td>
+                                                <td><%= ticket.Numero_unidades %></td>
+                                                <td><%= ticket.Tipo_servicio %></td>
+                                                <td class="text-end pe-3">
+                                                    <a href="/detalle_ticket/<%= ticket.ID_ticket %>" class="btn btn-sm btn-primary rounded-pill px-3" style="background-color: var(--pastel-blue-text); border:none;">
+                                                        Ver Detalles
+                                                    </a>
+                                                </td>
+                                            </tr> 
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center py-4 text-muted">No hay servicios en curso actualmente.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="soft-card mb-5 border-start border-4 border-success">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3 text-success">
+                                <i class="bi bi-check-circle-fill fs-4"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">Finalizados Recientemente</h4>
+                                <small class="text-muted">Historial de cierres</small>
+                            </div>
+                            <span class="ms-auto badge bg-success rounded-pill px-3">Total: <%= ticketsFinalizados.length %></span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID</th>
+                                        <th class="border-0">Cliente</th>
+                                        <th class="border-0">Técnico</th>
+                                        <th class="border-0">Unidades</th>
+                                        <th class="border-0">Servicio</th>
+                                        <th class="pe-3 border-0 rounded-end text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if(ticketsFinalizados.length > 0) { %>
+                                        <% ticketsFinalizados.forEach(ticket => { %> 
+                                            <tr>
+                                                <td class="ps-3 text-muted">#<%= ticket.ID_ticket %></td>
+                                                <td class="text-muted"><%= ticket.Cliente.Nombre_empresa %></td>
+                                                <td class="text-muted"><%= ticket.Tecnico?.Nombre_tecnico %></td>
+                                                <td class="text-muted"><%= ticket.Numero_unidades %></td>
+                                                <td><span class="badge bg-success bg-opacity-25 text-success">Finalizado</span></td>
+                                                <td class="text-end pe-3">
+                                                    <a href="/detalle_ticket/<%= ticket.ID_ticket %>" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                        Revisar
+                                                    </a>
+                                                </td>
+                                            </tr> 
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center py-4 text-muted">No hay tickets finalizados aún.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+            
+            <footer class="mt-auto py-3  text-center text-muted  small">
+                © 2025 CRM TSV - Desarrollado por GenoxZG
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Lógica para el toggle del sidebar en móvil
+        const toggler = document.querySelector(".toggler-btn");
+        toggler.addEventListener("click", function () {
+            document.querySelector("#sidebar").classList.toggle("collapsed");
+        });
+    </script>
+</body>
+</html>

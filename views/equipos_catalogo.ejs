@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Equipos | CRM TSV</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item"><a href="/" class="sidebar-link"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Crear Ticket</span></a></li>
+                <li class="sidebar-item"><a href="/estado_tickets" class="sidebar-link"><i class="lni lni-stats-up"></i><span>Estado de Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+                
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item"><a href="/asignacion_unidades" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignar Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/asignacion_equipos" class="sidebar-link"><i class="lni lni-network"></i><span>Asignar Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/registro_equipos" class="sidebar-link"><i class="lni lni-pencil-alt"></i><span>Registro Equipos</span></a></li>
+                
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/equipos" class="sidebar-link active"><i class="lni lni-display-alt"></i><span>Catálogo Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/unidades" class="sidebar-link"><i class="lni lni-car"></i><span>Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/accesorios" class="sidebar-link"><i class="lni lni-plug"></i><span>Accesorios</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger"><i class="lni lni-exit"></i><span>Salir</span></a>
+            </div>
+        </aside>
+
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+                <span class="ms-3 fw-bold text-secondary">Recursos / Hardware</span>
+            </nav>
+
+            <main class="p-4">
+                <div class="container-fluid">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="mb-1">Catálogo de Equipos</h1>
+                            <p class="text-muted">Define los modelos de hardware (GPS, Módems) disponibles.</p>
+                        </div>
+                    </div>
+
+                    <div class="soft-card mb-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle bg-teal bg-opacity-10 p-2 me-3 text-teal" style="background-color: #ccfbf1; color: #0f766e;">
+                                <i class="bi bi-motherboard fs-5"></i>
+                            </div>
+                            <h5 class="mb-0">Registrar Nuevo Modelo</h5>
+                        </div>
+
+                        <form action="/add_equipo_catalogo" method="POST">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label text-muted small fw-bold">Marca del Fabricante</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi bi-tag"></i></span>
+                                        <input type="text" class="form-control bg-light border-0" id="marca" name="Marca_equipo" required placeholder="Ej. Cellocator...">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-5">
+                                    <label class="form-label text-muted small fw-bold">Modelo del Equipo</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-0"><i class="bi bi-cpu"></i></span>
+                                        <input type="text" class="form-control bg-light border-0" id="modelo" name="Modelo_equipo" required placeholder="Ej. CR300B, Eco4...">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100 rounded-pill shadow-sm" 
+                                            style="background: linear-gradient(90deg, #14b8a6 0%, #0d9488 100%); border:none;">
+                                        <i class="bi bi-plus-lg me-1"></i> Guardar
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="soft-card">
+                        <h5 class="mb-4">Modelos Registrados</h5>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID</th>
+                                        <th class="border-0">Marca</th>
+                                        <th class="border-0">Modelo</th>
+                                        <th class="pe-3 border-0 rounded-end text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if(equipos_stock && equipos_stock.length > 0) { %>
+                                        <% equipos_stock.forEach(equipo => { %>
+                                            <tr>
+                                                <td class="ps-3 fw-bold text-muted">#<%= equipo.ID_equipo_modelo %></td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark border fw-normal px-3 py-2">
+                                                        <%= equipo.Marca_equipo %>
+                                                    </span>
+                                                </td>
+                                                <td class="fw-bold text-dark"><%= equipo.Modelo_equipo %></td>
+                                                <td class="text-end pe-3">
+                                                    <div class="d-flex justify-content-end gap-2">
+                                                        <button class="btn btn-sm btn-outline-primary btn-icon rounded-pill px-3 btn-editar"
+                                                                data-id="<%= equipo.ID_equipo_modelo %>"
+                                                                data-marca="<%= equipo.Marca_equipo %>"
+                                                                data-modelo="<%= equipo.Modelo_equipo %>"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalEditar">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>
+                                                        
+                                                        <button class="btn btn-sm btn-outline-danger btn-icon rounded-pill px-3 btn-eliminar"
+                                                                data-id="<%= equipo.ID_equipo_modelo %>"
+                                                                data-marca="<%= equipo.Marca_equipo %>"
+                                                                data-modelo="<%= equipo.Modelo_equipo %>"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalEliminar">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr><td colspan="4" class="text-center py-5 text-muted">No hay modelos de equipo registrados.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold ms-2">Editar Modelo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="/editar_equipo_stock" method="POST">
+                    <div class="modal-body pt-4">
+                        <input type="hidden" name="ID_equipo_modelo" id="modal-id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Marca</label>
+                            <input type="text" class="form-control bg-light border-0" name="Marca_equipo" id="modal-marca" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Modelo</label>
+                            <input type="text" class="form-control bg-light border-0" name="Modelo_equipo" id="modal-modelo" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4" style="background-color: var(--pastel-blue-text); border:none;">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-body text-center p-5">
+                    <div class="mb-4 text-danger bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle fs-1"></i>
+                    </div>
+                    <h4 class="mb-2">¿Eliminar del Catálogo?</h4>
+                    <p class="text-muted mb-4">
+                        Vas a eliminar el modelo <span id="modal_eliminar-modelo-display" class="fw-bold text-dark"></span> 
+                        de la marca <span id="modal_eliminar-marca-display"></span>.
+                    </p>
+                    
+                    <form action="/eliminar_equipo_stock" method="POST" class="d-flex justify-content-center gap-3">
+                        <input type="hidden" name="ID_equipo_modelo" id="modal_eliminar-id">
+                        <input type="hidden" name="Marca_equipo" id="modal_eliminar-marca">
+                        <input type="hidden" name="Modelo_equipo" id="modal_eliminar-modelo">
+                        
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/scripts/sidebar.js"></script>
+    <script src="/scripts/editar_equipo_stock.js"></script>
+</body>
+</html>

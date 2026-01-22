@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Servicio #<%= ticket.ID_ticket %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <style>
+        .card-detail {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .label-text {
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .value-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .status-border {
+            border-left: 5px solid #0d6efd; 
+        }
+        .status-espera { border-left-color: #ffc107; }
+        .status-seguimiento { border-left-color: #0dcaf0; }
+        .status-finalizado { border-left-color: #198754; }
+@media print {
+        @page { 
+            size: letter; 
+            margin: 0; /* Sin márgenes del navegador */
+        }
+        
+        /* TRUCO 1: Ocultar todo con display:none para que NO ocupe espacio */
+        body > *:not(#printable-area) {
+            display: none !important;
+        }
+
+        /* TRUCO 2: Bloquear el scroll y altura del body */
+        html, body {
+            height: 100vh;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+        }
+
+        #printable-area {
+            display: flex !important;
+            flex-direction: column;
+            
+            /* Posicionamiento fijo para "planchar" el contenido en la hoja */
+            position: fixed; 
+            top: 0;
+            left: 0;
+            
+            width: 100%;
+            height: 100%; /* Ocupar exactamente la ventana disponible */
+            
+            padding: 1.5cm;
+            box-sizing: border-box;
+            background: white;
+            z-index: 9999;
+        }
+
+        /* Ajuste de elementos internos para que sean visibles */
+        #printable-area * {
+            visibility: visible;
+        }
+
+        /* --- Diseño Interno (Igual que antes) --- */
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .print-logo-box {
+            width: 120px;
+            height: 50px;
+            border: 1px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 10px;
+            background: #f9f9f9;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            font-size: 11px;
+        }
+        
+        .info-box { border: 1px solid #ddd; padding: 10px; border-radius: 4px; }
+        .info-title { font-weight: bold; text-transform: uppercase; font-size: 9px; color: #555; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 3px; }
+
+        .print-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 15px; }
+        .print-table th { background-color: #f4f4f4 !important; border: 1px solid #000; padding: 5px; text-transform: uppercase; font-size: 9px; }
+        .print-table td { border: 1px solid #ccc; padding: 5px; vertical-align: top; }
+
+        .obs-box { border: 1px solid #ddd; padding: 8px; font-size: 10px; background: #fdfdfd; margin-bottom: 10px; }
+
+        /* Firmas: Empujadas al fondo automáticamente */
+        .signature-wrapper {
+            margin-top: auto; 
+            display: flex;
+            justify-content: space-between;
+            padding-top: 10px;
+            page-break-inside: avoid;
+        }
+        .signature-box { width: 40%; text-align: center; }
+        .signature-line { border-bottom: 1px solid #000; height: 1px; margin-bottom: 8px; }
+        
+        .footer-legal { text-align: center; margin-top: 10px; font-size: 8px; color: #999; }
+        a { text-decoration: none; color: #000; }
+    }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Detalle del Servicio</h2>
+            <p class="text-muted">Gestión de Ticket de Soporte</p>
+        </div>
+        <a href="/estado_tickets" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Tablero
+        </a>
+    </div>
+
+    <div class="card card-detail status-border 
+        <%= ticket.Estatus_servicio === 'En espera' ? 'status-espera' : 
+           (ticket.Estatus_servicio === 'Finalizado' ? 'status-finalizado' : 'status-seguimiento') %>">
+        
+        <div class="card-body p-4">
+            
+            <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
+                <div>
+                    <span class="badge bg-dark mb-2">ID: #<%= ticket.ID_ticket %></span>
+                    <h3 class="card-title text-primary"><%= ticket.Tipo_servicio %></h3>
+                </div>
+                <div class="text-end">
+                    <span class="label-text d-block">Estatus Actual</span>
+                    <% 
+                        let badgeClass = 'bg-secondary';
+                        if(ticket.Estatus_servicio === 'En espera') badgeClass = 'bg-warning text-dark';
+                        if(ticket.Estatus_servicio === 'En seguimiento') badgeClass = 'bg-info text-dark';
+                        if(ticket.Estatus_servicio === 'Finalizado') badgeClass = 'bg-success';
+                    %>
+                    <span class="badge <%= badgeClass %> fs-6 px-3 py-2 rounded-pill">
+                        <%= ticket.Estatus_servicio %>
+                    </span>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 border-end-md">
+                    <h5 class="mb-3 text-secondary"><i class="bi bi-people-fill me-2"></i>Info</h5>
+                    
+                    <div class="mb-3">
+                        <label class="label-text">Cliente / Empresa</label>
+                        <div class="value-text">
+                            <%= ticket.Cliente ? ticket.Cliente.Nombre_empresa : 'ID: ' + ticket.ID_cliente %>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="label-text">Técnico Asignado</label>
+                        <div class="d-flex align-items-center">
+                            <div class="value-text">
+                                <%= ticket.Tecnico ? ticket.Tecnico.Nombre_tecnico : 'Tecnico pendiente de asignacion' %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="label-text">Fecha y Hora de Servicio</label>
+                        <div class="value-text">
+                            <div>
+                                <i class="bi bi-calendar-event me-2 text-primary"></i>
+                                <%= new Date(ticket.Fecha_servicio).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+                            </div>
+                            <div class="mt-1 text-muted small" style="font-size: 0.95rem;">
+                                <i class="bi bi-clock me-2 text-primary"></i>
+                                <%= new Date(ticket.Fecha_servicio).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 ps-md-4">
+                    <h5 class="mb-3 text-secondary"><i class="bi bi-geo-alt-fill me-2"></i>Logística</h5>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="label-text">Unidades a Atender</label>
+                            <div class="value-text fs-4 fw-bold text-dark">
+                                <%= ticket.Numero_unidades %>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="label-text">Asignacion de Equipos</label>
+                            <div>
+                                <% if(ticket.Estatus_unidades == 1) { %>
+                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Asignados </span>
+                                <% } else { %>
+                                    <span class="badge bg-danger"><i class="bi bi-exclamation-circle"></i> Pendientes</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="label-text d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-geo-alt-fill me-1"></i>Ubicación (Maps)</span>
+                        </label>
+                        
+                        <div class="bg-white p-3 rounded-4 border shadow-sm mt-2">
+                            <div class="input-group mb-3">
+                                <span class="input-group-text bg-light border-end-0 text-primary">
+                                    <i class="bi bi-link-45deg"></i>
+                                </span>
+                                <input type="text" class="form-control bg-light border-start-0 text-muted small" 
+                                    id="inputLinkMaps" 
+                                    value="<%= ticket.Link_maps || '' %>" 
+                                    readonly 
+                                    placeholder="Sin ubicación registrada">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copiarLinkMaps()" title="Copiar al portapapeles">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <% if(ticket.Link_maps) { %>
+                                    <a href="<%= ticket.Link_maps %>" target="_blank" class="btn btn-primary btn-sm flex-grow-1 rounded-pill">
+                                        <i class="bi bi-map-fill me-1"></i> Abrir enlace
+                                    </a>
+                                <% } else { %>
+                                    <button class="btn btn-secondary btn-sm flex-grow-1 rounded-pill" disabled>
+                                        <i class="bi bi-map-fill me-1"></i> Sin Mapa
+                                    </button>
+                                <% } %>
+                                
+                                 <% if( ticket.Estatus_servicio === 'En espera' || ticket.Estatus_servicio === 'En seguimiento') { %>
+                                    <button class="btn btn-outline-primary btn-sm flex-grow-1 rounded-pill" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalEditarMaps">
+                                        <i class="bi bi-pencil-square me-1"></i> Editar Ruta
+                                    </button>
+                                <% } %>
+                               
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0 text-secondary"><i class="bi bi-chat-left-text-fill me-2"></i>Comentarios y Observaciones</h5>
+                    
+                    <% 
+                       const estatusCom = ticket.Estatus_servicio ? ticket.Estatus_servicio.trim() : '';
+                       if (estatusCom === 'En espera' || estatusCom === 'En seguimiento') { 
+                    %>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalComentarios">
+                            <i class="bi bi-pencil-square me-1"></i> Editar
+                        </button>
+                    <% } %>
+                </div>
+
+                <div class="p-3 bg-light rounded border border-light">
+                    <% if(ticket.Comentarios) { %>
+                        <p class="mb-0 text-dark"><%= ticket.Comentarios %></p>
+                    <% } else { %>
+                        <p class="mb-0 text-muted fst-italic">No hay comentarios adicionales para este servicio.</p>
+                    <% } %>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="text-secondary mb-0"><i class="bi bi-truck-front-fill me-2"></i>Unidades y Equipos Asignados</h5>
+                </div>
+                
+                <% if (ticket.Unidades && ticket.Unidades.length > 0) { %>
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-secondary small text-uppercase">
+                                <tr>
+                                    <th class="ps-3 border-0">Unidad</th>
+                                    <th class="border-0">Identificadores</th>
+                                    <th class="border-0">Equipo GPS</th>
+                                    <th class="border-0">Accesorios</th> 
+                                    <th class="border-0 text-end pe-3">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% ticket.Unidades.forEach(unidad => { %>
+                                    <tr>
+                                        <td class="ps-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="rounded-circle bg-light p-2 me-2 text-primary">
+                                                    <i class="bi bi-car-front"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark">
+                                                        <%= unidad.Unidad_stock ? unidad.Unidad_stock.Modelo_unidad : 'Modelo N/D' %>
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        <%= unidad.Unidad_stock ? unidad.Unidad_stock.Marca_unidad : 'Marca N/D' %>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="small text-muted font-monospace">Placa:</div>
+                                                <span class="badge bg-white text-dark border fw-normal text-start">
+                                                    <i class="bi bi-card-text me-1 text-muted"></i> <%= unidad.Placa_unidad || 'S/P' %>
+                                                </span>
+                                                <div class="small text-muted font-monospace">VIN:</div>
+                                                <span class="badge bg-white text-dark border fw-normal text-start">
+                                                    <i class="bi bi-upc-scan me-1 text-muted"></i> <%= unidad.Vin_unidad || 'S/V' %>
+                                                </span>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <% if (unidad.Equipo) { %>
+                                                <div class="d-flex justify-content-between align-items-center bg-light border rounded p-2" style="max-width: 220px;">
+                                                    <div class="text-primary overflow-hidden">
+                                                        <div class="fw-medium text-truncate">
+                                                            <i class="bi bi-cpu-fill me-1"></i>
+                                                            <%= unidad.Equipo.Equipo_stock ? unidad.Equipo.Equipo_stock.Modelo_equipo : 'GPS' %>
+                                                        </div>
+                                                        <div class="small text-muted font-monospace">
+                                                            IMEI: <%= unidad.Equipo.IMEI %>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
+                                                        <button class="btn btn-sm btn-outline-danger border-0 ms-2" 
+                                                                title="Desvincular GPS"
+                                                                onclick="confirmarDesvincularEquipo('<%= unidad.ID_unidad %>', '<%= unidad.Equipo.ID_equipo %>', '<%= ticket.ID_ticket %>')">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    <% } %>
+                                                </div>
+                                            <% } else { %>
+                                                <span class="text-muted fst-italic small">
+                                                    <i class="bi bi-dash-circle me-1"></i>Sin equipo
+                                                </span>
+                                            <% } %>
+                                        </td>
+
+                                        <td style="min-width: 200px;"> 
+                                            <% if (unidad.Accesorio_stocks && unidad.Accesorio_stocks.length > 0) { %>
+                                                <div class="d-flex flex-column gap-2 align-items-start py-1">
+                                                    <% unidad.Accesorio_stocks.forEach(acc => { %>
+                                                        <span class="badge bg-white text-secondary border shadow-sm d-inline-flex align-items-center justify-content-between" 
+                                                            style="min-width: 160px; max-width: 100%;"> 
+                                                            <span class="text-truncate me-2">
+                                                                <i class="bi bi-plug-fill me-1 text-warning"></i>
+                                                                <%= acc.Nombre_accesorio %>
+                                                            </span>
+                                                            
+                                                            <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
+                                                                <i class="bi bi-x-circle-fill text-danger cursor-pointer flex-shrink-0" 
+                                                                style="cursor: pointer;"
+                                                                title="Quitar accesorio"
+                                                                onclick="confirmarDesvincularAccesorio('<%= unidad.ID_unidad %>', '<%= acc.ID_accesorio_modelo %>')">
+                                                                </i>
+                                                            <% } %>
+                                                        </span>
+                                                    <% }) %>
+                                                </div>
+                                            <% } else { %>
+                                                <span class="text-muted small fst-italic">-</span>
+                                            <% } %>
+                                        </td>
+
+                                        <td class="text-end pe-3">
+                                            <% if (unidad.Equipo) { %>
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">
+                                                    <i class="bi bi-check-circle me-1"></i>Equipo Asignado
+                                                </span>
+                                            <% } else { %>
+                                                <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
+                                                    <a href="/asignacion_equipos" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                        <i class="bi bi-plus-lg"></i> Asignar Equipo
+                                                    </a>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">
+                                                        <i class="bi bi-dash-circle me-1"></i>Finalizado
+                                                    </span>
+                                                <% } %>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-light border-0 d-flex align-items-center text-muted" role="alert">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <div>
+                            No hay unidades asignadas a este ticket. 
+                            <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
+                                <a href="/asignacion_unidades" class="fw-bold text-decoration-none ms-1">Ir a Asignar Unidades</a>.
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="soft-card">
+                        <h5 class="mb-4">Evidencia del Servicio</h5>
+                        
+                        <div class="d-flex flex-wrap gap-3 mb-4">
+                            <% if (ticket.TicketFotos && ticket.TicketFotos.length > 0) { %>
+                                <% ticket.TicketFotos.forEach(foto => { %>
+                                    <div class="position-relative">
+                                        <img src="<%= foto.Ruta_archivo %>" class="rounded-4 shadow-sm" 
+                                            style="width: 100px; height: 100px; object-fit: cover; border: 2px solid white;">
+                                        <a href="<%= foto.Ruta_archivo %>" target="_blank" class="position-absolute top-0 end-0 m-1 bg-white rounded-circle p-1 text-primary shadow-sm" style="font-size: 10px;">
+                                            <i class="bi bi-arrows-fullscreen"></i>
+                                        </a>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <p class="text-muted fst-italic w-100">No hay evidencia fotográfica cargada aún.</p>
+                            <% } %>
+                        </div>
+                        <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
+                            <div class="mt-4 p-3 bg-white rounded-4 shadow-sm border">
+                                <h6 class="mb-3 fw-bold text-muted">Agregar Nueva Evidencia</h6>
+                                
+                                <form action="/tickets/<%= ticket.ID_ticket %>/subir-fotos" method="POST" enctype="multipart/form-data" id="formSubida">
+                                    <input type="file" name="fotos" id="inputFotosReal" multiple accept="image/*" class="d-none">
+                                    <div class="d-flex gap-2 align-items-center mb-3">
+                                        <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="document.getElementById('inputFotosReal').click()">
+                                            <i class="bi bi-images me-2"></i> Seleccionar Fotos
+                                        </button>
+                                        <small class="text-muted" id="conteoArchivos">0 archivos seleccionados</small>
+                                    </div>
+                                    <div id="previewContainer" class="d-flex flex-wrap gap-3 mb-3"></div>
+                                    <button type="submit" id="btnSubirReal" class="btn btn-success rounded-pill px-4 w-100 d-none" style="background-color: var(--pastel-green-text); border:none;">
+                                        <i class="bi bi-cloud-upload-fill me-2"></i> Subir Imágenes Seleccionadas
+                                    </button>
+                                </form>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-footer bg-white p-3 d-flex justify-content-end gap-2 rounded-bottom">
+            
+            <% if( (ticket.Estatus_servicio === 'En espera' || ticket.Estatus_servicio === 'En seguimiento') && !ticket.Tecnico ) { %>
+            <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#modalAsignarTecnico">
+                <i class="bi bi-person-plus-fill me-1"></i> Asignar Técnico
+            </button>
+            <% } %>
+
+            <% if(ticket.Estatus_servicio === 'En espera') { %>
+                <a href="/asignacion_unidades" class="btn btn-warning text-dark">
+                    <i class="bi bi-truck"></i> Asignar Unidades
+                </a>
+            <% } %>
+            
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir Orden
+            </button>
+
+            <% 
+                const estatus = ticket.Estatus_servicio ? ticket.Estatus_servicio.trim().toLowerCase() : '';
+            %>
+            <% if (estatus === 'en espera' || estatus === 'en seguimiento') { %>
+                <button onclick="confirmarFinalizacion('<%= ticket.ID_ticket %>')" class="btn btn-success">
+                    <i class="bi bi-check-circle-fill me-2"></i> Finalizar Servicio
+                </button>
+            <% } %>
+
+            <% if (ticket.Estatus_servicio === 'Finalizado') { %>
+                <button onclick="confirmarReapertura('<%= ticket.ID_ticket %>')" class="btn btn-outline-dark">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Reabrir Ticket
+                </button>
+            <% } %>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalComentarios" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Editar Comentarios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/tickets/actualizar_comentarios" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="ID_ticket" value="<%= ticket.ID_ticket %>">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Comentarios y Observaciones</label>
+                        <textarea class="form-control bg-light" name="Comentarios" rows="5"><%= ticket.Comentarios %></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAsignarTecnico" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-info text-white border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-helmet me-2"></i>Asignar Técnico</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="/tickets/asignar_tecnico" method="POST">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="ID_ticket" value="<%= ticket.ID_ticket %>">
+                    
+                    <p class="text-muted mb-3">Selecciona el técnico responsable para este servicio.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Técnico Disponible</label>
+                        <select class="form-select form-select-lg" name="ID_tecnico" required>
+                            <option value="" selected disabled>-- Seleccionar --</option>
+                            <% if(typeof tecnicos !== 'undefined' && tecnicos.length > 0) { %>
+                                <% tecnicos.forEach(tec => { %>
+                                    <% if(tec.Estatus_tecnico === 'Activo') { %>
+                                        <option value="<%= tec.ID_Tecnico %>"><%= tec.Nombre_tecnico %></option>
+                                    <% } %>
+                                <% }) %>
+                            <% } else { %>
+                                <option value="" disabled>No se cargó la lista de técnicos (Revisar Controlador)</option>
+                            <% } %>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill px-4">Confirmar Asignación</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarMaps" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary">
+                    <i class="bi bi-geo-alt me-2"></i>Actualizar Ubicación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form action="/tickets/actualizar_maps" method="POST">
+                <div class="modal-body pt-4">
+                    <input type="hidden" name="ID_ticket" value="<%= ticket.ID_ticket %>">
+                    
+                    <div class="alert alert-light border-0 small text-muted mb-3">
+                        <i class="bi bi-info-circle me-1"></i> 
+                        Pega aquí el enlace completo de Google Maps (ej: https://maps.app.goo.gl/...)
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Enlace / URL</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0"><i class="bi bi-globe"></i></span>
+                            <input type="url" class="form-control bg-light border-0" 
+                                   name="Link_maps" 
+                                   value="<%= ticket.Link_maps %>" 
+                                   placeholder="https://..." required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <div id="printable-area" style="display: none;">
+        
+        <div class="print-header">
+            <div class="print-logo-box">
+                [LOGO EMPRESA]
+            </div>
+            <div style="text-align: center; flex-grow: 1;">
+                <h2 style="margin: 0; font-size: 18px; font-weight: bold;">ORDEN DE SERVICIO</h2>
+                <p style="margin: 0; font-size: 10px;">Comprobante de Instalación y Configuración GPS</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 14px; font-weight: bold;">FOLIO: #<%= ticket.ID_ticket %></div>
+                <div style="font-size: 10px;">Fecha Impresión: <script>document.write(new Date().toLocaleDateString())</script></div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-box">
+                <div class="info-title">Cliente / Empresa</div>
+                <div style="font-weight: bold; font-size: 12px;"><%= ticket.Cliente.Nombre_empresa %></div>
+                <div>Contacto: <%= ticket.Cliente.Encargado || 'N/D' %></div>
+            </div>
+
+            <div class="info-box">
+                <div class="info-title">Datos del Servicio</div>
+                <div>Tipo: <strong><%= ticket.Tipo_servicio %></strong></div>
+                <div>Técnico: <%= ticket.Tecnico ? ticket.Tecnico.Nombre_tecnico : 'Sin Asignar' %></div>
+                <div>Fecha Programada: <%= new Date(ticket.Fecha_servicio).toLocaleDateString() %></div>
+            </div>
+
+            <div class="info-box">
+                <div class="info-title">Estatus & Unidades</div>
+                <div>Estado: <%= ticket.Estatus_servicio %></div>
+                <div>Unidades Totales: <strong><%= ticket.Numero_unidades %></strong></div>
+            </div>
+        </div>
+
+        <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px; text-transform: uppercase; border-bottom: 2px solid #000;">
+            Detalle de Unidades y Equipos
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Vehículo</th>
+                    <th style="width: 25%;">Identificadores</th>
+                    <th style="width: 25%;">Equipo GPS (IMEI)</th>
+                    <th style="width: 25%;">Accesorios</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (ticket.Unidades && ticket.Unidades.length > 0) { %>
+                    <% ticket.Unidades.forEach(unidad => { %>
+                    <tr>
+                        <td>
+                            <strong><%= unidad.Unidad_stock ? unidad.Unidad_stock.Modelo_unidad : 'N/D' %></strong><br>
+                            <span style="font-size: 9px;"><%= unidad.Unidad_stock ? unidad.Unidad_stock.Marca_unidad : '' %></span>
+                        </td>
+                        <td>
+                            Placa: <strong><%= unidad.Placa_unidad || '--' %></strong><br>
+                            VIN: <%= unidad.Vin_unidad || '--' %>
+                        </td>
+                        <td>
+                            <% if (unidad.Equipo) { %>
+                                <strong><%= unidad.Equipo.Equipo_stock ? unidad.Equipo.Equipo_stock.Modelo_equipo : 'GPS' %></strong><br>
+                                <%= unidad.Equipo.IMEI %>
+                            <% } else { %>
+                                <span style="font-style: italic; color: #777;">Sin Asignar</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <% if (unidad.Accesorio_stocks && unidad.Accesorio_stocks.length > 0) { %>
+                                <% unidad.Accesorio_stocks.forEach(acc => { %>
+                                    • <%= acc.Nombre_accesorio %><br>
+                                <% }) %>
+                            <% } else { %>
+                                -
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% }) %>
+                <% } else { %>
+                    <tr><td colspan="4" style="text-align: center; padding: 20px;">Sin unidades asignadas.</td></tr>
+                <% } %>
+            </tbody>
+        </table>
+
+        <% if(ticket.Comentarios) { %>
+        <div style="border: 1px solid #ddd; padding: 5px; margin-bottom: 20px; font-size: 10px; background: #fdfdfd;">
+            <strong>Observaciones:</strong> <%= ticket.Comentarios %>
+        </div>
+        <% } %>
+
+        <div class="signature-wrapper">
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div style="font-weight: bold; font-size: 11px;"><%= ticket.Tecnico ? ticket.Tecnico.Nombre_tecnico : 'Técnico' %></div>
+                <div style="font-size: 9px; color: #555;">Firma del Técnico</div>
+            </div>
+
+            <div class="signature-box">
+                <div class="signature-line"></div>
+                <div style="font-weight: bold; font-size: 11px;"><%= ticket.Cliente.Nombre_contacto || 'Cliente' %></div>
+                <div style="font-size: 9px; color: #555;">Firma de Conformidad</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px; font-size: 8px; color: #999;">
+            El cliente acepta que los servicios descritos han sido recibidos a entera satisfacción. <br>
+            Generado por CRM TSV.
+        </div>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmarFinalizacion(idTicket) {
+            const cantidadFotos = <%= (ticket.TicketFotos && ticket.TicketFotos.length > 0) ? ticket.TicketFotos.length : 0 %>;
+            let titulo = '¿Finalizar Servicio?';
+            let texto = "El estatus cambiará a 'Finalizado'.";
+            let icono = 'question';
+            let confirmColor = '#065f46';
+
+            if (cantidadFotos === 0) {
+                titulo = '¡Sin Evidencia Fotográfica!';
+                texto = "Advertencia: No has subido fotos para este servicio. ¿Deseas finalizarlo de todos modos sin evidencia?";
+                icono = 'warning';
+                confirmColor = '#d9a600';
+            }
+
+            Swal.fire({
+                title: titulo,
+                text: texto,
+                icon: icono,
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#d33',
+                confirmButtonText: cantidadFotos === 0 ? 'Sí, finalizar sin fotos' : 'Sí, finalizar',
+                cancelButtonText: 'Cancelar',
+                background: '#f4f7fe',
+                customClass: { popup: 'rounded-4 shadow-lg border-0' }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/tickets/finalizar/${idTicket}`;
+                }
+            });
+        }
+
+        const inputReal = document.getElementById('inputFotosReal');
+        const previewContainer = document.getElementById('previewContainer');
+        const btnSubir = document.getElementById('btnSubirReal');
+        const labelConteo = document.getElementById('conteoArchivos');
+        let dt = new DataTransfer();
+
+        if(inputReal) {
+            inputReal.addEventListener('change', function(e) {
+                for(let i = 0; i < this.files.length; i++){
+                    let file = this.files[i];
+                    if (file.type.startsWith('image/')) {
+                        dt.items.add(file); 
+                    }
+                }
+                this.files = dt.files;
+                actualizarVistasPrevias();
+            });
+        }
+
+        function actualizarVistasPrevias() {
+            previewContainer.innerHTML = '';
+            if (dt.files.length === 0) {
+                btnSubir.classList.add('d-none');
+                labelConteo.innerText = '0 archivos seleccionados';
+                return;
+            }
+            btnSubir.classList.remove('d-none');
+            labelConteo.innerText = `${dt.files.length} archivos listos para subir`;
+
+            Array.from(dt.files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'position-relative d-inline-block animate__animated animate__fadeIn'; 
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="rounded-3 shadow-sm object-fit-cover border" style="width: 80px; height: 80px; cursor: pointer;" onclick="mostrarImagenModal('${e.target.result}')">
+                        <button type="button" onclick="quitarDeLaLista(${index})" class="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger border border-light p-1" style="cursor: pointer;"><i class="bi bi-x"></i></button>
+                    `;
+                    previewContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function quitarDeLaLista(index) {
+            const newDt = new DataTransfer();
+            Array.from(dt.files).forEach((file, i) => {
+                if (i !== index) newDt.items.add(file);
+            });
+            dt = newDt;
+            inputReal.files = dt.files;
+            actualizarVistasPrevias();
+        }
+
+
+        function confirmarReapertura(idTicket) {
+            Swal.fire({
+                title: '¿Reabrir Servicio?',
+                text: "El estatus regresará a 'En seguimiento' y podrás editar la información nuevamente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#343a40', // Color oscuro para coincidir con el botón
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, reabrir servicio',
+                cancelButtonText: 'Cancelar',
+                background: '#f4f7fe',
+                customClass: { 
+                    popup: 'rounded-4 shadow-lg border-0',
+                    confirmButton: 'rounded-pill px-4',
+                    cancelButton: 'rounded-pill px-4'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirige a la ruta que procesará el cambio en el backend
+                    window.location.href = `/tickets/reabrir/${idTicket}`;
+                }
+            });
+        }
+
+
+        function copiarLinkMaps() {
+            const inputLink = document.getElementById('inputLinkMaps');
+            const link = inputLink.value;
+
+            if (!link) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Vacío',
+                    text: 'No hay un enlace registrado para copiar.',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    customClass: { popup: 'rounded-4 shadow-sm' }
+                });
+                return;
+            }
+
+            
+            navigator.clipboard.writeText(link).then(() => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+
+                Toast.fire({
+                    icon: 'success',
+                    title: '¡Enlace copiado al portapapeles!'
+                });
+            }).catch(err => {
+                console.error('Error al copiar: ', err);
+                // Fallback simple si falla
+                inputLink.select();
+                document.execCommand('copy');
+            });
+        }
+
+        async function confirmarDesvincularEquipo(idUnidad, idEquipo, idTicket) {
+            const result = await Swal.fire({
+                title: '¿Liberar equipo GPS?',
+                text: "El equipo volverá a estar 'En espera' y la unidad quedará sin GPS.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, quitar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('/desvincular_equipo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idUnidad, idEquipo, idTicket })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        Swal.fire('Eliminado', data.message, 'success').then(() => location.reload());
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+                }
+            }
+        }
+
+        async function confirmarDesvincularAccesorio(idUnidad, idAccesorio) {
+            // Confirmación más sutil para accesorios
+            const result = await Swal.fire({
+                title: '¿Quitar accesorio?',
+                text: "Se eliminará de la lista de esta unidad.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, quitar',
+                confirmButtonColor: '#d33'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('/desvincular_accesorio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ idUnidad, idAccesorio})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                
+                        location.reload(); 
+                        
+                    
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('Error', 'Fallo de red', 'error');
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>

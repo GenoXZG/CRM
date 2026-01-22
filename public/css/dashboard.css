@@ -1,0 +1,304 @@
+/* public/css/dashboard.css */
+
+/* --- Definición de Variables (Paleta Pastel) --- */
+:root {
+    --bg-body: #f4f7fe;
+    --text-dark: #2b3674;
+    --text-muted: #a3aed0;
+    --card-radius: 30px;
+    
+    /* Colores Pastel */
+    --pastel-yellow-bg: #fff5cc;
+    --pastel-yellow-text: #d9a600;
+    
+    --pastel-blue-bg: #dbeafe;
+    --pastel-blue-text: #1e40af;
+    
+    --pastel-green-bg: #d1fae5;
+    --pastel-green-text: #065f46;
+    
+    --pastel-purple-bg: #ede9fe;
+    --pastel-purple-text: #5b21b6;
+}
+
+body {
+    background-color: var(--bg-body);
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+}
+
+h1, h2, h3, h4, h5 {
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+/* --- Tarjetas Soft UI --- */
+.soft-card {
+    background: #ffffff;
+    border-radius: var(--card-radius);
+    border: none;
+    box-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    padding: 1.5rem;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.soft-card:hover {
+     transform: translateY(-5px);
+}
+
+.card-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.card-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 1rem;
+}
+
+/* --- Utilidades de Color --- */
+.bg-pastel-yellow { background-color: var(--pastel-yellow-bg); color: var(--pastel-yellow-text); }
+.bg-pastel-blue { background-color: var(--pastel-blue-bg); color: var(--pastel-blue-text); }
+.bg-pastel-green { background-color: var(--pastel-green-bg); color: var(--pastel-green-text); }
+
+.kpi-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    background: rgba(255,255,255,0.4);
+}
+
+.card-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+.card-link:hover { opacity: 1; }
+
+/* --- Header y Búsqueda --- */
+.search-bar {
+    background: #fff;
+    border-radius: 30px;
+    padding: 0.8rem 1.5rem;
+    box-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    display: flex;
+    align-items: center;
+}
+.search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    margin-left: 10px;
+    width: 100%;
+    color: var(--text-dark);
+}
+.profile-pic {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0px 10px 20px rgba(112, 144, 176, 0.2);
+}
+
+
+/* --- Personalización de FullCalendar (Soft UI) --- */
+
+#calendar {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+}
+
+/* Quitar bordes de la tabla y encabezado */
+.fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+    border-color: #f1f5f9; /* Gris muy muy suave */
+}
+
+
+.fc-col-header-cell-cushion {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-decoration: none;
+    padding: 10px 0;
+}
+
+/* Números de los días */
+.fc-daygrid-day-number {
+    color: var(--text-dark);
+    font-weight: 500;
+    text-decoration: none;
+    margin: 5px;
+}
+
+/* Botones del header (Mes, Hoy, Flechas) - Estilo Pastilla */
+.fc .fc-button-primary {
+    background-color: #fff;
+    color: var(--text-dark);
+    border: none;
+    box-shadow: 0 4px 10px rgba(112, 144, 176, 0.12);
+    border-radius: 20px;
+    font-weight: 600;
+    padding: 6px 16px;
+    text-transform: capitalize;
+    transition: all 0.2s;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: var(--bg-body);
+    color: var(--pastel-blue-text);
+    box-shadow: 0 6px 15px rgba(112, 144, 176, 0.2);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active, 
+.fc .fc-button-primary:not(:disabled):active {
+    background-color: var(--pastel-blue-bg);
+    color: var(--pastel-blue-text);
+    box-shadow: none;
+}
+
+/* Eventos (Las barritas de colores) */
+.fc-event {
+    border-radius: 8px; /* Redondear eventos */
+    padding: 2px 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: none !important; /* Forzar sin borde */
+}
+
+/* Título del Mes (Ej: Enero 2026) */
+.fc-toolbar-title {
+    font-size: 1.5rem !important;
+    font-weight: 700;
+}
+
+/* Día actual (Hoy) */
+.fc-day-today {
+    background-color: rgba(237, 233, 254, 0.3) !important; /* Fondo púrpura muy suave */
+}
+
+
+
+/* --- SIDEBAR SOFT UI --- */
+
+#sidebar {
+    min-width: 260px;
+    max-width: 260px;
+    background: #ffffff; /* Fondo blanco */
+    transition: all 0.35s ease-in-out;
+    /* Borde redondeado solo a la derecha para efecto suave */
+    border-top-right-radius: 30px; 
+    border-bottom-right-radius: 30px;
+    /* Sombra suave para separarlo del contenido */
+    box-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
+    position: relative;
+    z-index: 100;
+    margin-right: 20px; /* Separación del contenido principal */
+}
+
+/* Logo */
+.sidebar-logo {
+    padding: 1.5rem 2rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar-logo a {
+    color: var(--text-dark); /* Azul oscuro */
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-decoration: none;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Navegación */
+.sidebar-nav {
+    list-style: none;
+    padding: 0 1rem !important; /* Padding lateral para que los botones no toquen el borde */
+}
+
+.sidebar-header {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 1.5rem 0 0.5rem 1rem;
+}
+
+.sidebar-item {
+    margin-bottom: 0.5rem;
+}
+
+/* Enlaces (Items) */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    color: #707eae; /* Un gris azulado suave para items inactivos */
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-radius: 15px; /* Bordes redondeados estilo "Pastilla" */
+    transition: all 0.2s ease;
+}
+
+.sidebar-link i {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    color: inherit;
+}
+
+/* Hover: Efecto sutil */
+.sidebar-link:hover {
+    color: var(--text-dark);
+    background-color: #f4f7fe; /* Color de fondo muy suave */
+    transform: translateX(3px); /* Pequeño movimiento a la derecha */
+}
+
+/* ESTADO ACTIVO (Importante: Asigna esta clase en tu HTML al link actual) */
+.sidebar-link.active {
+    background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); /* Gradiente azul/morado moderno */
+    color: #ffffff !important; /* Texto blanco */
+    box-shadow: 0 5px 15px rgba(67, 24, 255, 0.3); /* Sombra de color brillante */
+}
+
+/* Footer del Sidebar */
+.sidebar-footer {
+    padding: 1rem;
+    margin-top: auto; /* Empuja al fondo */
+    border-top: 1px solid #f4f7fe;
+}
+
+/* Sidebar Colapsado (Opcional, si usas la función de ocultar) */
+#sidebar.collapsed {
+    margin-left: -260px;
+}
+
+/* --- Ajuste para pantallas pequeñas --- */
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -260px;
+        position: fixed;
+        height: 100vh;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}

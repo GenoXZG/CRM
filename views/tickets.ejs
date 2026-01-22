@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Ticket | CRM TSV</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item">
+                    <a href="/" class="sidebar-link"> 
+                        <i class="lni lni-grid-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Gestión de Servicios</li>
+
+                <li class="sidebar-item">
+                    <a href="/tickets" class="sidebar-link active"> 
+                        <i class="lni lni-ticket-alt"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/estado_tickets" class="sidebar-link "> 
+                        <i class="lni lni-stats-up"></i>
+                        <span>Estado de Tickets</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/clientes" class="sidebar-link"> 
+                        <i class="lni lni-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Operativo</li>
+
+                <li class="sidebar-item">
+                    <a href="/asignacion_unidades" class="sidebar-link"> 
+                        <i class="lni lni-delivery"></i>
+                        <span>Asignar Unidades</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/asignacion_equipos" class="sidebar-link"> 
+                        <i class="lni lni-network"></i>
+                        <span>Asignar Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/registro_equipos" class="sidebar-link"> 
+                        <i class="lni lni-pencil-alt"></i>
+                        <span>Registro Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Recursos</li>
+
+                <li class="sidebar-item">
+                    <a href="/tecnicos" class="sidebar-link"> 
+                        <i class="lni lni-helmet"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/equipos" class="sidebar-link"> 
+                        <i class="lni lni-display-alt"></i>
+                        <span>Catálogo Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="/unidades" class="sidebar-link"> 
+                        <i class="lni lni-car"></i>
+                        <span>Unidades</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a href="/accesorios" class="sidebar-link"> 
+                        <i class="lni lni-plug"></i>
+                        <span>Accesorios</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger">
+                    <i class="lni lni-exit"></i>
+                    <span>Salir</span>
+                </a>
+            </div>
+        </aside>
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+                <span class="ms-3 fw-bold text-secondary">Gestión de Servicios</span>
+            </nav>
+
+            <main class="p-4">
+                <div class="container-fluid">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="mb-1">Nuevo Ticket de Servicio</h1>
+                            <p class="text-muted">Complete la información para generar una nueva orden.</p>
+                        </div>
+                        <a href="/tickets" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-arrow-left me-2"></i> Cancelar
+                        </a>
+                    </div>
+
+                    <div class="soft-card">
+                        <form action="/add_ticket" method="POST">
+                            
+                            <div class="mb-4 pb-4 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="bi bi-building me-2"></i>Datos del Cliente</h5>
+                                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" 
+                                            data-bs-toggle="modal" data-bs-target="#modalClientes"
+                                            style="background-color: var(--pastel-blue-text); border: none;">
+                                        <i class="bi bi-search me-1"></i> Buscar Cliente
+                                    </button>
+                                </div>
+                                
+                                <input type="hidden" name="ID_cliente" id="id_cliente">
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label text-muted small fw-bold">Empresa</label>
+                                        <input class="form-control bg-light fw-bold text-dark" type="text" id="nombre_cliente" name="Nombre_cliente" readonly placeholder="Seleccione un cliente...">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">Encargado</label>
+                                        <input class="form-control bg-light fw-medium" type="text" id="encargado" name="encargado" readonly>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label text-muted small fw-bold">Teléfono</label>
+                                        <input class="form-control bg-light fw-medium" type="tel" id="telefono_cliente" name="telefono_cliente" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 pb-4 border-bottom">
+                                <h5 class="text-primary mb-3"><i class="bi bi-tools me-2"></i>Detalles del Servicio</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="Tipo_servicio" class="form-label text-muted small fw-bold">Tipo de Servicio</label>
+                                        <select class="form-select" name="Tipo_servicio" id="Tipo_servicio" required>
+                                            <option value="" selected disabled>-- Seleccionar --</option>
+                                            <option value="Instalacion">Instalación</option>
+                                            <option value="Desinstalacion">Desinstalación</option>
+                                            <option value="Revision">Revisión</option>
+                                            <option value="Rescate">Rescate</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="numero_unidades" class="form-label text-muted small fw-bold">No. Unidades</label>
+                                        <input class="form-control" type="number" id="numero_unidades" name="numero_unidades" required min="1" value="1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="fecha" class="form-label text-muted small fw-bold">Fecha Programada</label>
+                                        <input class="form-control" type="datetime-local" id="fecha" name="fecha_registro" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 pb-4 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="bi bi-person-badge me-2"></i>Técnico Asignado</h5>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 btn_tecnico_pendiente">
+                                            <i class="bi bi-clock-history me-1"></i> Pendiente
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" 
+                                                data-bs-toggle="modal" data-bs-target="#modalTecnicos"
+                                                style="background-color: var(--pastel-blue-text); border: none;">
+                                            <i class="bi bi-search me-1"></i> Buscar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="ID_Tecnico" id="id_tecnico">
+
+                                <div class="row g-3">
+                                    <div class="col-md-8">
+                                        <label class="form-label text-muted small fw-bold">Nombre del Técnico</label>
+                                        <input class="form-control bg-light" type="text" id="nombre_tecnico" name="Nombre_tecnico" readonly placeholder="Seleccione o marque pendiente...">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label text-muted small fw-bold">Número de Telefono</label>
+                                        <input class="form-control bg-light" type="tel" id="numero_tecnico" name="Numero_tecnico" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="text-primary mb-0"><i class="bi bi-geo-alt me-2"></i>Ubicación y Notas</h5>
+                                    
+                                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3" id="btn_ubicacion_pendiente">
+                                        <i class="bi bi-clock-history me-1"></i> Pendiente
+                                    </button>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="direccion_servicio" class="form-label text-muted small fw-bold">Link de Google Maps</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-link-45deg"></i></span>
+                                        <input type="text" class="form-control border-start-0 ps-0" 
+                                               id="direccion_servicio" name="direccion_servicio" 
+                                               placeholder="Pegue el link aquí o marque como pendiente...">
+                                        
+                                        <a class="btn btn-outline-secondary" target="_blank" id="btn_abrir_mapa" href="#">
+                                            <i class="bi bi-map"></i> Abrir Mapa
+                                        </a>
+                                    </div>
+                                </div>
+     
+                                <div class="mb-3">
+                                    <label for="comentarios_servicios" class="form-label text-muted small fw-bold">Comentarios Adicionales</label>
+                                    <textarea class="form-control" name="comentarios" id="comentarios_servicios" rows="3" placeholder="Instrucciones especiales..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end pt-3">
+                                <button type="submit" class="btn btn-lg btn-primary rounded-pill px-5 shadow-sm" style="background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); border:none;">
+                                    <i class="bi bi-check-circle-fill me-2"></i> Confirmar Servicio
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <footer class="mt-auto py-3  text-center text-muted  small">
+                    © 2025 CRM TSV - Desarrollado por GenoxZG
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalClientes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold ms-2">Seleccionar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 py-3">Empresa</th>
+                                    <th>Encargado</th>
+                                    <th>Teléfono</th>
+                                    <th class="text-end pe-3">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(typeof clientes !== 'undefined') { %>
+                                    <% clientes.forEach(cliente => { %>
+                                    <% 
+                                       const nombreEmpresa = cliente.Nombre_empresa  || 'Sin nombre';
+                                       const nombreEncargado = cliente.Encargado  || '---';
+                                       const telefono = cliente.Numero  || '---';
+                                    %>
+                                    <tr>
+                                        <td class="ps-3 fw-medium"><%= nombreEmpresa %></td>
+                                        <td class="text-muted"><%= nombreEncargado %></td>
+                                        <td><%= telefono %></td>
+                                        <td class="text-end pe-3">
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill btn_confirmar_cliente"
+                                                    data-id="<%= cliente.ID_cliente %>"
+                                                    data-nombre="<%= nombreEmpresa %>"
+                                                    data-encargado="<%= nombreEncargado %>"
+                                                    data-numero="<%= telefono %>" 
+                                                    data-bs-dismiss="modal">
+                                                Seleccionar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalTecnicos" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold ms-2">Asignar Técnico</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-3 py-3">Nombre</th>
+                                    <th>Numero de Telefono</th>
+                                    <th class="text-end pe-3">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(typeof tecnicos !== 'undefined') { %>
+                                    <% tecnicos.forEach(tecnico => { %>
+                                    <tr>
+                                        <td class="ps-3 fw-medium">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle bg-light p-1 text-primary"><i class="bi bi-person-fill"></i></div>
+                                                <%= tecnico.Nombre_tecnico %>
+                                            </div>
+                                        </td>
+                                        <td class="text-muted"><%= tecnico.Numero_tecnico %></td>
+                                        <td class="text-end pe-3">
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill btn_confirmar_tecnico"
+                                                    data-id="<%= tecnico.ID_Tecnico %>"
+                                                    data-nombre="<%= tecnico.Nombre_tecnico %>"
+                                                    data-numero="<%= tecnico.Numero_tecnico %>"
+                                                    data-bs-dismiss="modal">
+                                                Asignar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/scripts/seleccion.js"></script>
+    <script>
+        const toggler = document.querySelector(".toggler-btn");
+        if(toggler) toggler.addEventListener("click", () => document.querySelector("#sidebar").classList.toggle("collapsed"));
+    </script>
+</body>
+</html>

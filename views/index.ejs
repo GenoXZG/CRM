@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operativo</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item"><a href="/" class="sidebar-link active"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Crear Ticket</span></a></li>
+                <li class="sidebar-item"><a href="/estado_tickets" class="sidebar-link"><i class="lni lni-stats-up"></i><span>Estado de Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item">
+                    <a href="/asignacion_unidades" class="sidebar-link"> 
+                        <i class="lni lni-delivery"></i>
+                        <span>Asignar Unidades</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/asignacion_equipos" class="sidebar-link"> 
+                        <i class="lni lni-network"></i>
+                        <span>Asignar Equipos</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/registro_equipos" class="sidebar-link"> 
+                        <i class="lni lni-pencil-alt"></i>
+                        <span>Registro Equipos</span>
+                    </a>
+                </li>
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/equipos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogo Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/unidades" class="sidebar-link"><i class="lni lni-car"></i><span>Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/accesorios" class="sidebar-link"><i class="lni lni-plug"></i><span>Accesorios</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger"><i class="lni lni-exit"></i><span>Salir</span></a>
+            </div>
+        </aside>
+
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+            </nav>
+
+            <main class="p-4">
+               <div class="container-fluid">
+                  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+                      <div>
+                          <h4 class="text-muted mb-1 fw-normal">Bienvenido de nuevo, 👋</h4>
+                          <h1 class="mb-0">Panel de Control Operativo</h1>
+                      </div>
+                  </div>
+
+                  <div class="row g-4 mb-5">
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card bg-pastel-yellow d-flex flex-column justify-content-between">
+                              <div>
+                                  <div class="kpi-icon-wrapper"><i class="bi bi-hourglass-split"></i></div>
+                                  <div class="card-label">En Espera</div>
+                                  <div class="card-value"><%= metrics.counts.espera %></div>
+                              </div>
+                              <a href="/estado_tickets" class="card-link" style="color: var(--pastel-yellow-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card bg-pastel-blue d-flex flex-column justify-content-between">
+                              <div>
+                                  <div class="kpi-icon-wrapper"><i class="bi bi-truck"></i></div>
+                                  <div class="card-label">En Seguimiento</div>
+                                  <div class="card-value"><%= metrics.counts.seguimiento %></div>
+                              </div>
+                              <a href="/estado_tickets" class="card-link" style="color: var(--pastel-blue-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card bg-pastel-green d-flex flex-column justify-content-between">
+                              <div>
+                                  <div class="kpi-icon-wrapper"><i class="bi bi-check-circle-fill"></i></div>
+                                  <div class="card-label">Finalizados Hoy</div>
+                                  <div class="card-value"><%= metrics.counts.finalizado %></div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card d-flex flex-column justify-content-between" style="background: var(--pastel-purple-bg); color: var(--pastel-purple-text)">
+                              <div>
+                                  <div class="kpi-icon-wrapper bg-white"><i class="bi bi-collection-fill" style="color: var(--pastel-purple-text)"></i></div>
+                                  <div class="card-label" style="opacity: 0.8;">Total Histórico</div>
+                                  <div class="card-value"><%= metrics.totalTickets %></div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row g-4">
+                      <div class="col-lg-8">
+                          <div class="soft-card">
+                              <h5 class="mb-4">Carga de Trabajo <span class="text-muted fs-6 fw-normal">(Tickets Activos)</span></h5>
+                              <div style="height: 300px; position: relative;">
+                                  <canvas id="chartTecnicos"></canvas>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-lg-4">
+                          <div class="soft-card h-100">
+                              <div class="d-flex align-items-center mb-4">
+                                  <div class="rounded-circle bg-light bg-opacity-10 p-2 me-3"><i class="bi bi-box-seam fs-5"></i></div>
+                                  <h5 class="mb-0">Equipos listos para asignacion</h5>
+                              </div>
+                              
+                              <div class="d-flex flex-column gap-3">
+                                  <% if (metrics.equiposStockBajo && metrics.equiposStockBajo.length > 0) { %>
+                                      <% metrics.equiposStockBajo.forEach(eq => { %>
+                                          <div class="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light bg-opacity-50">
+                                              <div class="d-flex align-items-center">
+                                                  <div class="rounded-3 bg-white p-2 shadow-sm me-3 text-muted"><i class="bi bi-router fs-5"></i></div>
+                                                  <span class="fw-bold text-dark"><%= eq.Modelo_equipo %></span>
+                                              </div>
+                                              <span class="badge bg-success rounded-pill py-2 px-3 font-monospace">
+                                                <%= eq.disponibles %> disp.
+                                              </span>
+                                          </div>
+                                      <% }) %>
+                                  <% } else { %>
+                                    <div class="text-center text-muted py-4">Inventario saludable</div>
+                                  <% } %>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="soft-card">
+                            <h5 class="mb-4">Calendario de Servicios</h5>
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+                <footer class="mt-auto py-3  text-center text-muted  small">
+                    © 2025 CRM TSV - Desarrollado por GenoxZG
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const toggler = document.querySelector(".toggler-btn");
+        if(toggler) toggler.addEventListener("click", () => document.querySelector("#sidebar").classList.toggle("collapsed"));
+    </script>
+    
+    <script>
+        // Pre-procesamos los técnicos para quitar nulos
+        const rawTecnicos = <%- JSON.stringify(metrics.topTecnicos || []) %>;
+        window.dashboardData = rawTecnicos.map(t => ({
+            nombre: t.nombre || 'Sin Asignar', 
+            tickets_activos: t.tickets_activos
+        }));
+
+        window.calendarEvents = <%- JSON.stringify(calendarEvents || []) %>;
+    </script>
+    
+    <script src="/scripts/dashboard.js"></script>
+</body>
+</html>

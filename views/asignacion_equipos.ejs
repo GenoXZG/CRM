@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignación de Equipos | CRM TSV</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    
+    <style>
+        /* Estilos específicos para las tarjetas de unidad */
+        .unit-card {
+            transition: all 0.3s ease;
+            border-left: 5px solid #ddd;
+        }
+        .unit-card.pending { border-left-color: #ffc107; }
+        .unit-card.assigned { border-left-color: #198754; }
+        
+        .empty-slot {
+            border: 2px dashed #cbd5e1;
+            background-color: #f8fafc;
+            transition: all 0.2s;
+        }
+        .empty-slot:hover {
+            border-color: #94a3b8;
+            background-color: #f1f5f9;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item"><a href="/" class="sidebar-link"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Crear Ticket</span></a></li>
+                <li class="sidebar-item"><a href="/estado_tickets" class="sidebar-link"><i class="lni lni-stats-up"></i><span>Estado de Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+                
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item"><a href="/asignacion_unidades" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignar Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/asignacion_equipos" class="sidebar-link active"><i class="lni lni-network"></i><span>Asignar Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/registro_equipos" class="sidebar-link"><i class="lni lni-pencil-alt"></i><span>Registro Equipos</span></a></li>
+                
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/equipos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogo Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/unidades" class="sidebar-link"><i class="lni lni-car"></i><span>Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/accesorios" class="sidebar-link"><i class="lni lni-plug"></i><span>Accesorios</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger"><i class="lni lni-exit"></i><span>Salir</span></a>
+            </div>
+        </aside>
+
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+                <span class="ms-3 fw-bold text-secondary">Operativo / Instalación</span>
+            </nav>
+
+         <main class="p-4">
+                <div class="container-fluid">
+                    
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                        <div>
+                            <h1 class="mb-1">Asignación de Equipos GPS</h1>
+                            <p class="text-muted mb-0">Vincule los dispositivos físicos a las unidades vehiculares del ticket.</p>
+                        </div>
+                        <div>
+                            <a href="/registro_equipos" class="btn btn-primary rounded-pill shadow-sm px-4 py-2" 
+                               style="background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); border: none;">
+                                <i class="bi bi-hdd-network me-2"></i>Registrar Nuevo Equipo
+                            </a>
+                        </div>
+                    </div>
+
+                    <% 
+                        let parciales = [];
+                        let pendientes = [];
+                        
+                        if(ticketsSeguimiento && ticketsSeguimiento.length > 0) {
+                            // Estatus 2 = Parcial (Según tu lógica actual)
+                            parciales = ticketsSeguimiento.filter(t => t.Estatus_unidades == 2);
+                            // Estatus 0 = Pendiente
+                            pendientes = ticketsSeguimiento.filter(t => t.Estatus_unidades == 0);
+                        }
+                    %>
+
+                    <% if (parciales.length > 0) { %>
+                    <div class="soft-card mb-4 border-start border-4 border-warning">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-2 me-3 text-warning">
+                                <i class="bi bi-hourglass-split fs-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-bold text-dark">Asignaciones en Progreso</h5>
+                                <small class="text-muted">Tickets que requieren completar unidades restantes.</small>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID Ticket</th>
+                                        <th class="border-0">Cliente</th>
+                                        <th class="border-0">Técnico</th>
+                                        <th class="border-0 text-center">Unidades</th>
+                                        <th class="border-0">Estatus</th>
+                                        <th class="pe-3 border-0 rounded-end text-end">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% parciales.forEach(ticket => { %>
+                                        <tr>
+                                            <td class="ps-3 fw-bold text-dark">#<%= ticket.ID_ticket %></td>
+                                            <td><i class="bi bi-building me-2 text-muted"></i><%= ticket.Cliente.Nombre_empresa %></td>
+                                            <td>
+                                                <% if(ticket.Tecnico && ticket.Tecnico.Nombre_tecnico) { %>
+                                                    <span class="badge bg-light text-dark border fw-normal"><%= ticket.Tecnico.Nombre_tecnico %></span>
+                                                <% } else { %>
+                                                    <span class="badge bg-warning text-dark bg-opacity-25 fw-normal">Sin Asignar</span>
+                                                <% } %>
+                                            </td>
+                                            <td class="text-center fw-bold text-dark"><%= ticket.Numero_unidades %></td>
+                                            <td>
+                                                <span class="badge bg-warning text-dark bg-opacity-25 border border-warning">
+                                                    <i class="bi bi-exclamation-circle me-1"></i> Incompleto
+                                                </span>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <button class="btn btn-sm btn-warning text-dark rounded-pill px-3 btn_seleccion_ticket shadow-sm" 
+                                                        type="button"
+                                                        data-id_ticket="<%= ticket.ID_ticket %>"
+                                                        data-num_unidades="<%= ticket.Numero_unidades %>"
+                                                        data-cliente="<%= ticket.Cliente.Nombre_empresa %>"
+                                                        data-tecnico="<%= ticket.Tecnico?.Nombre_tecnico || 'Sin Técnico' %>">
+                                                    <i class="bi bi-pencil-square me-1"></i> Continuar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <div class="soft-card mb-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3 text-primary">
+                                <i class="bi bi-inbox fs-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0">Tickets Pendientes</h5>
+                                <small class="text-muted">Listos para iniciar asignación.</small>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="bg-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3 border-0 rounded-start">ID</th>
+                                        <th class="border-0">Cliente</th>
+                                        <th class="border-0">Técnico</th>
+                                        <th class="border-0 text-center">Unidades</th>
+                                        <th class="border-0">Servicio</th>
+                                        <th class="pe-3 border-0 rounded-end text-end">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if(pendientes.length > 0) { %>
+                                        <% pendientes.forEach(ticket => { %>
+                                            <tr>
+                                                <td class="ps-3 fw-bold text-dark">#<%= ticket.ID_ticket %></td>
+                                                <td><i class="bi bi-building me-2 text-muted"></i><%= ticket.Cliente.Nombre_empresa %></td>
+                                                <td>
+                                                    <% if(ticket.Tecnico && ticket.Tecnico.Nombre_tecnico) { %>
+                                                        <span class="badge bg-light text-dark border fw-normal"><%= ticket.Tecnico.Nombre_tecnico %></span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-warning text-dark bg-opacity-25 fw-normal">Sin Asignar</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="text-center fw-bold text-primary"><%= ticket.Numero_unidades %></td>
+                                                <td><span class="badge bg-primary bg-opacity-10 text-primary"><%= ticket.Tipo_servicio %></span></td>
+                                                <td class="text-end pe-3">
+                                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3 btn_seleccion_ticket" 
+                                                            type="button"
+                                                            data-id_ticket="<%= ticket.ID_ticket %>"
+                                                            data-num_unidades="<%= ticket.Numero_unidades %>"
+                                                            data-cliente="<%= ticket.Cliente.Nombre_empresa %>"
+                                                            data-tecnico="<%= ticket.Tecnico?.Nombre_tecnico || 'Sin Técnico' %>">
+                                                        Gestionar <i class="bi bi-arrow-right-circle ms-1"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <% }) %>
+                                    <% } else { %>
+                                        <tr><td colspan="6" class="text-center py-4 text-muted fst-italic">No hay tickets nuevos pendientes.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="workbench-container" class="d-none">
+                    <div class="soft-card mb-4 bg-primary text-white" style="background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%);">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-white-50 text-uppercase fw-bold">Trabajando en Ticket</small>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <h2 class="mb-0 text-white">#<span id="ID_ticket"></span></h2>
+                                        
+                                        <a id="btn_ver_detalles" href="#" class="btn btn-sm bg-white text-primary border-0 rounded-pill shadow-sm fw-bold px-3">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i> Ver Detalles
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <h5 class="mb-0 text-white"><i class="bi bi-building me-2"></i><span id="Cliente_Ticket"></span></h5>
+                                    <small class="text-white-50">Técnico: <span id="Tecnico_Ticket"></span> | Unidades: <span id="Unidades_Ticket"></span></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4" id="contenedor-unidades-equipos"></div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button hidden id="btn_confirmar_asignaciones" type="button" 
+                                    class="btn btn-lg btn-success rounded-pill px-5 shadow-lg">
+                                <i class="bi bi-check-circle-fill me-2"></i> Confirmar Asignaciones
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="loading-indicator" class="text-center py-5 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Cargando unidades del ticket...</p>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSeleccionEquipo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold ms-2">Inventario Disponible</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="alert alert-light border-0 d-flex align-items-center text-muted small">
+                        <i class="bi bi-info-circle-fill me-2 fs-5 text-info"></i>
+                        Selecciona el dispositivo GPS para vincularlo a la unidad.
+                    </div>
+
+                    <div class="table-responsive rounded-3 border" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0" id="tablaEquipos">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th class="ps-3 py-3">Marca/Modelo</th>
+                                    <th>IMEI</th>
+                                    <th>ID Módem</th>
+                                    <th class="text-end pe-3">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(equiposEnEspera && equiposEnEspera.length > 0) { %>
+                                    <% equiposEnEspera.forEach(equipo => { %>
+                                        <tr>
+                                            <td class="ps-3">
+                                                <div class="d-flex flex-column">
+                                                    <span class="fw-bold text-dark"><%= equipo.Equipo_stock.Modelo_equipo %></span>
+                                                    <small class="text-muted"><%= equipo.Equipo_stock.Marca_equipo %></small>
+                                                </div>
+                                            </td>
+                                            <td class="font-monospace text-primary"><%= equipo.IMEI %></td>
+                                            <td class="font-monospace"><%= equipo.ID_modem %></td>
+                                            <td class="text-end pe-3">
+                                                <button class="btn btn-sm btn-outline-primary rounded-pill btn_seleccion_equipo"
+                                                    data-id_equipo="<%= equipo.ID_equipo %>"
+                                                    data-marca="<%= equipo.Equipo_stock.Marca_equipo %>"
+                                                    data-modelo="<%= equipo.Equipo_stock.Modelo_equipo %>"
+                                                    data-imei="<%= equipo.IMEI %>"
+                                                    data-id_modem="<%= equipo.ID_modem %>"
+                                                    data-bs-dismiss="modal">
+                                                    Seleccionar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="4" class="text-center py-5">
+                                            <div class="mb-3 text-muted">
+                                                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                                                No hay equipos disponibles en inventario.
+                                            </div>
+                                            <a href="/registro_equipos" class="btn btn-sm btn-primary rounded-pill px-4">
+                                                <i class="bi bi-plus-lg me-1"></i> Ir a Registrar Equipo
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSeleccionAccesorio" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold ms-2">
+                        <i class="bi bi-plug me-2"></i>Agregar Accesorio
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <p class="text-muted small mb-3">Seleccione el accesorio para vincular a la unidad actual.</p>
+                    
+                    <div class="table-responsive rounded-3 border" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light sticky-top">
+                                <tr>
+                                    <th class="ps-3">Tipo/Nombre</th>
+                        
+                                    <th class="text-end pe-3">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if(typeof accesoriosDisponibles !== 'undefined' && accesoriosDisponibles.length > 0) { %>
+                                    <% accesoriosDisponibles.forEach(acc => { %>
+                                        <tr>
+                                            <td class="ps-3 fw-medium">
+                                                <%= acc.Nombre_accesorio %>
+                                            </td>
+                                            
+                                            <td class="text-end pe-3">
+                                                <button class="btn btn-sm btn-outline-success rounded-pill btn_agregar_accesorio_modal"
+                                                    data-id="<%= acc.ID_accesorio_modelo %>"
+                                                    data-nombre="<%= acc.Nombre_accesorio %>"
+                                                    >
+                                                    <i class="bi bi-plus-lg"></i> Agregar
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="3" class="text-center py-4 text-muted">
+                                            No hay accesorios disponibles en stock.
+                                        </td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/scripts/sidebar.js"></script>
+    <script src="/scripts/asignacion_equipos.js"></script>
+</body>
+</html>
