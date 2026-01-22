@@ -2,6 +2,7 @@ const { Ticket, Cliente, Tecnico, TicketFoto, Unidad, Equipo, Unidad_stock, Equi
 const { Op } = require('sequelize');
 const createTicket = async (data) => {
     
+
     let idTecnico = data.ID_Tecnico;
     if (idTecnico === 'null') {
         idTecnico = null;

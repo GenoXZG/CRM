@@ -70,7 +70,7 @@ const marcas = async ()=>{
         return marcaslistado;
     }
     catch{
-        console.log("error (service)");
+        
     }
     
 }

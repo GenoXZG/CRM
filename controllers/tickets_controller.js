@@ -1,14 +1,31 @@
 const ticketService = require('../services/ticketService');
 const TicketFoto = require('../models/Ticket_foto');
 const tecnicoService = require('../services/tecnicoService');
+const clienteService = require('../services/clienteService');
+
+
+
 const agregarTicket = async (req, res) => {
     try {
-        
-        await ticketService.createTicket(req.body);
-        res.redirect('/tickets');
+        if(!req.body.ID_cliente){
+
+            const listaClientes = await clienteService.listarClientes(); 
+            const listaTecnicos = await tecnicoService.listarTecnicos();
+            return res.status(400).render('tickets', {
+                alert: true,
+                alertTitle: "Error",
+                alertMessage: "El campo Cliente es obligatorio",
+                alertIcon: "error",
+                clientes: listaClientes, 
+                tecnicos: listaTecnicos, 
+                data: req.body
+            });
+        }else{
+            await ticketService.createTicket(req.body);
+            res.redirect('/tickets');
+        }
     } catch (error) {
         console.error('Error al agregar ticket:', error);
-        
         res.status(500).send("Error al crear el ticket");
     }
 };
