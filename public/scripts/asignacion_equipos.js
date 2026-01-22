@@ -29,8 +29,7 @@ const estadoAsignaciones = {
       return null;
     },
 
-    // --- Lógica Accesorios (CON SOPORTE READ-ONLY) ---
-    // Ahora aceptamos un 4to parámetro opcional 'isReadOnly'
+    // --- Lógica Accesorios  ---
     agregarAccesorio(unidadId, accId, nombre, isReadOnly = false) { 
         if (!this.accesorios[unidadId]) {
             this.accesorios[unidadId] = [];
@@ -44,14 +43,13 @@ const estadoAsignaciones = {
         this.accesorios[unidadId].push({ 
             id: accId, 
             nombre,
-            readOnly: isReadOnly // <--- NUEVA PROPIEDAD
+            readOnly: isReadOnly 
         }); 
         return { success: true };
     },
 
     eliminarAccesorio(unidadId, index) {
         if (this.accesorios[unidadId] && this.accesorios[unidadId][index]) {
-            // Protección extra: No borrar si es readOnly
             if(this.accesorios[unidadId][index].readOnly) {
                 return { success: false, message: 'No se puede eliminar un accesorio guardado.' };
             }
@@ -62,10 +60,6 @@ const estadoAsignaciones = {
     },
     
     toJSON() {
-      // Al enviar al backend, filtramos solo lo que NO es readOnly (lo nuevo)
-      // Ojo: Depende de tu backend. Si tu backend es "Idempotente" (findOrCreate), 
-      // puedes enviar todo. Si solo espera lo nuevo, filtra aquí.
-      // Como hicimos el backend idempotente, enviamos todo sin problemas.
       return {
           equipos: this.asignaciones,
           accesorios: this.accesorios
@@ -95,7 +89,7 @@ const estadoAsignaciones = {
             const tecnico = this.dataset.tecnico;
             const unidades = this.dataset.num_unidades;
 
-            // Actualizar Header (Textos existentes)
+            // Actualizar Header 
             idTicket.textContent = ticket;
             clienteTicket.textContent = cliente;
             tecnicoTicket.textContent = tecnico;
@@ -107,11 +101,8 @@ const estadoAsignaciones = {
                 btnDetalles.href = `/detalle_ticket/${ticket}`;
             }
 
-            // UX: Mostrar loader y ocultar workbench previo
             workbenchContainer.classList.add('d-none');
             loadingIndicator.classList.remove('d-none');
-            
-            // ... resto de tu código (cargarUnidadesConEquipos, scroll, etc) ...
             loadingIndicator.scrollIntoView({ behavior: 'smooth' });
 
             await cargarUnidadesConEquipos(ticket);
@@ -131,8 +122,6 @@ async function cargarUnidadesConEquipos(idTicket) {
         
         const contenedor = document.getElementById('contenedor-unidades-equipos');
         contenedor.innerHTML = '';
-        
-        // Limpiamos estado previo
         estadoAsignaciones.asignaciones = {};
         estadoAsignaciones.accesorios = {};
         
@@ -148,18 +137,16 @@ async function cargarUnidadesConEquipos(idTicket) {
         unidades.forEach(unidad => {
             const rowId = `unidad-row-${unidad.ID_Unidad}`;
 
-            // 1. DETERMINAR SI VIENE DE BD (LECTURA)
+            // DETERMINAR SI VIENE DE BD (LECTURA)
             const tieneEquipo = !!unidad.Equipo;
-            const esSoloLectura = tieneEquipo; // Si tiene equipo al cargar, es de BD (Solo Lectura)
+            const esSoloLectura = tieneEquipo; 
 
             // --- LÓGICA DE EQUIPO ---
             let htmlEquipoInfo = '';
             let htmlAvisoBloqueo = '';
-            // Control de visualización de botones: Si es solo lectura, display:none
             const displayBotones = esSoloLectura ? 'none' : 'flex';
 
             if (tieneEquipo) {
-                // Registrar en estado local
                 estadoAsignaciones.asignaciones[unidad.ID_Unidad] = unidad.Equipo.ID_equipo;
 
                 const modeloGPS = unidad.Equipo.Equipo_stock ? unidad.Equipo.Equipo_stock.Modelo_equipo : 'GPS Genérico';
@@ -175,7 +162,6 @@ async function cargarUnidadesConEquipos(idTicket) {
                 `;
 
                 if (esSoloLectura) {
-                    // MODO SOLO LECTURA: Mensaje de bloqueo limpio
                     htmlAvisoBloqueo = `
                         <div class="mt-2">
                             <div class="alert alert-light border border-secondary border-opacity-25 d-flex align-items-center justify-content-center p-2 mb-0 text-secondary small"
@@ -190,14 +176,14 @@ async function cargarUnidadesConEquipos(idTicket) {
                 }
             }
 
-            // --- LÓGICA DE ACCESORIOS (CARGA INICIAL) ---
+            // --- LÓGICA DE ACCESORIOS ---
             if (unidad.Accesorio_stocks && unidad.Accesorio_stocks.length > 0) {
                 unidad.Accesorio_stocks.forEach(acc => {
                     estadoAsignaciones.agregarAccesorio(
                         unidad.ID_Unidad, 
                         acc.ID_accesorio_modelo, 
                         acc.Nombre_accesorio, 
-                        true // <--- TRUE: Es Read Only
+                        true 
                     );
                 });
             }
@@ -291,11 +277,11 @@ async function cargarUnidadesConEquipos(idTicket) {
             `;
             contenedor.appendChild(col);
             
-            // Pintar los accesorios
+           
             renderizarAccesoriosEnTarjeta(unidad.ID_Unidad);
         });
 
-        // Eventos y Tooltips
+      
         asignarEventosDinamicos();
         inicializarTooltips();
 
@@ -306,7 +292,7 @@ async function cargarUnidadesConEquipos(idTicket) {
 }
   
 function asignarEventosDinamicos() {
-      // 1. Botón Seleccionar GPS
+      // Botón Seleccionar GPS
       document.querySelectorAll('.btn-seleccionar-equipo').forEach(btn => {
           btn.addEventListener('click', function() {
               const unidadId = this.dataset.unidadId;
@@ -314,7 +300,7 @@ function asignarEventosDinamicos() {
           });
       });
   
-      // 2. Botón Cambiar GPS
+      // Botón Cambiar GPS
       document.querySelectorAll('.btn_cambiar_equipo').forEach(btn => {
           btn.addEventListener('click', function() {
               const unidadId = this.dataset.unidadId;
@@ -322,7 +308,7 @@ function asignarEventosDinamicos() {
           });
       });
   
-      // 3. Botón Eliminar GPS
+      //  Botón Eliminar GPS
       document.querySelectorAll('.btn_eliminar_asignacion').forEach(btn => {
           btn.addEventListener('click', function() {
               const unidadId = this.dataset.unidad_id;
@@ -387,30 +373,24 @@ function asignarEventosDinamicos() {
 
   document.querySelectorAll('.btn_agregar_accesorio_modal').forEach(btn => {
     btn.addEventListener('click', function() {
-        // 1. Obtener datos
+        //  Obtener datos
         const modalElement = document.getElementById('modalSeleccionAccesorio');
         const unidadId = modalElement.dataset.unidadId;
         
         const idAcc = this.dataset.id;
         const nombre = this.dataset.nombre;
         
-        // 2. Procesar lógica
+        // Procesar lógica
         const resultado = estadoAsignaciones.agregarAccesorio(unidadId, idAcc, nombre);
         
         if(resultado.success) {
-            // 3. Actualizar UI
+            //  Actualizar UI
             renderizarAccesoriosEnTarjeta(unidadId);
-            
-            // 4. CERRAR MODAL MANUALMENTE (Aquí está el arreglo)
-            // Usamos getInstance para obtener el modal abierto y cerrarlo controladamente.
-            // Esto permite que Bootstrap maneje el scrollbar correctamente.
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
             if (modalInstance) {
                 modalInstance.hide();
             }
         } else {
-            // Si falla (duplicado), NO cerramos el modal, solo avisamos.
-            // Esto mejora la experiencia de usuario.
             Swal.fire({
                 icon: 'warning',
                 title: 'Atención',
@@ -426,13 +406,12 @@ function asignarEventosDinamicos() {
 function inicializarTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
-        // Evitamos reinicializar los que ya existen verificando si tiene la instancia
         if(!bootstrap.Tooltip.getInstance(tooltipTriggerEl)){
             return new bootstrap.Tooltip(tooltipTriggerEl);
         }
     });
 };
-  // Función para pintar los accesorios en la tarjeta
+
 function renderizarAccesoriosEnTarjeta(unidadId) {
     const contenedor = document.getElementById(`lista-accesorios-${unidadId}`);
     const lista = estadoAsignaciones.accesorios[unidadId] || [];
@@ -447,23 +426,14 @@ function renderizarAccesoriosEnTarjeta(unidadId) {
     lista.forEach((acc, index) => {
         const isLocked = acc.readOnly === true;
         
-        // Estilos Diferenciados
-        // Locked: Gris, Borde Sutil, Cursor normal (Default)
-        // Nuevo: Blanco, Borde Amarillo, Cursor normal
         const badgeClass = isLocked 
             ? 'bg-light text-secondary border-secondary border-opacity-25' 
             : 'bg-white text-dark border-warning'; 
             
         const iconClass = isLocked ? 'bi-lock-fill small' : 'bi-plug-fill text-warning';
-        
-        // LÓGICA DE LA X:
-        // Si está bloqueado (isLocked), deleteBtn es CADENA VACÍA.
-        // Si es nuevo, deleteBtn es el icono de basura.
         const deleteBtn = isLocked 
             ? '' 
             : `<i class="bi bi-x text-danger ms-1 cursor-pointer" onclick="removerAccesorioUI('${unidadId}', ${index})"></i>`;
-
-        // Tooltip opcional solo para los bloqueados
         const tooltipAttr = isLocked 
             ? 'data-bs-toggle="tooltip" title="Accesorio asignado a la Unidad"' 
             : '';
@@ -481,7 +451,6 @@ function renderizarAccesoriosEnTarjeta(unidadId) {
     inicializarTooltips();
 }
 
-  // Función global para remover accesorios desde la UI
   window.removerAccesorioUI = function(unidadId, index) {
       estadoAsignaciones.eliminarAccesorio(unidadId, index);
       renderizarAccesoriosEnTarjeta(unidadId);
@@ -493,25 +462,22 @@ const btn_confirmar = document.getElementById('btn_confirmar_asignaciones');
   if (btn_confirmar) {
       btn_confirmar.addEventListener('click', async () => {
           const ticketElement = document.getElementById('ID_ticket');
-          // Obtenemos el total de unidades esperado desde el encabezado
           const unidadesTotalElement = document.getElementById('Unidades_Ticket');
           
           if (!ticketElement) return;
           
           const idTicket = ticketElement.textContent;
           const totalUnidades = parseInt(unidadesTotalElement.textContent) || 0;
-          
-          // Obtenemos el estado actual
           const datosCompletos = estadoAsignaciones.toJSON(); 
           const asignadasCount = Object.keys(datosCompletos.equipos).length;
 
-          // 1. VALIDACIÓN BÁSICA: Nada asignado
+          // VALIDACIÓN BÁSICA
           if (asignadasCount === 0) {
               Swal.fire('Sin cambios', 'Asigna al menos un equipo GPS antes de confirmar.', 'info');
               return;
           }
 
-          // 2. CONFIGURACIÓN DINÁMICA DE LA ALERTA
+          // CONFIGURACIÓN DINÁMICA DE ALERTA
           let swalConfig = {
               title: '¿Confirmar asignaciones?',
               text: `Se guardarán los cambios para el ticket #${idTicket}.`,
@@ -520,16 +486,16 @@ const btn_confirmar = document.getElementById('btn_confirmar_asignaciones');
               confirmButtonText: 'Sí, guardar y finalizar'
           };
 
-          // 3. DETECCIÓN DE ASIGNACIÓN PARCIAL (Aquí está la magia)
+          // 3. DETECCIÓN DE ASIGNACIÓN PARCIAL 
           if (asignadasCount < totalUnidades) {
               swalConfig = {
-                  title: '⚠️ Asignación Incompleta',
+                  title: 'Asignación Incompleta',
                   html: `
                     Estás asignando equipos a <b>${asignadasCount}</b> de las <b>${totalUnidades}</b> unidades totales.<br>
                     <small class="text-muted">El ticket quedará en estado "Parcial" y podrás continuar después.</small>
                   `,
                   icon: 'warning',
-                  confirmButtonColor: '#ffc107', // Color Ámbar de advertencia
+                  confirmButtonColor: '#ffc107', 
                   confirmButtonText: 'Guardar Avance (Parcial)'
               };
           }
@@ -543,7 +509,6 @@ const btn_confirmar = document.getElementById('btn_confirmar_asignaciones');
       
           if (confirm.isConfirmed) {
               try {
-                  // Mostrar loading mientras guarda
                   Swal.fire({
                       title: 'Guardando...',
                       text: 'Por favor espere',
@@ -570,8 +535,6 @@ const btn_confirmar = document.getElementById('btn_confirmar_asignaciones');
                           timer: 2000,
                           showConfirmButton: false
                       }).then(() => {
-                          // Si fue parcial, recargamos para ver el estado actualizado.
-                          // Si fue total, podrías redirigir al dashboard si prefieres.
                           location.reload(); 
                       });
                   } else {
@@ -583,4 +546,5 @@ const btn_confirmar = document.getElementById('btn_confirmar_asignaciones');
               }
           }
       });
+
 };

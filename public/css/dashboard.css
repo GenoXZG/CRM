@@ -1,6 +1,6 @@
-/* public/css/dashboard.css */
 
-/* --- Definición de Variables (Paleta Pastel) --- */
+
+/* --- Definición de Variables --- */
 :root {
     --bg-body: #f4f7fe;
     --text-dark: #2b3674;
@@ -115,16 +115,16 @@ h1, h2, h3, h4, h5 {
 }
 
 
-/* --- Personalización de FullCalendar (Soft UI) --- */
+/* --- Personalización de FullCalendar --- */
 
 #calendar {
     font-family: 'Poppins', sans-serif;
     color: var(--text-dark);
 }
 
-/* Quitar bordes de la tabla y encabezado */
+
 .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
-    border-color: #f1f5f9; /* Gris muy muy suave */
+    border-color: #f1f5f9; 
 }
 
 
@@ -135,7 +135,6 @@ h1, h2, h3, h4, h5 {
     padding: 10px 0;
 }
 
-/* Números de los días */
 .fc-daygrid-day-number {
     color: var(--text-dark);
     font-weight: 500;
@@ -143,7 +142,7 @@ h1, h2, h3, h4, h5 {
     margin: 5px;
 }
 
-/* Botones del header (Mes, Hoy, Flechas) - Estilo Pastilla */
+/* Botones del header (Mes, Hoy, Flechas)  */
 .fc .fc-button-primary {
     background-color: #fff;
     color: var(--text-dark);
@@ -169,24 +168,24 @@ h1, h2, h3, h4, h5 {
     box-shadow: none;
 }
 
-/* Eventos (Las barritas de colores) */
+/* Eventos */
 .fc-event {
-    border-radius: 8px; /* Redondear eventos */
+    border-radius: 8px;
     padding: 2px 4px;
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    border: none !important; /* Forzar sin borde */
+    border: none !important; 
 }
 
-/* Título del Mes (Ej: Enero 2026) */
+/* Título del Mes */
 .fc-toolbar-title {
     font-size: 1.5rem !important;
     font-weight: 700;
 }
 
-/* Día actual (Hoy) */
+/* Día actual */
 .fc-day-today {
     background-color: rgba(237, 233, 254, 0.3) !important; /* Fondo púrpura muy suave */
 }
@@ -198,16 +197,14 @@ h1, h2, h3, h4, h5 {
 #sidebar {
     min-width: 260px;
     max-width: 260px;
-    background: #ffffff; /* Fondo blanco */
+    background: #ffffff; 
     transition: all 0.35s ease-in-out;
-    /* Borde redondeado solo a la derecha para efecto suave */
     border-top-right-radius: 30px; 
     border-bottom-right-radius: 30px;
-    /* Sombra suave para separarlo del contenido */
     box-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
     position: relative;
     z-index: 100;
-    margin-right: 20px; /* Separación del contenido principal */
+    margin-right: 20px; /
 }
 
 /* Logo */
@@ -217,7 +214,7 @@ h1, h2, h3, h4, h5 {
 }
 
 .sidebar-logo a {
-    color: var(--text-dark); /* Azul oscuro */
+    color: var(--text-dark); 
     font-size: 1.5rem;
     font-weight: 800;
     text-decoration: none;
@@ -230,7 +227,7 @@ h1, h2, h3, h4, h5 {
 /* Navegación */
 .sidebar-nav {
     list-style: none;
-    padding: 0 1rem !important; /* Padding lateral para que los botones no toquen el borde */
+    padding: 0 1rem !important; 
 }
 
 .sidebar-header {
@@ -246,16 +243,16 @@ h1, h2, h3, h4, h5 {
     margin-bottom: 0.5rem;
 }
 
-/* Enlaces (Items) */
+/* Enlaces*/
 .sidebar-link {
     display: flex;
     align-items: center;
     padding: 0.8rem 1rem;
-    color: #707eae; /* Un gris azulado suave para items inactivos */
+    color: #707eae; 
     text-decoration: none;
     font-weight: 500;
     font-size: 0.95rem;
-    border-radius: 15px; /* Bordes redondeados estilo "Pastilla" */
+    border-radius: 15px; 
     transition: all 0.2s ease;
 }
 
@@ -265,33 +262,31 @@ h1, h2, h3, h4, h5 {
     color: inherit;
 }
 
-/* Hover: Efecto sutil */
+/* Hover */
 .sidebar-link:hover {
     color: var(--text-dark);
-    background-color: #f4f7fe; /* Color de fondo muy suave */
-    transform: translateX(3px); /* Pequeño movimiento a la derecha */
+    background-color: #f4f7fe; 
+    transform: translateX(3px); 
 }
 
-/* ESTADO ACTIVO (Importante: Asigna esta clase en tu HTML al link actual) */
 .sidebar-link.active {
-    background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); /* Gradiente azul/morado moderno */
-    color: #ffffff !important; /* Texto blanco */
-    box-shadow: 0 5px 15px rgba(67, 24, 255, 0.3); /* Sombra de color brillante */
+    background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); 
+    color: #ffffff !important; 
+    box-shadow: 0 5px 15px rgba(67, 24, 255, 0.3); 
 }
 
 /* Footer del Sidebar */
 .sidebar-footer {
     padding: 1rem;
-    margin-top: auto; /* Empuja al fondo */
+    margin-top: auto; 
     border-top: 1px solid #f4f7fe;
 }
 
-/* Sidebar Colapsado (Opcional, si usas la función de ocultar) */
 #sidebar.collapsed {
     margin-left: -260px;
 }
 
-/* --- Ajuste para pantallas pequeñas --- */
+/* --- Media para pantallas pequeñas --- */
 @media (max-width: 768px) {
     #sidebar {
         margin-left: -260px;

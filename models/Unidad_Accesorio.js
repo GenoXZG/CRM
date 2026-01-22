@@ -13,10 +13,8 @@ const Unidad_Accesorio = sequelize.define('Unidad_Accesorio', {
     ID_accesorio: {
         type: DataTypes.INTEGER,
         primaryKey: true,
-        references: {
-            // Nombre EXACTO de la tabla en MySQL
+        references: {          
             model: 'Accesorios_catalogo', 
-            // Nombre EXACTO de la Llave Primaria de esa tabla
             key: 'ID_accesorio_modelo'
         }
     }

@@ -3,12 +3,12 @@ const unidadService = require('../services/unidadService');
 const agregarUnidades = async (req, res) => {
     const { unidades } = req.body;
 
-    // Validación básica de entrada
+    
     if (!unidades || unidades.length === 0) {
         return res.status(400).json({ success: false, message: "No se enviaron unidades." });
     }
 
-    // Asumimos que todas las unidades del array pertenecen al mismo ticket (basado en tu código original)
+   
     const ID_ticket = unidades[0].ticketId;
 
     try {
@@ -26,7 +26,7 @@ const agregarUnidades = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error al procesar la solicitud',
-            error: error.message // Ojo: En producción evita enviar error.message crudo al cliente por seguridad
+            error: error.message 
         });
     }
 };
@@ -51,4 +51,5 @@ const apiObtenerUnidadesTicket = async (req, res) => {
 module.exports = {
     agregarUnidades,
     apiObtenerUnidadesTicket
+
 };

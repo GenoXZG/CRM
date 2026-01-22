@@ -32,7 +32,6 @@ const agregarTicket = async (req, res) => {
 
 const viewTicketsEspera = async (req, res) => {
     try {
-        // Ejecutamos ambas consultas en paralelo para mejorar performance
         const [ticketsEspera, unidades] = await Promise.all([
             ticketService.getTicketsEnEspera(),
             ticketService.getUnidadesDisponibles()
@@ -155,4 +154,5 @@ module.exports = {
     actualizarMaps,
     reabrirTicket,
     subirFotos    
+
 };
