@@ -8,14 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.cancelarAsignacion = function() {
         cardAsignacion.classList.add('d-none');
         document.getElementById('cuerpo_tabla_unidades').innerHTML = '';
-        // Scroll suave hacia arriba
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     async function cargarMarcas() {
         try {
-            // Ajusta esta ruta si tu endpoint real es diferente
-            const response = await fetch('/test'); // O '/api/marcas'
+            const response = await fetch('/test'); 
             const marcas = await response.json();
             return marcas;
         } catch (error) {
@@ -31,38 +29,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const clienteNombre = this.dataset.cliente;
             const numUnidades = parseInt(this.dataset.num_unidades);
 
-            // 1. Mostrar la tarjeta de asignación
+            // Mostrar la tarjeta de asignación
             cardAsignacion.classList.remove('d-none');
             
-            // 2. Actualizar etiquetas informativas
+            // Actualizar etiquetas informativas
             lblCliente.textContent = clienteNombre;
             lblTicket.textContent = ticketID;
 
-            // 3. Habilitar botón y generar filas
+            // Habilitar botón y generar filas
             const btnRegistro = document.getElementById('btn_registrar_unidad');
             btnRegistro.disabled = false;
 
             generarFilas(numUnidades, ticketID);
 
-            // 4. Scroll suave hacia el formulario
+            // Scroll suave hacia el formulario
             cardAsignacion.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-            // 5. Lógica de cambio de Marca -> Modelo
+            // Lógica de cambio de Marca -> Modelo
             const cuerpo = document.getElementById('cuerpo_tabla_unidades');
-            // Removemos listeners previos clonando el nodo (truco rápido) o cuidando no duplicar
-            // En este caso, como generamos el HTML desde cero, el listener delegado está bien.
         });
     });
 
-    // Delegación de eventos para el cambio de marca (más eficiente)
+    // Delegación de eventos para el cambio de marca 
     document.getElementById('cuerpo_tabla_unidades').addEventListener('change', async (e) => {
         const target = e.target;
         if (target.matches('.select_marca')) {
             const marca = target.value;
             const fila = target.closest('tr');
             const selectModelo = fila.querySelector('.select_modelo');
-            
-            // Feedback visual de carga
+        
             selectModelo.innerHTML = '<option selected disabled>Cargando...</option>';
 
             try {
@@ -90,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const marcas = await cargarMarcas();
 
-        cuerpo.innerHTML = ''; // Limpiar spinner
+        cuerpo.innerHTML = ''; 
 
         for (let i = 0; i < numFilas; i++) {
             const fila = document.createElement('tr');
@@ -100,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 options += `<option value="${marca.Marca_unidad}">${marca.Marca_unidad}</option>`;
             });
 
-            // Usamos clases bg-light y border-0 para inputs estilo Soft UI
+         
             fila.innerHTML = `
                 <input type="hidden" value="${numFilas}" name="numRegistros">
                 <input type="hidden" value="${ID_ticket}" name="id_ticket" class="ticket-id-hidden">
@@ -152,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.success) {
-                // Alerta bonita con SweetAlert2
                 if(typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'success',
@@ -177,5 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Ocurrió un error de conexión');
         }
     });
+
 
 });
