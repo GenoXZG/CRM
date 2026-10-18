@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Operativo</title>
+    
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item"><a href="/" class="sidebar-link active"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Crear Ticket</span></a></li>
+                <li class="sidebar-item"><a href="/estado_tickets" class="sidebar-link"><i class="lni lni-stats-up"></i><span>Estado de Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item">
+                    <a href="/asignacion_unidades" class="sidebar-link"> 
+                        <i class="lni lni-delivery"></i>
+                        <span>Asignar Unidades</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/asignacion_equipos" class="sidebar-link"> 
+                        <i class="lni lni-network"></i>
+                        <span>Asignar Equipos</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/registro_equipos" class="sidebar-link"> 
+                        <i class="lni lni-pencil-alt"></i>
+                        <span>Registro Equipos</span>
+                    </a>
+                </li>
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/equipos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogo Equipos</span></a></li>
+                <li class="sidebar-item"><a href="/unidades" class="sidebar-link"><i class="lni lni-car"></i><span>Unidades</span></a></li>
+                <li class="sidebar-item"><a href="/accesorios" class="sidebar-link"><i class="lni lni-plug"></i><span>Accesorios</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger"><i class="lni lni-exit"></i><span>Salir</span></a>
+            </div>
+        </aside>
+
+        <div class="main d-flex flex-column min-vh-100 w-100">
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+            </nav>
+
+            <main class="p-4">
+               <div class="container-fluid">
+                  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+                      <div>
+                          <h4 class="text-muted mb-1 fw-normal">Bienvenido de nuevo, 👋</h4>
+                          <h1 class="mb-0">Panel de Control Operativo</h1>
+                      </div>
+                  </div>
+
+                  <!-- Asistente de configuración inicial -->
+                  <section id="crmSetupAssistant" class="setup-assistant mb-5" aria-labelledby="setupTitle">
+                      <div class="setup-assistant-header">
+                          <div>
+                              <span class="setup-eyebrow">ASISTENTE DE INICIO</span>
+                              <h2 id="setupTitle">Prepara tu CRM para trabajar</h2>
+                              <p>Completa estos pasos para empezar a crear tickets de servicio. Puedes configurar, omitir o cerrar esta guía cuando quieras.</p>
+                          </div>
+                          <button type="button" id="setupClose" class="btn btn-sm setup-close" aria-label="Cerrar guía" title="Cerrar guía"><i class="bi bi-x-lg"></i></button>
+                      </div>
+
+                      <div class="setup-progress-summary">
+                          <div>
+                              <span class="setup-muted">Progreso de configuración</span>
+                              <div class="setup-progress-label"><strong id="setupProgressText">0%</strong><span id="setupProgressCaption">0 de 6 acciones con progreso completado</span></div>
+                          </div>
+                          <div class="setup-progress-track" role="progressbar" aria-label="Progreso de configuración" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="setupProgressBar">
+                              <div id="setupProgressFill" class="setup-progress-fill" style="width:0%"></div>
+                          </div>
+                      </div>
+
+                      <div id="setupCompletedBanner" class="setup-completed-banner d-none" role="status">
+                          <i class="bi bi-check-circle-fill"></i>
+                          <div><strong>¡Proceso completado!</strong><span>Tu primer ticket se creó correctamente y terminaste la guía de inicio.</span></div>
+                      </div>
+
+                      <div class="setup-steps">
+                          <article class="setup-step" data-setup-item="clients" data-setup-weight="25" data-setup-done="<%= setupStatus.clients > 0 %>" data-setup-count="<%= setupStatus.clients %>">
+                              <div class="setup-step-icon"><i class="bi bi-people"></i></div>
+                              <div class="setup-step-main">
+                                  <div class="setup-step-heading"><span class="setup-step-number">01</span><h3>Registrar clientes</h3><span class="setup-state" data-setup-state>Por hacer</span></div>
+                                  <p>Registra un cliente nuevo o reutiliza los que ya están en el CRM.</p>
+                                  <div class="setup-step-actions">
+                                      <a class="btn setup-btn-primary" href="/clientes?setup=clients"><i class="bi bi-pencil-square"></i> Configurar</a>
+                                      <button type="button" class="btn setup-btn-secondary" data-skip-step="clients">Omitir</button>
+                                  </div>
+                              </div>
+                          </article>
+
+                          <article class="setup-step" data-setup-item="technicians" data-setup-weight="25" data-setup-done="<%= setupStatus.technicians > 0 %>" data-setup-count="<%= setupStatus.technicians %>">
+                              <div class="setup-step-icon"><i class="bi bi-person-gear"></i></div>
+                              <div class="setup-step-main">
+                                  <div class="setup-step-heading"><span class="setup-step-number">02</span><h3>Registrar técnicos</h3><span class="setup-state" data-setup-state>Por hacer</span></div>
+                                  <p>Agrega técnicos activos o continúa con los que ya están registrados.</p>
+                                  <div class="setup-step-actions">
+                                      <a class="btn setup-btn-primary" href="/tecnicos?setup=technicians"><i class="bi bi-pencil-square"></i> Configurar</a>
+                                      <button type="button" class="btn setup-btn-secondary" data-skip-step="technicians">Omitir</button>
+                                  </div>
+                              </div>
+                          </article>
+
+                          <article class="setup-step setup-catalog-step" data-setup-group="catalogs">
+                              <div class="setup-step-icon"><i class="bi bi-collection"></i></div>
+                              <div class="setup-step-main">
+                                  <div class="setup-step-heading"><span class="setup-step-number">03</span><h3>Completar catálogos</h3><span class="setup-state" data-setup-state>0 de 3</span></div>
+                                  <p>Cada catálogo aporta un 10% al progreso. Configura solamente los que necesites.</p>
+                                  <div class="setup-catalog-grid">
+                                      <div class="setup-catalog-row" data-setup-item="equipment" data-setup-weight="10" data-setup-done="<%= setupStatus.equipment > 0 %>" data-setup-count="<%= setupStatus.equipment %>">
+                                          <div><i class="bi bi-router"></i><span><strong>Equipos</strong><small data-setup-state>Por hacer</small></span></div>
+                                          <div class="setup-step-actions"><a href="/equipos?setup=equipment" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="equipment">Omitir</button></div>
+                                      </div>
+                                      <div class="setup-catalog-row" data-setup-item="units" data-setup-weight="10" data-setup-done="<%= setupStatus.units > 0 %>" data-setup-count="<%= setupStatus.units %>">
+                                          <div><i class="bi bi-truck"></i><span><strong>Unidades</strong><small data-setup-state>Por hacer</small></span></div>
+                                          <div class="setup-step-actions"><a href="/unidades?setup=units" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="units">Omitir</button></div>
+                                      </div>
+                                      <div class="setup-catalog-row" data-setup-item="accessories" data-setup-weight="10" data-setup-done="<%= setupStatus.accessories > 0 %>" data-setup-count="<%= setupStatus.accessories %>">
+                                          <div><i class="bi bi-plug"></i><span><strong>Accesorios</strong><small data-setup-state>Por hacer</small></span></div>
+                                          <div class="setup-step-actions"><a href="/accesorios?setup=accessories" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="accessories">Omitir</button></div>
+                                      </div>
+                                  </div>
+                                  <div class="setup-step-actions setup-catalog-footer"><button type="button" class="btn setup-btn-secondary" data-skip-catalogs>Omitir los tres catálogos</button></div>
+                              </div>
+                          </article>
+
+                          <article class="setup-step" data-setup-item="ticket" data-setup-weight="20" data-setup-done="false">
+                              <div class="setup-step-icon"><i class="bi bi-ticket-perforated"></i></div>
+                              <div class="setup-step-main">
+                                  <div class="setup-step-heading"><span class="setup-step-number">04</span><h3>Crear tu primer ticket</h3><span class="setup-state" data-setup-state>Pendiente</span></div>
+                                  <p>Abre Nuevo Ticket de Servicio. El proceso llegará al 100% cuando el ticket se guarde correctamente.</p>
+                                  <div class="setup-step-actions">
+                                      <a class="btn setup-btn-primary" href="/tickets?setup=ticket"><i class="bi bi-plus-circle"></i> Crear ticket</a>
+                                  </div>
+                              </div>
+                          </article>
+                      </div>
+
+                      <div class="setup-assistant-footer">
+                          <div><strong>¿Ya conoces el CRM?</strong><span>Puedes omitir todos los pasos iniciales o cerrar esta guía.</span></div>
+                          <div class="setup-footer-actions">
+                              <button type="button" id="setupReset" class="btn setup-btn-secondary"><i class="bi bi-arrow-counterclockwise"></i> Reiniciar guía</button>
+                              <button type="button" id="setupSkipAll" class="btn setup-btn-skip-all">Omitir todos e ir a crear un ticket <i class="bi bi-arrow-right"></i></button>
+                          </div>
+                      </div>
+                  </section>
+
+                  <div id="crmSetupReopen" class="setup-reopen-card mb-4 d-none">
+                      <div><strong>Guía de configuración</strong><span>Continúa o consulta el progreso de inicio cuando quieras.</span></div>
+                      <button type="button" id="setupReopen" class="btn setup-btn-primary">Mostrar guía</button>
+                  </div>
+
+                  <div class="row g-4 mb-5">
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card bg-pastel-yellow d-flex flex-column justify-content-between">
+                              <div>
+                                  <div class="kpi-icon-wrapper"><i class="bi bi-hourglass-split"></i></div>
+                                  <div class="card-label">En Espera</div>
+                                  <div class="card-value"><%= metrics.counts.espera %></div>
+                              </div>
+                              <a href="/estado_tickets" class="card-link" style="color: var(--pastel-yellow-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card bg-pastel-blue d-flex flex-column justify-content-between">
+                              <div>
+                                  <div class="kpi-icon-wrapper"><i class="bi bi-truck"></i></div>
+                                  <div class="card-label">En Seguimiento</div>
+                                  <div class="card-value"><%= metrics.counts.seguimiento %></div>
+                              </div>
+                              <a href="/estado_tickets" class="card-link" style="color: var(--pastel-blue-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card bg-pastel-green d-flex flex-column justify-content-between">
+                              <div>
+                                  <div class="kpi-icon-wrapper"><i class="bi bi-check-circle-fill"></i></div>
+                                  <div class="card-label">Finalizados Hoy</div>
+                                  <div class="card-value"><%= metrics.counts.finalizado %></div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6 col-lg-3">
+                          <div class="soft-card d-flex flex-column justify-content-between" style="background: var(--pastel-purple-bg); color: var(--pastel-purple-text)">
+                              <div>
+                                  <div class="kpi-icon-wrapper bg-white"><i class="bi bi-collection-fill" style="color: var(--pastel-purple-text)"></i></div>
+                                  <div class="card-label" style="opacity: 0.8;">Total Histórico</div>
+                                  <div class="card-value"><%= metrics.totalTickets %></div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row g-4">
+                      <div class="col-lg-8">
+                          <div class="soft-card">
+                              <h5 class="mb-4">Carga de Trabajo <span class="text-muted fs-6 fw-normal">(Tickets Activos)</span></h5>
+                              <div style="height: 300px; position: relative;">
+                                  <canvas id="chartTecnicos"></canvas>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div class="col-lg-4">
+                          <div class="soft-card h-100">
+                              <div class="d-flex align-items-center mb-4">
+                                  <div class="rounded-circle bg-light bg-opacity-10 p-2 me-3"><i class="bi bi-box-seam fs-5"></i></div>
+                                  <h5 class="mb-0">Equipos listos para asignacion</h5>
+                              </div>
+                              
+                              <div class="d-flex flex-column gap-3">
+                                  <% if (metrics.equiposStockBajo && metrics.equiposStockBajo.length > 0) { %>
+                                      <% metrics.equiposStockBajo.forEach(eq => { %>
+                                          <div class="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light bg-opacity-50">
+                                              <div class="d-flex align-items-center">
+                                                  <div class="rounded-3 bg-white p-2 shadow-sm me-3 text-muted"><i class="bi bi-router fs-5"></i></div>
+                                                  <span class="fw-bold text-dark"><%= eq.Modelo_equipo %></span>
+                                              </div>
+                                              <span class="badge bg-success rounded-pill py-2 px-3 font-monospace">
+                                                <%= eq.disponibles %> disp.
+                                              </span>
+                                          </div>
+                                      <% }) %>
+                                  <% } else { %>
+                                    <div class="text-center text-muted py-4">Inventario saludable</div>
+                                  <% } %>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="soft-card">
+                            <h5 class="mb-4">Calendario de Servicios</h5>
+                            <div id="calendar"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+                <footer class="mt-auto py-3  text-center text-muted  small">
+                    © 2025 CRM TSV - Desarrollado por GenoxZG
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
+    
+
+<script id="dashboard-data" type="application/json"><%- JSON.stringify({ technicians: metrics ? metrics.topTecnicos || [] : [], events: calendarEvents || [] }).replace(/</g, '\\u003c') %></script>
+    <script type="module" src="/assets/pages/dashboard.js"></script>
+    <script src="/js/setup-wizard.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { unitCatalog, listBrands, listModels } from '../controllers/master-data-controller';
+import * as units from '../controllers/unit-controller';
+const router = Router();
+router.get('/unidades', unitCatalog.list);
+router.post('/add_unidad_catalogo', unitCatalog.create);
+router.post('/editar_unidad_stock', unitCatalog.update);
+router.post('/eliminar_unidad_stock', unitCatalog.remove);
+router.get('/modelos', listModels);
+router.get('/test', listBrands);
+router.post('/add_unidades', units.registerUnits);
+router.get('/unidades-por-ticket/:id_ticket', units.listUnitsByTicket);
+export default router;
