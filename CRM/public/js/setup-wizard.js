@@ -125,7 +125,7 @@
   if (skipAllButton) skipAllButton.addEventListener('click', () => {
     writeSkipped([...readSkipped(), 'clients', 'technicians', 'equipment', 'units', 'accessories']);
     update();
-    window.location.href = '/tickets?setup=ticket';
+    window.location.href = '/tickets/nuevo?setup=ticket';
   });
 
   function showAssistant(show) {

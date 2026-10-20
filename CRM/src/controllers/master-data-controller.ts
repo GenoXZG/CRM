@@ -60,7 +60,8 @@ function controller<Entity>(
           response.redirect(`/?setupReturn=${encodeURIComponent(setupWizard)}`);
           return;
         }
-        response.redirect(redirect);
+        const catalogState = request.body?.catalogState;
+        response.redirect(redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000 ? catalogState : redirect);
       } catch (error) {
         respondError(response, error);
       }
@@ -69,7 +70,8 @@ function controller<Entity>(
       try {
         const input = requestBody(request.body as unknown);
         await service.update(input[idField], read(input));
-        response.redirect(redirect);
+        const catalogState = request.body?.catalogState;
+        response.redirect(redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000 ? catalogState : redirect);
       } catch (error) {
         respondError(response, error);
       }
@@ -77,7 +79,8 @@ function controller<Entity>(
     async remove(request: Request, response: Response) {
       try {
         await service.remove(requestBody(request.body as unknown)[idField]);
-        response.redirect(redirect);
+        const catalogState = request.body?.catalogState;
+        response.redirect(redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000 ? catalogState : redirect);
       } catch (error) {
         respondError(response, error);
       }
@@ -108,7 +111,7 @@ export const equipmentCatalog = controller(
   serializeEquipmentModel,
   'equipos_catalogo',
   'equipos_stock',
-  '/equipos',
+  '/catalogos#equipment',
   'ID_equipo_modelo',
 );
 export const unitCatalog = controller(
@@ -117,7 +120,7 @@ export const unitCatalog = controller(
   serializeUnitModel,
   'unidades_catalogo',
   'unidades',
-  '/unidades',
+  '/catalogos#units',
   'ID_Unidad_modelo',
 );
 export const accessoryCatalog = controller(
@@ -126,7 +129,7 @@ export const accessoryCatalog = controller(
   serializeAccessory,
   'accesorios_catalogo',
   'accesorios_stock',
-  '/accesorios',
+  '/catalogos#accessories',
   'ID_accesorio_modelo',
 );
 

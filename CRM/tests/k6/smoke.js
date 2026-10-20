@@ -8,8 +8,8 @@ export const options = {
 };
 const baseUrl = (__ENV.BASE_URL || 'http://127.0.0.1:3030').replace(/\/$/, '');
 const ticketId = encodeURIComponent(__ENV.TICKET_ID || '2');
-const pages = ["/", "/clientes", "/tecnicos", "/tickets", "/estado_tickets", "/equipos", "/unidades", "/accesorios", "/registro_equipos", "/asignacion_unidades", "/asignacion_equipos", `/detalle_ticket/${ticketId}`];
-const modules = ["pages/common.js", "pages/dashboard.js", "pages/equipment-assignment.js", "pages/equipment-registration.js", "pages/ticket-details.js", "pages/ticket-form.js", "pages/unit-assignment.js", "shared/bootstrap.js", "shared/dialogs.js", "shared/dom.js", "shared/http.js", "state/equipment-assignment.js"];
+const pages = ["/", "/clientes", "/tecnicos", "/tickets", "/tickets/nuevo", "/estado_tickets", "/equipos", "/unidades", "/accesorios", "/registro_equipos", "/asignaciones", "/asignacion_unidades", "/asignacion_equipos", `/detalle_ticket/${ticketId}`];
+const modules = ["pages/ticket-list.js", "pages/assignments.js", "pages/common.js", "pages/dashboard.js", "pages/equipment-assignment.js", "pages/equipment-registration.js", "pages/ticket-details.js", "pages/ticket-form.js", "pages/unit-assignment.js", "shared/bootstrap.js", "shared/dialogs.js", "shared/dom.js", "shared/http.js", "shared/unit-removal.js", "shared/assignment-workspace.js", "state/equipment-assignment.js"];
 
 function get(path, contentType) {
   const response = http.get(`${baseUrl}${path}`);
@@ -42,6 +42,6 @@ export default function () {
   check(brands, { 'Brand available for model lookup': result => result.length > 0 });
   if (brands.length) jsonArray(get(`/modelos?marca=${encodeURIComponent(brands[0].Marca_unidad)}`, 'application/json'), 'Models');
   for (const module of modules) get(`/assets/${module}`, 'javascript');
-  for (const stylesheet of ['/css/styles.css', '/css/dashboard.css', '/bootstrap/css/bootstrap.min.css']) get(stylesheet, 'text/css');
+  for (const stylesheet of ['/css/ticket-list.css', '/css/ticket-workspace.css', '/css/assignments.css', '/css/styles.css', '/css/dashboard.css', '/bootstrap/css/bootstrap.min.css']) get(stylesheet, 'text/css');
   get('/bootstrap/js/bootstrap.bundle.min.js', 'javascript');
 }

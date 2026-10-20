@@ -1,0 +1,22 @@
+  <section id="assignment-workspace" class="<%= embedded ? '' : 'd-none' %>" aria-labelledby="<%= embedded ? 'ticket-assignment-title' : 'assignment-title' %>" aria-busy="false">
+    <% if (!embedded) { %>
+    <div class="soft-card mb-4 assignment-context">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div><h2 class="h5" id="assignment-title">Ticket #<span id="assignment-ticket-id"></span> · <span id="assignment-client"></span></h2><p class="mb-0 text-muted">Técnico: <span id="assignment-technician"></span> · <span id="assignment-unit-count"></span> unidades previstas</p></div>
+        <div class="d-flex flex-wrap gap-2"><a class="btn btn-outline-primary" id="assignment-details" href="#">Ver detalle</a><button type="button" class="btn btn-outline-secondary" data-action="close-assignment">Cambiar ticket</button></div>
+      </div>
+      <ol class="assignment-steps mt-3 mb-0"><li id="assignment-step-units">1. Registrar unidades</li><li id="assignment-step-equipment">2. Asignar equipos y accesorios</li><li id="assignment-step-ready">3. Asignación completa</li></ol>
+    </div>
+    <% } %>
+    <%- include('assignment-units', { embedded }) %>
+    <div id="equipment-locked" class="alert alert-light border mt-3">Guarda las unidades para habilitar la asignación de equipos y accesorios.</div>
+    <div id="loading-indicator" class="text-center py-4 d-none" role="status"><div class="spinner-border text-primary" aria-hidden="true"></div><p>Cargando asignación…</p></div>
+    <div id="workbench-container" class="d-none">
+      <div class="soft-card mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3"><div><h2 class="h5">2. Equipos y accesorios</h2><p class="text-muted mb-0" id="assignment-progress" role="status"></p></div><a id="btn_ver_detalles" class="btn btn-outline-secondary <%= embedded ? 'd-none' : '' %>" href="#">Modificar asignaciones guardadas</a></div>
+        <p class="small text-muted mt-3 mb-0">Puedes guardar un avance parcial y continuar después. <%= embedded ? 'Puedes liberar equipos guardados y administrar los accesorios de cada unidad aquí mismo.' : 'Los equipos ya guardados se modifican desde el detalle del ticket.' %></p>
+      </div>
+      <div class="row g-3" id="contenedor-unidades-equipos"></div>
+      <div class="d-flex flex-wrap justify-content-end gap-2 mt-3"><button hidden id="btn_confirmar_asignaciones" type="button" class="btn btn-success">Guardar equipos y accesorios</button></div>
+    </div>
+  </section>

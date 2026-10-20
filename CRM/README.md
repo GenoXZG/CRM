@@ -18,7 +18,7 @@ Abrir http://localhost:3030. Si el puerto está ocupado:
 CRM_HTTP_PORT=3031 docker compose up --build -d --wait
 ```
 
-Compose configura la base `crm_prueba1`, independiente de la instalación local, y
+Compose configura la base `crm_demo`, independiente de la instalación local, y
 no utiliza el `.env` del proyecto. MySQL no se publica en el host; la aplicación
 se publica en loopback. Las contraseñas incluidas son de desarrollo.
 
@@ -68,7 +68,7 @@ obsoletas; no elimina fotografías ni datos.
 | `src/controllers/`, `src/routes/`, `src/adapters/` | HTTP, renderizado y compatibilidad con formularios |
 | `src/infrastructure/database/` | Conexión, modelos tipados, relaciones y consultas |
 | `src/browser/` | Lógica de las páginas y módulos compartidos del navegador |
-| `views/`, `public/css/`, `public/js/` | Las doce plantillas EJS, los dos estilos activos y el script del asistente de inicio |
+| `views/`, `public/css/`, `public/js/` | Las plantillas EJS, los estilos activos y el script del asistente de inicio |
 | `public/uploads/` | Fotografías persistidas; no se eliminan durante la limpieza |
 | `dist/`, `public/assets/` | JavaScript generado necesario para ejecutar la aplicación |
 | `scripts/build.js` | Compilación reproducible de ambos destinos |
@@ -89,6 +89,73 @@ limpieza, desarrollo y smoke. La documentación se consolidó en este archivo. L
 historia de esas pruebas sigue disponible en Git; ya no forman parte de la suite
 actual. El SQL histórico, las notas locales y el reset antiguo se retiraron del
 directorio de trabajo con una copia temporal fuera del proyecto.
+
+## Catálogos unificados
+
+La pantalla `/catalogos` reúne Equipos, Unidades y Accesorios en tarjetas
+horizontales a todo el ancho disponible, una debajo de otra. Cada catálogo tiene búsqueda independiente
+(por marca o modelo, o por nombre para accesorios), paginación y selección de
+5, 10, 25 o 50 filas. MySQL aplica los filtros y límites antes de devolver los
+registros. Los filtros y páginas se conservan en la URL y tras guardar cambios.
+
+Cada tarjeta permite agregar, editar y eliminar registros con las validaciones
+existentes. Las rutas `/equipos`, `/unidades` y `/accesorios` también muestran la
+pantalla unificada para conservar los enlaces anteriores. El asistente de inicio
+abre el catálogo correspondiente y conserva el regreso a la guía al registrar.
+
+## Tickets y espacio de trabajo del servicio
+
+El menú **Tickets** abre `/tickets`, una bandeja con búsqueda por número, cliente
+o técnico, filtros por estado, cliente, técnico y fechas del servicio. MySQL
+aplica la búsqueda y la paginación; el selector de 5, 10, 25 o 50 filas está al
+pie. Los filtros quedan en la URL y se conservan al cambiar de página.
+`/estado_tickets` continúa mostrando esta misma bandeja.
+
+**Nuevo ticket** abre `/tickets/nuevo`. Al guardar, el flujo normal abre
+`/detalle_ticket/<id>`. La guía de inicio usa `/tickets/nuevo?setup=ticket` y
+conserva el regreso al dashboard con `setupTicketCreated=1`; el enlace anterior
+`/tickets?setup=ticket` también sigue funcionando.
+
+El detalle reúne información, técnico, ubicación, comentarios, unidades, equipos,
+accesorios, evidencias y cierre. Los formularios y módulos de preparación se
+comparten con la bandeja de Asignaciones. Al guardar unidades, equipos o accesorios,
+el usuario permanece dentro del mismo ticket. Los equipos guardados se pueden
+liberar y los accesorios se pueden agregar o quitar desde sus tarjetas.
+
+La preparación muestra unidades registradas y unidades con equipo respecto a la
+cantidad prevista; su porcentaje combina ambos conteos. La siguiente acción
+orienta al registro, a la asignación o a revisar y finalizar el servicio. El botón
+de cierre se habilita cuando todas las unidades previstas tienen equipo. Si hay
+asignaciones sin guardar, se solicita guardarlas antes de cambiar el estado y se
+confirma su descarte al guardar otros formularios. Los tickets finalizados muestran
+su información y evidencias para consulta e impresión; reabrir conserva sus datos.
+
+## Asignaciones de unidades y equipos
+
+`/asignaciones` reúne la selección del ticket, el registro de sus unidades y la
+asignación de equipos y accesorios. El menú tiene una sola entrada **Asignaciones**;
+las rutas anteriores `/asignacion_unidades` y `/asignacion_equipos` siguen abriendo
+la misma pantalla. Los enlaces de la bandeja pueden incluir `?ticket=<id>` para
+abrir directamente el ticket elegido. El detalle integra estos mismos formularios.
+
+La lista permite buscar por ticket, cliente o técnico, filtrar por etapa y elegir
+5, 10, 25 o 50 filas por página. Estos filtros se aplican en el navegador sobre
+los tickets abiertos cargados. Durante el registro se pueden quitar filas y confirmar
+la reducción de la cantidad prevista; al guardar, se abre automáticamente la etapa
+de equipos del mismo ticket. Las asignaciones de equipos pueden guardarse de forma
+parcial y retomarse después. El progreso distingue equipos guardados y cambios
+pendientes. Cambiar de ticket o salir avisa si hay datos sin guardar.
+
+Las unidades registradas se pueden quitar desde Asignaciones o desde el detalle
+mientras el ticket esté en seguimiento. La operación confirma el retiro, reduce
+la cantidad prevista, libera el equipo al inventario, elimina los vínculos con
+accesorios y recalcula el avance dentro de una transacción. Los catálogos no se
+modifican. El ticket debe conservar al menos una unidad; los tickets finalizados
+rechazan el retiro. Si hay selecciones de equipos sin guardar, la confirmación
+advierte que se descartarán al retirar la unidad.
+
+Los equipos y accesorios ya guardados se modifican desde el detalle del servicio. Los tickets finalizados no se pueden asignar desde esta
+pantalla. Se conservan las validaciones y transacciones de los servicios actuales.
 
 ## Datos y operación
 

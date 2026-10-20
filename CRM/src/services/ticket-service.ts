@@ -10,7 +10,6 @@ import {
   type UploadedPhoto,
 } from '../domain/entities';
 import {
-  catalogs,
   clients,
   photos,
   technicians,
@@ -78,9 +77,10 @@ export async function getTicketDetails(id: unknown) {
   if (!ticket) throw new BusinessError(404, 'Ticket no encontrado');
   return ticket;
 }
-export const getWaitingTickets = () => tickets.list('waiting');
-export const getUnitModels = () => catalogs.listUnitModels();
-export const getTicketsAwaitingEquipment = () => tickets.list('in_progress', true);
+export async function getEquipmentAssignmentTickets() {
+  const [waiting, inProgress] = await Promise.all([tickets.list('waiting'), tickets.list('in_progress')]);
+  return [...waiting, ...inProgress].sort((left, right) => right.id - left.id);
+}
 export const confirmCompleteAssignment = (id: unknown) =>
   withTransaction(async (transaction) => {
     const ticket = await getTicket(id, transaction, ['in_progress']);
@@ -88,14 +88,6 @@ export const confirmCompleteAssignment = (id: unknown) =>
     if (!summary.complete) throw new BusinessError(409, 'La asignación no está completa');
     await tickets.update(ticket.id, { assignmentStatus: summary.status }, transaction);
   });
-export async function getTicketDashboard() {
-  const all = await tickets.list();
-  return {
-    waitingTickets: all.filter((ticket) => ticket.status === 'waiting'),
-    inProgressTickets: all.filter((ticket) => ticket.status === 'in_progress'),
-    completedTickets: all.filter((ticket) => ticket.status === 'completed'),
-  };
-}
 export const updateLocation = (id: unknown, value: unknown) =>
   withTransaction(async (transaction) => {
     const ticket = await getTicket(id, transaction, OPEN_STATES);

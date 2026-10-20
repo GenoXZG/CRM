@@ -3,14 +3,18 @@ import type { NextFunction, Request, Response } from 'express';
 import { respondError } from '../adapters/http-errors';
 import {
   readCreateTicketRequest,
+  serializeAccessory,
+  serializeEquipment,
   serializeClient,
   serializeTechnician,
   serializeTicketDetails,
   serializeTicketSummary,
-  serializeUnitModel,
 } from '../adapters/legacy-http';
-import { clients, technicians } from '../infrastructure/database/repositories';
+import { catalogs, clients, technicians } from '../infrastructure/database/repositories';
 import * as ticketService from '../services/ticket-service';
+import { getTicketList } from '../services/ticket-search-service';
+import { getAvailableEquipment } from '../services/equipment-service';
+import { getTicketPreparation } from '../services/ticket-lifecycle';
 import { isRecord } from '../domain/business-error';
 
 type HttpRequest = Request<Record<string, string>, unknown, Record<string, unknown>>;
@@ -46,26 +50,12 @@ export async function createTicket(request: HttpRequest, response: Response) {
       });
       return;
     }
-    await ticketService.createTicket(readCreateTicketRequest(request.body));
+    const ticket = await ticketService.createTicket(readCreateTicketRequest(request.body));
     if (request.body?.setupWizard === 'ticket') {
       response.redirect('/?setupTicketCreated=1');
       return;
     }
-    response.redirect('/tickets');
-  } catch (error) {
-    respondError(response, error);
-  }
-}
-export async function renderUnitAssignment(_request: Request, response: Response) {
-  try {
-    const [waitingTickets, unitModels] = await Promise.all([
-      ticketService.getWaitingTickets(),
-      ticketService.getUnitModels(),
-    ]);
-    response.render('asignacion_unidades', {
-      ticketsEspera: waitingTickets.map(serializeTicketSummary),
-      unidades: unitModels.map(serializeUnitModel),
-    });
+    response.redirect(`/detalle_ticket/${ticket.id}`);
   } catch (error) {
     respondError(response, error);
   }
@@ -76,7 +66,13 @@ export async function renderTicketDetails(request: HttpRequest, response: Respon
       ticketService.getTicketDetails(request.params.id),
       technicians.list(),
     ]);
+    const canAssign = ticket.status === 'waiting' || ticket.status === 'in_progress';
+    const [availableEquipment, accessoryList] = canAssign ? await Promise.all([getAvailableEquipment(), catalogs.listAccessories()]) : [[], []];
     response.render('detalles_servicio', {
+      canAssign,
+      preparation: getTicketPreparation(ticket),
+      equiposEnEspera: availableEquipment.map(serializeEquipment),
+      accesoriosDisponibles: accessoryList.map(serializeAccessory),
       ticket: serializeTicketDetails(ticket),
       tecnicos: technicianList.map(serializeTechnician),
     });
@@ -140,15 +136,25 @@ export async function confirmCompleteAssignment(request: HttpRequest, response: 
     respondError(response, error);
   }
 }
-export async function renderTicketDashboard(_request: Request, response: Response) {
+export async function renderTicketDashboard(request: Request, response: Response) {
   try {
-    const dashboard = await ticketService.getTicketDashboard();
+    const [result, clientList, technicianList] = await Promise.all([
+      getTicketList(request.query), clients.list(), technicians.list(),
+    ]);
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(result.filters)) {
+      if (value !== null && value !== '') params.set(key, String(value));
+    }
     response.render('estado_tickets', {
-      ticketsEspera: dashboard.waitingTickets.map(serializeTicketSummary),
-      ticketsSeguimiento: dashboard.inProgressTickets.map(serializeTicketSummary),
-      ticketsFinalizados: dashboard.completedTickets.map(serializeTicketSummary),
+      ...result,
+      tickets: result.tickets.map(serializeTicketSummary),
+      clientes: clientList.map(serializeClient),
+      tecnicos: technicianList.map(serializeTechnician),
+      pageUrl: (page: number) => { const next = new URLSearchParams(params); next.set('page', String(page)); return `/tickets?${next}`; },
     });
-  } catch (error) {
-    respondError(response, error);
-  }
+  } catch (error) { respondError(response, error); }
+}
+export async function renderTicketEntry(request: Request, response: Response) {
+  if (request.query.setup === 'ticket') return renderTicketForm(request, response);
+  return renderTicketDashboard(request, response);
 }

@@ -148,6 +148,10 @@ export const units = {
   ): Promise<void> {
     await unitModel.update({ ID_equipo: equipmentId }, { where: { ID_unidad: id }, transaction });
   },
+  async remove(id: number, transaction: Transaction): Promise<void> {
+    await unitAccessoryModel.destroy({ where: { ID_unidad: id }, transaction });
+    await unitModel.destroy({ where: { ID_unidad: id }, transaction });
+  },
   async listDetails(ticketId: number): Promise<UnitDetails[]> {
     return (
       await unitModel.findAll({

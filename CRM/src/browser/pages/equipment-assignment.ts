@@ -3,6 +3,7 @@ import { delegate, element, escapeHtml } from '../shared/dom.js';
 import { hideModal, refreshTooltips } from '../shared/bootstrap.js';
 import { showDialog, showError } from '../shared/dialogs.js';
 import { postJson, requestJson } from '../shared/http.js';
+import { confirmUnitRemoval } from '../shared/unit-removal.js';
 import { AssignmentState } from '../state/equipment-assignment.js';
 
 interface UnitResponse {
@@ -23,12 +24,33 @@ let unitCount = 0;
 let selectionVersion = 0;
 let pendingRequest: AbortController | undefined;
 let saving = false;
+const embedded = document.body.dataset.ticketWorkspace === 'true';
+function actionBusy() { return saving || document.body.dataset.ticketActionBusy === 'true'; }
 
-delegate(document, 'click', '.btn_seleccion_ticket', (button) => {
-  if (!saving) void selectTicket(button).catch(showError);
-});
+export const equipmentAssignmentBusy = () => saving;
+export function equipmentAssignmentDirty() {
+  return Array.from(state.equipment.keys()).some(id => !state.lockedUnits.has(id)) ||
+    Array.from(state.accessories.values()).some(items => items.some(item => !item.readOnly));
+}
+export function resetEquipmentAssignment() {
+  pendingRequest?.abort();
+  selectionVersion++;
+  selectedTicket = '';
+  state.reset();
+  refreshTooltips(container, true);
+  container.replaceChildren();
+  workbench.classList.add('d-none');
+  loading.classList.add('d-none');
+  saveButton.disabled = true;
+}
+function updateProgress() {
+  const persisted = state.lockedUnits.size;
+  const pending = state.equipment.size - persisted;
+  element('assignment-progress').textContent = `Equipos guardados: ${persisted} de ${unitCount} unidades.${pending ? ` ${pending} equipo(s) por guardar.` : ''}`;
+  saveButton.disabled = !equipmentAssignmentDirty();
+}
 
-async function selectTicket(button: HTMLElement) {
+export async function selectEquipmentTicket(button: HTMLElement) {
   for (const id of ['modalSeleccionEquipo', 'modalSeleccionAccesorio']) {
     hideModal(id);
     delete element(id).dataset.unitId;
@@ -39,17 +61,10 @@ async function selectTicket(button: HTMLElement) {
   selectedTicket = button.dataset.id_ticket ?? '';
   unitCount = Number(button.dataset.num_unidades) || 0;
   state.reset();
-  for (const [id, value] of Object.entries({
-    ID_ticket: selectedTicket,
-    Cliente_Ticket: button.dataset.cliente,
-    Tecnico_Ticket: button.dataset.tecnico,
-    Unidades_Ticket: String(unitCount),
-  }))
-    element(id).textContent = value ?? '';
   element<HTMLAnchorElement>('btn_ver_detalles').href = `/detalle_ticket/${selectedTicket}`;
   workbench.classList.add('d-none');
   loading.classList.remove('d-none');
-  loading.scrollIntoView({ behavior: 'smooth' });
+  if (!embedded) loading.scrollIntoView({ behavior: 'smooth' });
   saveButton.disabled = true;
   try {
     const units = await requestJson<UnitResponse[]>(`/unidades-por-ticket/${selectedTicket}`, {
@@ -77,7 +92,8 @@ async function selectTicket(button: HTMLElement) {
     refreshTooltips(container);
     workbench.classList.remove('d-none');
     saveButton.hidden = false;
-    saveButton.disabled = !units.length;
+    updateProgress();
+    return { total: units.length, equipped: state.lockedUnits.size };
   } catch (error) {
     if (
       version === selectionVersion &&
@@ -99,7 +115,7 @@ function renderUnit(unit: UnitResponse) {
   const id = String(unit.ID_Unidad);
   const assigned = Boolean(unit.Equipo);
   const column = document.createElement('div');
-  column.className = 'col-lg-6 mb-4';
+  column.className = 'col-12 mb-3';
   column.innerHTML = `
     <div class="soft-card h-100 p-0 overflow-hidden unit-card ${assigned ? 'assigned' : 'pending'}" id="unidad-row-${id}">
       <div class="row g-0 h-100">
@@ -109,6 +125,7 @@ function renderUnit(unit: UnitResponse) {
           <div class="small text-muted mb-1">IDENTIFICADORES</div>
           <div class="font-monospace bg-white p-2 rounded border mb-1 small">${escapeHtml(unit.Placa_unidad || 'S/P')}</div>
           <div class="font-monospace bg-white p-2 rounded border small">${escapeHtml(unit.Vin_unidad || 'S/V')}</div>
+          <button type="button" class="btn btn-outline-danger align-self-start mt-3" data-action="remove-saved-unit" ${unitCount <= 1 ? 'disabled title="El ticket debe conservar al menos una unidad"' : ''} data-unit-id="${id}" data-unit-label="${escapeHtml(unit.Placa_unidad || unit.Vin_unidad || '#' + id)}">Quitar unidad del ticket</button>
         </div>
         <div class="col-md-6 p-4 d-flex flex-column">
           <div class="mb-3">
@@ -124,11 +141,11 @@ function renderUnit(unit: UnitResponse) {
               </div>
               ${
                 assigned
-                  ? `<div class="alert alert-light border p-2 small text-secondary" data-bs-toggle="tooltip" title="Para modificar el equipo y sus accesorios, vaya a Detalles del Ticket."><i class="bi bi-lock-fill me-2"></i>Asignado (Solo Lectura)</div>`
+                  ? embedded && unit.Equipo ? `<button type="button" class="btn btn-outline-danger" data-ticket-action="release-equipment" data-unit-id="${id}" data-equipment-id="${unit.Equipo.ID_equipo}" data-ticket-id="${selectedTicket}">Liberar equipo</button>` : `<div class="alert alert-light border p-2 small text-secondary" data-bs-toggle="tooltip" title="Para modificar el equipo y sus accesorios, vaya a Detalles del Ticket."><i class="bi bi-lock-fill me-2"></i>Asignado (Solo Lectura)</div>`
                   : `
                 <div class="d-flex gap-2 mt-2">
-                  <button type="button" class="btn btn-sm btn-outline-primary w-100 rounded-pill btn_cambiar_equipo" data-unit-id="${id}" data-bs-toggle="modal" data-bs-target="#modalSeleccionEquipo">Cambiar</button>
-                  <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" data-action="release-local-equipment" data-unit-id="${id}"><i class="bi bi-x-lg"></i></button>
+                  <button type="button" class="btn btn-outline-primary w-100 rounded-pill btn_cambiar_equipo" data-unit-id="${id}" data-bs-toggle="modal" data-bs-target="#modalSeleccionEquipo">Cambiar</button>
+                  <button type="button" class="btn btn-outline-danger rounded-pill" aria-label="Quitar equipo seleccionado" data-action="release-local-equipment" data-unit-id="${id}"><i class="bi bi-x-lg"></i></button>
                 </div>`
               }
             </div>
@@ -136,7 +153,7 @@ function renderUnit(unit: UnitResponse) {
           <div class="border-top pt-3 mt-auto">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <span class="small fw-bold text-muted text-uppercase">Accesorios</span>
-              ${assigned ? '' : `<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill btn-abrir-accesorios" data-unit-id="${id}" data-bs-toggle="modal" data-bs-target="#modalSeleccionAccesorio"><i class="bi bi-plus"></i></button>`}
+              ${assigned && !embedded ? '' : `<button type="button" class="btn btn-outline-secondary rounded-pill btn-abrir-accesorios" aria-label="Agregar accesorio" data-unit-id="${id}" data-bs-toggle="modal" data-bs-target="#modalSeleccionAccesorio"><span aria-hidden="true">+</span> Agregar</button>`}
             </div>
             <div id="lista-accesorios-${id}" class="d-flex flex-wrap gap-2"></div>
           </div>
@@ -153,6 +170,7 @@ function updateEquipmentCard(unitId: string) {
   const card = element(`unidad-row-${unitId}`);
   card.classList.toggle('assigned', assigned);
   card.classList.toggle('pending', !assigned);
+  updateProgress();
 }
 
 function renderAccessories(unitId: string) {
@@ -163,7 +181,7 @@ function renderAccessories(unitId: string) {
     badge.className =
       'badge bg-light text-dark border rounded-pill d-flex align-items-center gap-2';
     badge.textContent = accessory.name;
-    if (accessory.readOnly) {
+    if (accessory.readOnly && !embedded) {
       const lock = document.createElement('i');
       lock.className = 'bi bi-lock-fill';
       badge.append(lock);
@@ -171,7 +189,10 @@ function renderAccessories(unitId: string) {
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'btn-close';
-      remove.dataset.action = 'remove-local-accessory';
+      if (accessory.readOnly) {
+        remove.dataset.ticketAction = 'remove-accessory';
+        remove.dataset.ticketId = selectedTicket;
+      } else remove.dataset.action = 'remove-local-accessory';
       remove.dataset.unitId = unitId;
       remove.dataset.accessoryId = accessory.id;
       remove.setAttribute('aria-label', `Quitar ${accessory.name}`);
@@ -179,7 +200,24 @@ function renderAccessories(unitId: string) {
     }
     list.append(badge);
   }
+  updateProgress();
 }
+
+function updateEquipmentChoices() {
+  const currentUnit = element('modalSeleccionEquipo').dataset.unitId;
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.btn_seleccion_equipo')) {
+    const occupied = Array.from(state.equipment).some(([unitId, equipmentId]) => unitId !== currentUnit && equipmentId === button.dataset.id_equipo);
+    button.disabled = occupied;
+    button.textContent = occupied ? 'En otra unidad' : 'Seleccionar';
+  }
+}
+element('modalSeleccionEquipo').addEventListener('show.bs.modal', updateEquipmentChoices);
+element<HTMLInputElement>('assignment-equipment-search').addEventListener('input', event => {
+  const term = (event.target as HTMLInputElement).value.trim().toLocaleLowerCase('es');
+  for (const row of document.querySelectorAll<HTMLTableRowElement>('#tablaEquipos tbody tr')) {
+    row.hidden = !row.textContent?.toLocaleLowerCase('es').includes(term);
+  }
+});
 
 // Delegation survives card replacement without rebinding individual controls.
 delegate(
@@ -187,10 +225,12 @@ delegate(
   'click',
   '.btn-seleccionar-equipo, .btn_cambiar_equipo, .btn-abrir-accesorios',
   (button) => {
+    if (actionBusy()) return;
     const modalId = button.classList.contains('btn-abrir-accesorios')
       ? 'modalSeleccionAccesorio'
       : 'modalSeleccionEquipo';
     element(modalId).dataset.unitId = button.dataset.unitId ?? '';
+    if (modalId === 'modalSeleccionEquipo') updateEquipmentChoices();
   },
 );
 delegate(
@@ -198,7 +238,7 @@ delegate(
   'click',
   '[data-action="release-local-equipment"], [data-action="remove-local-accessory"]',
   (button) => {
-    if (saving) return;
+    if (actionBusy()) return;
     try {
       const id = button.dataset.unitId ?? '';
       if (button.dataset.action === 'release-local-equipment') {
@@ -214,7 +254,7 @@ delegate(
   },
 );
 delegate(document, 'click', '.btn_seleccion_equipo', (button) => {
-  if (saving) return;
+  if (actionBusy()) return;
   try {
     const id = element('modalSeleccionEquipo').dataset.unitId;
     if (!id) return;
@@ -229,10 +269,10 @@ delegate(document, 'click', '.btn_seleccion_equipo', (button) => {
   }
 });
 delegate(document, 'click', '.btn_agregar_accesorio_modal', (button) => {
-  if (saving) return;
+  if (actionBusy()) return;
   try {
     const id = element('modalSeleccionAccesorio').dataset.unitId;
-    if (!id || state.lockedUnits.has(id)) return;
+    if (!id || (state.lockedUnits.has(id) && !embedded)) return;
     state.addAccessory(id, {
       id: button.dataset.id ?? '',
       name: button.dataset.nombre ?? '',
@@ -245,14 +285,14 @@ delegate(document, 'click', '.btn_agregar_accesorio_modal', (button) => {
   }
 });
 saveButton.addEventListener('click', () => {
-  if (!saving) void saveAssignments().catch(showError);
+  if (!actionBusy()) void saveAssignments().catch(showError);
 });
 async function saveAssignments() {
   const count = state.equipment.size;
-  if (!count) {
+  if (!equipmentAssignmentDirty()) {
     await showDialog({
       title: 'Sin cambios',
-      text: 'Asigna al menos un equipo GPS antes de confirmar.',
+      text: 'Selecciona un equipo o accesorio antes de guardar.',
       icon: 'info',
     });
     return;
@@ -264,9 +304,9 @@ async function saveAssignments() {
     const partial = count < unitCount;
     const confirmed = await showDialog({
       title: partial ? 'Asignación Incompleta' : '¿Confirmar asignaciones?',
-      text: partial
+      text: partial && count > 0
         ? `Estás asignando equipos a ${count} de ${unitCount} unidades. El ticket quedará en estado "Parcial".`
-        : `Se guardarán los cambios para el ticket #${selectedTicket}.`,
+        : `Se guardarán los cambios para el ticket #${selectedTicket}.${count === 0 ? ' Aún quedan equipos por asignar.' : ''}`,
       icon: partial ? 'warning' : 'question',
       showCancelButton: true,
       confirmButtonText: partial ? 'Guardar Avance (Parcial)' : 'Sí, guardar asignaciones',
@@ -282,9 +322,19 @@ async function saveAssignments() {
       text: result.message ?? 'Cambios aplicados correctamente.',
       icon: 'success',
     });
+    document.dispatchEvent(new Event('assignment:saved'));
+    // The coordinator already keeps this ticket in the URL; refresh its saved stage.
     location.reload();
   } finally {
     saving = false;
-    saveButton.disabled = false;
+    updateProgress();
   }
 }
+
+delegate(container, 'click', '[data-action="remove-saved-unit"]', button => {
+  if (actionBusy()) return;
+  saving = true;
+  saveButton.disabled = true;
+  void confirmUnitRemoval(selectedTicket, button.dataset.unitId ?? '', button.dataset.unitLabel ?? 'seleccionada', equipmentAssignmentDirty())
+    .catch(showError).finally(() => { saving = false; updateProgress(); });
+});

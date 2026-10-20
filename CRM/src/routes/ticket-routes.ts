@@ -2,7 +2,9 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import * as tickets from '../controllers/ticket-controller';
+import { renderAssignments } from '../controllers/assignment-controller';
 const router = Router();
+router.get('/asignaciones', renderAssignments);
 const storage = multer.diskStorage({
   destination(_request, _file, callback) {
     callback(null, 'public/uploads/tickets');
@@ -13,14 +15,15 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
-router.get('/tickets', tickets.renderTicketForm);
+router.get('/tickets', tickets.renderTicketEntry);
+router.get('/tickets/nuevo', tickets.renderTicketForm);
 router.post('/tickets/finalizar/:id', tickets.completeTicket);
 router.post('/tickets/reabrir/:id', tickets.reopenTicket);
 router.post('/tickets/asignar_tecnico', tickets.assignTechnician);
 router.post('/tickets/actualizar_comentarios', tickets.updateComments);
 router.post('/tickets/actualizar_maps', tickets.updateLocation);
 router.get('/estado_tickets', tickets.renderTicketDashboard);
-router.get('/asignacion_unidades', tickets.renderUnitAssignment);
+router.get('/asignacion_unidades', renderAssignments);
 router.get('/detalle_ticket/:id', tickets.renderTicketDetails);
 router.post(
   '/tickets/:id/subir-fotos',

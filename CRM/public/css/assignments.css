@@ -1,0 +1,85 @@
+.assignment-main { min-width: 0; }
+.assignment-page .soft-card { height: auto; scroll-margin-top: 1rem; }
+.assignment-page .soft-card:hover { transform: none; }
+.assignment-page .btn, .assignment-page .form-control, .assignment-page .form-select,
+#modalSeleccionEquipo .btn, #modalSeleccionAccesorio .btn { min-height: 44px; }
+.assignment-page .table th, .assignment-page .table td { padding: .85rem .75rem; }
+.assignment-page .badge { white-space: normal; text-align: left; line-height: 1.5; }
+.assignment-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 1rem; border-top: 1px solid #dee2e6; }
+.assignment-context { border-left: 4px solid var(--bs-primary); }
+.assignment-steps { list-style: none; display: flex; flex-wrap: wrap; gap: .75rem; padding: 0; }
+.assignment-steps li { padding: .6rem 1rem; border-radius: .6rem; background: #f1f5f9; color: #64748b; }
+.assignment-steps li.active { background: #dbeafe; color: #1e40af; font-weight: 600; }
+.assignment-steps li.complete { background: #d1fae5; color: #065f46; }
+.assignment-queue tr.selected > td { background-color: #eff6ff; }
+.unit-card { border-left: 4px solid #ffc107; }
+.unit-card.assigned { border-left-color: #198754; }
+.empty-slot { border: 2px dashed #cbd5e1; background: #f8fafc; }
+.empty-slot:hover { background: #eff6ff; }
+@media (max-width: 575.98px) {
+  .assignment-page .soft-card { padding: 1rem; border-radius: 1rem; }
+  .assignment-page .table { font-size: .875rem; }
+  .assignment-steps { flex-direction: column; }
+  .assignment-footer > *, .assignment-footer nav { width: 100%; justify-content: space-between; }
+  #form_unidades > .d-flex { flex-direction: column; }
+  #form_unidades > .d-flex .btn { width: 100%; padding-inline: 1rem !important; }
+}
+.assignment-menu-close, .assignment-menu-backdrop { display: none; }
+@media (max-width: 768px) {
+  .assignments-view #sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    height: 100dvh;
+    transform: translateX(-100%);
+    overflow-y: auto;
+  }
+  .assignments-view #sidebar.collapsed { transform: translateX(0); }
+  .assignment-menu-close { display: block; }
+  .assignments-view #sidebar.collapsed ~ .assignment-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    border: 0;
+    background: rgb(15 23 42 / 35%);
+  }
+}
+@media (max-width: 575.98px) {
+  .assignment-queue thead { display: none; }
+  .assignment-queue tbody { display: block; }
+  .assignment-queue tr:not([hidden]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: .75rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #dee2e6;
+  }
+  .assignment-page .assignment-queue td {
+    display: block;
+    border: 0;
+    padding: .25rem;
+    width: auto;
+    text-align: left !important;
+    overflow-wrap: anywhere;
+  }
+  .assignment-queue td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: .75rem;
+    color: #64748b;
+    font-weight: normal;
+    margin-bottom: .35rem;
+  }
+  #assignment-empty > td { grid-column: 1 / -1; }
+}
+@media (max-width: 575.98px) {
+  #form_unidades thead { display: none; }
+  #form_unidades tbody { display: block; }
+  #form_unidades tbody tr { display: grid; gap: .75rem; padding: 1rem 0; border-bottom: 1px solid #dee2e6; }
+  #form_unidades tbody td { display: block; padding: 0 !important; border: 0; }
+  #form_unidades td::before { content: attr(data-label); display: block; margin-bottom: .35rem; }
+  #form_unidades input, #form_unidades select { width: 100%; }
+}

@@ -31,22 +31,10 @@
             <ul class="sidebar-nav">
                 <li class="sidebar-item"><a href="/" class="sidebar-link active"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
                 <li class="sidebar-header">Gestión de Servicios</li>
-                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Crear Ticket</span></a></li>
-                <li class="sidebar-item"><a href="/estado_tickets" class="sidebar-link"><i class="lni lni-stats-up"></i><span>Estado de Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Tickets</span></a></li>
                 <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
                 <li class="sidebar-header">Operativo</li>
-                <li class="sidebar-item">
-                    <a href="/asignacion_unidades" class="sidebar-link"> 
-                        <i class="lni lni-delivery"></i>
-                        <span>Asignar Unidades</span>
-                    </a>
-                </li>
-                <li class="sidebar-item">
-                    <a href="/asignacion_equipos" class="sidebar-link"> 
-                        <i class="lni lni-network"></i>
-                        <span>Asignar Equipos</span>
-                    </a>
-                </li>
+                <li class="sidebar-item"><a href="/asignaciones" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignaciones</span></a></li>
                 <li class="sidebar-item">
                     <a href="/registro_equipos" class="sidebar-link"> 
                         <i class="lni lni-pencil-alt"></i>
@@ -55,9 +43,7 @@
                 </li>
                 <li class="sidebar-header">Recursos</li>
                 <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
-                <li class="sidebar-item"><a href="/equipos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogo Equipos</span></a></li>
-                <li class="sidebar-item"><a href="/unidades" class="sidebar-link"><i class="lni lni-car"></i><span>Unidades</span></a></li>
-                <li class="sidebar-item"><a href="/accesorios" class="sidebar-link"><i class="lni lni-plug"></i><span>Accesorios</span></a></li>
+                <li class="sidebar-item"><a href="/catalogos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogos</span></a></li>
             </ul>
 
             <div class="sidebar-footer">
@@ -138,15 +124,15 @@
                                   <div class="setup-catalog-grid">
                                       <div class="setup-catalog-row" data-setup-item="equipment" data-setup-weight="10" data-setup-done="<%= setupStatus.equipment > 0 %>" data-setup-count="<%= setupStatus.equipment %>">
                                           <div><i class="bi bi-router"></i><span><strong>Equipos</strong><small data-setup-state>Por hacer</small></span></div>
-                                          <div class="setup-step-actions"><a href="/equipos?setup=equipment" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="equipment">Omitir</button></div>
+                                          <div class="setup-step-actions"><a href="/catalogos?setup=equipment#equipment" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="equipment">Omitir</button></div>
                                       </div>
                                       <div class="setup-catalog-row" data-setup-item="units" data-setup-weight="10" data-setup-done="<%= setupStatus.units > 0 %>" data-setup-count="<%= setupStatus.units %>">
                                           <div><i class="bi bi-truck"></i><span><strong>Unidades</strong><small data-setup-state>Por hacer</small></span></div>
-                                          <div class="setup-step-actions"><a href="/unidades?setup=units" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="units">Omitir</button></div>
+                                          <div class="setup-step-actions"><a href="/catalogos?setup=units#units" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="units">Omitir</button></div>
                                       </div>
                                       <div class="setup-catalog-row" data-setup-item="accessories" data-setup-weight="10" data-setup-done="<%= setupStatus.accessories > 0 %>" data-setup-count="<%= setupStatus.accessories %>">
                                           <div><i class="bi bi-plug"></i><span><strong>Accesorios</strong><small data-setup-state>Por hacer</small></span></div>
-                                          <div class="setup-step-actions"><a href="/accesorios?setup=accessories" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="accessories">Omitir</button></div>
+                                          <div class="setup-step-actions"><a href="/catalogos?setup=accessories#accessories" class="btn setup-btn-primary">Configurar</a><button type="button" class="btn setup-btn-secondary" data-skip-step="accessories">Omitir</button></div>
                                       </div>
                                   </div>
                                   <div class="setup-step-actions setup-catalog-footer"><button type="button" class="btn setup-btn-secondary" data-skip-catalogs>Omitir los tres catálogos</button></div>
@@ -159,7 +145,7 @@
                                   <div class="setup-step-heading"><span class="setup-step-number">04</span><h3>Crear tu primer ticket</h3><span class="setup-state" data-setup-state>Pendiente</span></div>
                                   <p>Abre Nuevo Ticket de Servicio. El proceso llegará al 100% cuando el ticket se guarde correctamente.</p>
                                   <div class="setup-step-actions">
-                                      <a class="btn setup-btn-primary" href="/tickets?setup=ticket"><i class="bi bi-plus-circle"></i> Crear ticket</a>
+                                      <a class="btn setup-btn-primary" href="/tickets/nuevo?setup=ticket"><i class="bi bi-plus-circle"></i> Crear ticket</a>
                                   </div>
                               </div>
                           </article>
@@ -187,7 +173,7 @@
                                   <div class="card-label">En Espera</div>
                                   <div class="card-value"><%= metrics.counts.espera %></div>
                               </div>
-                              <a href="/estado_tickets" class="card-link" style="color: var(--pastel-yellow-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
+                              <a href="/tickets?status=waiting" class="card-link" style="color: var(--pastel-yellow-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
                           </div>
                       </div>
 
@@ -198,7 +184,7 @@
                                   <div class="card-label">En Seguimiento</div>
                                   <div class="card-value"><%= metrics.counts.seguimiento %></div>
                               </div>
-                              <a href="/estado_tickets" class="card-link" style="color: var(--pastel-blue-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
+                              <a href="/tickets?status=in_progress" class="card-link" style="color: var(--pastel-blue-text)">Ver Detalles <i class="bi bi-arrow-right-short"></i></a>
                           </div>
                       </div>
 

@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
+    <link rel="stylesheet" href="/css/ticket-workspace.css">
     <style>
         .card-detail {
             border: none;
@@ -132,25 +134,36 @@
     }
     </style>
 </head>
-<body class="bg-light">
+<body class="bg-light" data-ticket-workspace="<%= canAssign %>">
 
-<div class="container py-5">
+<div class="container-fluid ticket-detail-page assignment-page px-3 px-lg-4 py-4">
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h2 class="fw-bold mb-0">Detalle del Servicio</h2>
             <p class="text-muted">Gestión de Ticket de Soporte</p>
         </div>
-        <a href="/estado_tickets" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver al Tablero
+        <a href="/tickets" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Tickets
         </a>
     </div>
+
+    <section class="soft-card mb-4 ticket-preparation" aria-labelledby="preparation-title">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div><h2 class="h5" id="preparation-title">Preparación del servicio</h2><p class="mb-0 text-muted"><%= preparation.registered %> de <%= preparation.planned %> unidades registradas · <%= preparation.equipped %> de <%= preparation.planned %> con equipo</p></div>
+        <% if (canAssign) { %><a id="ticket-next-action" class="btn btn-primary" href="<%= preparation.complete ? '#ticket-close-actions' : '#assignment-workspace' %>"><%= preparation.complete ? 'Revisar y finalizar' : ticket.Estatus_servicio === 'En espera' ? 'Registrar unidades' : 'Asignar equipos y accesorios' %></a><% } else { %><span class="badge text-bg-success">Servicio finalizado · Consulta del historial</span><% } %>
+      </div>
+      <div class="progress mt-3" role="progressbar" aria-label="Preparación de unidades y equipos" aria-valuenow="<%= preparation.percent %>" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:<%= preparation.percent %>%"><%= preparation.percent %>%</div></div>
+      <ol class="assignment-steps mt-3 mb-0"><li id="assignment-step-units" class="<%= preparation.registered === preparation.planned && preparation.planned > 0 ? 'complete' : 'active' %>">1. Registrar unidades</li><li id="assignment-step-equipment" class="<%= preparation.complete ? 'complete' : ticket.Estatus_servicio === 'En seguimiento' ? 'active' : '' %>">2. Equipos y accesorios</li><li id="assignment-step-ready" class="<%= preparation.complete ? 'complete' : '' %>">3. Asignación completa</li></ol>
+      <% if (canAssign && !ticket.Tecnico) { %><p class="small mt-3 mb-0">Técnico pendiente. <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAsignarTecnico">Asignar técnico</button></p><% } %>
+      <nav class="d-flex flex-wrap gap-2 mt-3" aria-label="Secciones del ticket"><a class="btn btn-outline-secondary" href="#ticket-information">Información</a><a class="btn btn-outline-secondary" href="<%= canAssign ? '#assignment-workspace' : '#ticket-units-history' %>">Unidades y equipos</a><a class="btn btn-outline-secondary" href="#ticket-evidence">Evidencias</a></nav>
+    </section>
 
     <div class="card card-detail status-border 
         <%= ticket.Estatus_servicio === 'En espera' ? 'status-espera' : 
            (ticket.Estatus_servicio === 'Finalizado' ? 'status-finalizado' : 'status-seguimiento') %>">
         
-        <div class="card-body p-4">
+        <div class="card-body p-3 p-lg-4" id="ticket-information">
             
             <div class="d-flex justify-content-between align-items-start mb-4 border-bottom pb-3">
                 <div>
@@ -188,6 +201,7 @@
                             <div class="value-text">
                                 <%= ticket.Tecnico ? ticket.Tecnico.Nombre_tecnico : 'Tecnico pendiente de asignacion' %>
                             </div>
+                            <% if (canAssign) { %><button type="button" class="btn btn-outline-primary ms-3" data-bs-toggle="modal" data-bs-target="#modalAsignarTecnico"><%= ticket.Tecnico ? 'Cambiar técnico' : 'Asignar técnico' %></button><% } %>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -297,7 +311,15 @@
                     <% } %>
                 </div>
             </div>
-            <div class="mt-4 pt-3 border-top">
+            <% if (canAssign) { %>
+            <div class="mt-4 pt-3 border-top" id="ticket-assignment-section">
+              <h2 class="h5 mb-3" id="ticket-assignment-title">Unidades, equipos y accesorios</h2>
+              <div id="ticket-assignment-context" hidden data-id_ticket="<%= ticket.ID_ticket %>" data-cliente="<%= ticket.Cliente?.Nombre_empresa ?? 'Sin cliente' %>" data-num_unidades="<%= ticket.Numero_unidades %>" data-stage="<%= ticket.Estatus_servicio === 'En espera' ? 'units' : 'equipment' %>"></div>
+              <div id="ticket-assignment-error" class="alert alert-warning d-none" role="alert"><span></span> <button type="button" class="btn btn-outline-primary" id="ticket-assignment-retry">Reintentar</button></div>
+              <fieldset id="ticket-assignment-fields" class="border-0 p-0 m-0" disabled><legend class="visually-hidden">Preparación de unidades y equipos del ticket</legend><%- include('partials/assignment-workspace', { embedded: true }) %></fieldset>
+            </div>
+            <% } else { %>
+            <div class="mt-4 pt-3 border-top" id="ticket-units-history">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="text-secondary mb-0"><i class="bi bi-truck-front-fill me-2"></i>Unidades y Equipos Asignados</h5>
                 </div>
@@ -311,7 +333,7 @@
                                     <th class="border-0">Identificadores</th>
                                     <th class="border-0">Equipo GPS</th>
                                     <th class="border-0">Accesorios</th> 
-                                    <th class="border-0 text-end pe-3">Estado</th>
+                                    <th class="border-0 text-end pe-3">Estado / Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -407,7 +429,7 @@
                                                 </span>
                                             <% } else { %>
                                                 <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
-                                                    <a href="/asignacion_equipos" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                    <a href="#assignment-workspace" class="btn btn-sm btn-primary rounded-pill px-3">
                                                         <i class="bi bi-plus-lg"></i> Asignar Equipo
                                                     </a>
                                                 <% } else { %>
@@ -415,6 +437,9 @@
                                                         <i class="bi bi-dash-circle me-1"></i>Finalizado
                                                     </span>
                                                 <% } %>
+                                            <% } %>
+                                            <% if (ticket.Estatus_servicio === 'En seguimiento') { %>
+                                                <div class="mt-2"><button type="button" class="btn btn-outline-danger" style="min-height:44px" data-ticket-action="remove-unit" <%= ticket.Numero_unidades <= 1 ? 'disabled' : '' %> title="<%= ticket.Numero_unidades <= 1 ? 'El ticket debe conservar al menos una unidad' : 'Retirar esta unidad y ajustar la cantidad prevista' %>" data-unit-id="<%= unidad.ID_unidad %>" data-ticket-id="<%= ticket.ID_ticket %>" data-unit-label="<%= unidad.Placa_unidad || unidad.Vin_unidad || ('#' + unidad.ID_unidad) %>">Quitar unidad</button></div>
                                             <% } %>
                                         </td>
                                     </tr>
@@ -428,13 +453,14 @@
                         <div>
                             No hay unidades asignadas a este ticket. 
                             <% if (ticket.Estatus_servicio !== 'Finalizado') { %>
-                                <a href="/asignacion_unidades" class="fw-bold text-decoration-none ms-1">Ir a Asignar Unidades</a>.
+                                <a href="#assignment-workspace" class="fw-bold text-decoration-none ms-1">Ir a Asignar Unidades</a>.
                             <% } %>
                         </div>
                     </div>
                 <% } %>
             </div>
-            <div class="row mt-4">
+            <% } %>
+            <div class="row mt-4" id="ticket-evidence">
                 <div class="col-12">
                     <div class="soft-card">
                         <h5 class="mb-4">Evidencia del Servicio</h5>
@@ -478,7 +504,7 @@
             </div>
         </div>
         
-        <div class="card-footer bg-white p-3 d-flex justify-content-end gap-2 rounded-bottom">
+        <div id="ticket-close-actions" class="card-footer bg-white p-3 d-flex flex-wrap justify-content-end gap-2 rounded-bottom">
             
             <% if( (ticket.Estatus_servicio === 'En espera' || ticket.Estatus_servicio === 'En seguimiento') && !ticket.Tecnico ) { %>
             <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#modalAsignarTecnico">
@@ -487,7 +513,7 @@
             <% } %>
 
             <% if(ticket.Estatus_servicio === 'En espera') { %>
-                <a href="/asignacion_unidades" class="btn btn-warning text-dark">
+                <a href="#assignment-workspace" class="btn btn-warning text-dark">
                     <i class="bi bi-truck"></i> Asignar Unidades
                 </a>
             <% } %>
@@ -500,7 +526,7 @@
                 const estatus = ticket.Estatus_servicio ? ticket.Estatus_servicio.trim().toLowerCase() : '';
             %>
             <% if (estatus === 'en espera' || estatus === 'en seguimiento') { %>
-                <button data-ticket-action="complete" data-ticket-id="<%= ticket.ID_ticket %>" data-photo-count="<%= ticket.TicketFotos ? ticket.TicketFotos.length : 0 %>" class="btn btn-success">
+                <button data-ticket-action="complete" <%= preparation.complete ? '' : 'disabled' %> title="<%= preparation.complete ? 'Finalizar servicio' : 'Completa las unidades y sus equipos para finalizar' %>" data-ticket-id="<%= ticket.ID_ticket %>" data-photo-count="<%= ticket.TicketFotos ? ticket.TicketFotos.length : 0 %>" class="btn btn-success">
                     <i class="bi bi-check-circle-fill me-2"></i> Finalizar Servicio
                 </button>
             <% } %>
@@ -730,6 +756,7 @@
     </div>
 
 
+    <% if (canAssign) { %><%- include('partials/assignment-equipment-modals') %><% } %>
     <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <script type="module" src="/assets/pages/ticket-details.js"></script>

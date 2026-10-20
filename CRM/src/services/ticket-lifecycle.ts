@@ -4,6 +4,7 @@ import {
   AssignmentStatus,
   type AssignmentSummary,
   type Ticket,
+  type TicketDetails,
   type TicketStatus,
 } from '../domain/entities';
 import { tickets, units } from '../infrastructure/database/repositories';
@@ -50,4 +51,13 @@ export async function updateAssignmentStatus(
   const summary = await getAssignmentSummary(ticket, transaction);
   await tickets.update(ticket.id, { assignmentStatus: summary.status }, transaction);
   return summary;
+}
+
+export function getTicketPreparation(ticket: TicketDetails) {
+  const planned = ticket.unitCount ?? 0;
+  const registered = ticket.units.length;
+  const equipped = ticket.units.filter(unit => unit.equipmentId !== null).length;
+  const complete = planned > 0 && registered === planned && equipped === planned;
+  const percent = planned > 0 ? Math.min(100, Math.round((Math.min(registered, planned) + Math.min(equipped, planned)) * 100 / (planned * 2))) : 0;
+  return { planned, registered, equipped, complete, percent };
 }

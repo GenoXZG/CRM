@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogos | CRM TSV</title>
+
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/catalogs.css">
+</head>
+<body>
+
+    <div class="d-flex">
+
+        <aside id="sidebar">
+            <div class="sidebar-logo">
+                <a href="/">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <li class="sidebar-item"><a href="/" class="sidebar-link"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item"><a href="/asignaciones" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignaciones</span></a></li>
+                <li class="sidebar-item"><a href="/registro_equipos" class="sidebar-link"><i class="lni lni-pencil-alt"></i><span>Registro Equipos</span></a></li>
+
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/catalogos" class="sidebar-link active"><i class="lni lni-display-alt"></i><span>Catálogos</span></a></li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <a href="/logout" class="sidebar-link text-danger"><i class="lni lni-exit"></i><span>Salir</span></a>
+            </div>
+        </aside>
+
+        <div class="main catalog-main d-flex flex-column min-vh-100 w-100">
+
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+                <span class="ms-3 fw-bold text-secondary">Recursos / Catálogos</span>
+            </nav>
+
+<main class="catalog-page p-3 p-lg-4">
+  <div class="mb-4"><h1>Catálogos</h1><p class="text-muted">Administra los modelos de equipos, unidades y accesorios en un solo lugar.</p></div>
+  <div class="row g-4">
+  <% catalogs.forEach(catalog => { const destination = '/catalogos?' + state.toString() + '#' + catalog.key; %>
+    <div class="col-12">
+      <section class="soft-card h-100 d-flex flex-column" id="<%= catalog.key %>" aria-labelledby="<%= catalog.key %>-title">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+          <h2 class="h5 mb-0" id="<%= catalog.key %>-title"><i class="bi bi-<%= catalog.icon %> me-2" aria-hidden="true"></i><%= catalog.title %></h2>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#<%= catalog.key %>-create">+ Agregar</button>
+        </div>
+        <% if (setupWizard === catalog.key) { %><p class="alert alert-info small">Agrega un registro para continuar con la guía de inicio.</p><% } %>
+        <form action="/catalogos#<%= catalog.key %>" method="GET" id="<%= catalog.key %>-filters" class="catalog-filters mb-3">
+          <% for (const [key, value] of state) { if (!key.startsWith(catalog.key + '_')) { %>
+            <input type="hidden" name="<%= key %>" value="<%= value %>">
+          <% } } %>
+          <label for="<%= catalog.key %>-search" class="form-label small">Buscar <%= catalog.fields.length > 1 ? 'por marca o modelo' : 'por nombre' %></label>
+          <div class="input-group catalog-search">
+            <input class="form-control" type="search" id="<%= catalog.key %>-search" name="<%= catalog.key %>_search" maxlength="255" value="<%= catalog.search %>" placeholder="<%= catalog.fields.length > 1 ? 'Marca o modelo…' : 'Nombre del accesorio…' %>">
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+          </div>
+          <a class="btn btn-link catalog-clear" href="<%= (() => { const params = new URLSearchParams(state); params.delete(catalog.key + '_search'); params.delete(catalog.key + '_page'); return '/catalogos?' + params + '#' + catalog.key; })() %>">Limpiar búsqueda</a>
+        </form>
+        <div class="table-responsive flex-grow-1">
+          <table class="table table-hover align-middle catalog-table">
+            <caption class="visually-hidden">Catálogo de <%= catalog.title %></caption>
+            <thead><tr><th scope="col">ID</th><% catalog.fields.forEach(field => { %><th scope="col"><%= field.label %></th><% }) %><th scope="col" class="text-end">Acciones</th></tr></thead>
+            <tbody>
+              <% catalog.rows.forEach(row => { %>
+              <tr><td>#<%= row.id %></td><% catalog.fields.forEach(field => { %><td style="overflow-wrap:anywhere"><%= row[field.property] %></td><% }) %>
+                <td class="text-end catalog-actions">
+                  <button class="btn btn-outline-primary catalog-action" aria-label="Editar <%= catalog.title %> #<%= row.id %>" data-bs-toggle="modal" data-bs-target="#<%= catalog.key %>-edit" data-id="<%= row.id %>" <% catalog.fields.forEach(field => { %>data-<%= field.property %>="<%= row[field.property] %>"<% }) %>><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Editar</span></button>
+                  <button class="btn btn-outline-danger catalog-action" aria-label="Eliminar <%= catalog.title %> #<%= row.id %>" data-bs-toggle="modal" data-bs-target="#<%= catalog.key %>-delete" data-id="<%= row.id %>" data-description="<%= catalog.fields.map(field => row[field.property]).join(' / ') %>"><i class="bi bi-trash" aria-hidden="true"></i><span>Eliminar</span></button>
+                </td>
+              </tr>
+              <% }) %>
+              <% if (!catalog.rows.length) { %><tr><td colspan="<%= catalog.fields.length + 2 %>" class="text-center text-muted py-4"><%= catalog.search ? 'No se encontraron coincidencias.' : 'Aún no hay registros en este catálogo.' %></td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+        <div class="catalog-footer border-top pt-3 mt-2">
+          <div class="catalog-summary">
+            <label class="d-flex align-items-center gap-2 mb-0" for="<%= catalog.key %>-size">Filas por página
+              <select class="form-select w-auto" id="<%= catalog.key %>-size" name="<%= catalog.key %>_size" form="<%= catalog.key %>-filters">
+                <% [5,10,25,50].forEach(size => { %><option value="<%= size %>" <%= size === catalog.size ? 'selected' : '' %>><%= size %></option><% }) %>
+              </select>
+            </label>
+            <p class="small text-muted mb-0" role="status"><%= catalog.count ? (catalog.page - 1) * catalog.size + 1 : 0 %>–<%= Math.min(catalog.page * catalog.size, catalog.count) %> de <%= catalog.count %> registros</p>
+          </div>
+        <nav aria-label="Paginación de <%= catalog.title %>" class="catalog-pagination">
+          <% if (catalog.page > 1) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(catalog.key, catalog.page - 1) %>">Anterior</a><% } else { %><button class="btn btn-outline-secondary" disabled>Anterior</button><% } %>
+          <span class="small">Página <%= catalog.page %> de <%= catalog.pages %></span>
+          <% if (catalog.page < catalog.pages) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(catalog.key, catalog.page + 1) %>">Siguiente</a><% } else { %><button class="btn btn-outline-secondary" disabled>Siguiente</button><% } %>
+        </nav>
+        </div>
+      </section>
+    </div>
+    <% ['create','edit','delete'].forEach(action => {
+      const modal = catalog.key + '-' + action;
+      const mapping = { [modal + '-id']: 'id' };
+      catalog.fields.forEach(field => { mapping[modal + '-' + field.property] = field.property; });
+      if (action === 'delete') { for (const key of Object.keys(mapping)) delete mapping[key]; mapping[modal + '-id'] = 'id'; mapping[modal + '-description'] = 'description'; }
+    %>
+    <div class="modal fade" id="<%= modal %>" tabindex="-1" aria-labelledby="<%= modal %>-title" aria-hidden="true" <% if (action !== 'create') { %>data-field-map='<%= JSON.stringify(mapping) %>'<% } %>>
+      <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title fs-5" id="<%= modal %>-title"><%= action === 'create' ? 'Agregar' : action === 'edit' ? 'Editar' : 'Eliminar' %> · <%= catalog.title %></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+        <form action="<%= catalog[action === 'edit' ? 'update' : action === 'delete' ? 'remove' : 'create'] %>" method="POST">
+          <div class="modal-body">
+            <input type="hidden" name="catalogState" value="<%= destination %>">
+            <% if (action === 'create' && setupWizard === catalog.key) { %><input type="hidden" name="setupWizard" value="<%= setupWizard %>"><% } %>
+            <% if (action !== 'create') { %><input type="hidden" name="<%= catalog.idField %>" id="<%= modal %>-id"><% } %>
+            <% if (action === 'delete') { %><p>¿Eliminar <strong id="<%= modal %>-description"></strong> del catálogo?</p><p class="small text-muted mb-0">Solo se pueden eliminar registros sin información asociada.</p><% } else { catalog.fields.forEach(field => { %>
+              <div class="mb-3"><label class="form-label" for="<%= modal %>-<%= field.property %>"><%= field.label %></label><input class="form-control" id="<%= modal %>-<%= field.property %>" name="<%= field.name %>" required maxlength="255"></div>
+            <% }); } %>
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn <%= action === 'delete' ? 'btn-danger' : 'btn-primary' %>"><%= action === 'delete' ? 'Eliminar' : 'Guardar' %></button></div>
+        </form>
+      </div></div>
+    </div>
+    <% }) %>
+  <% }) %>
+  </div>
+</main></div></div>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="/assets/pages/common.js"></script>
+<script type="module" src="/assets/pages/catalogs.js"></script>
+</body></html>

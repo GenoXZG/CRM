@@ -3,14 +3,10 @@ import { respondError } from '../adapters/http-errors';
 import {
   readCreateEquipmentRequest,
   readEquipmentAssignment,
-  serializeAccessory,
   serializeEquipment,
   serializeEquipmentModel,
-  serializeTicketSummary,
 } from '../adapters/legacy-http';
-import { catalogs } from '../infrastructure/database/repositories';
 import * as equipmentService from '../services/equipment-service';
-import * as ticketService from '../services/ticket-service';
 type HttpRequest = Request<Record<string, string>, unknown, Record<string, unknown>>;
 
 export async function createEquipment(request: HttpRequest, response: Response) {
@@ -38,22 +34,6 @@ export async function renderEquipmentInventory(_request: Request, response: Resp
 export async function listAvailableEquipment(_request: Request, response: Response) {
   try {
     response.json((await equipmentService.getAvailableEquipment()).map(serializeEquipment));
-  } catch (error) {
-    respondError(response, error);
-  }
-}
-export async function renderEquipmentAssignment(_request: Request, response: Response) {
-  try {
-    const [pendingTickets, availableEquipment, accessoryList] = await Promise.all([
-      ticketService.getTicketsAwaitingEquipment(),
-      equipmentService.getAvailableEquipment(),
-      catalogs.listAccessories(),
-    ]);
-    response.render('asignacion_equipos', {
-      ticketsSeguimiento: pendingTickets.map(serializeTicketSummary),
-      equiposEnEspera: availableEquipment.map(serializeEquipment),
-      accesoriosDisponibles: accessoryList.map(serializeAccessory),
-    });
   } catch (error) {
     respondError(response, error);
   }

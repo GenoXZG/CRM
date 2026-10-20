@@ -11,12 +11,14 @@
     
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
 </head>
-<body>
+<body class="assignments-view">
     
     <div class="d-flex">
         
         <aside id="sidebar">
+            <button type="button" class="toggler-btn btn assignment-menu-close align-self-end m-2" aria-label="Cerrar menú">Cerrar menú ×</button>
             <div class="sidebar-logo">
                 <a href="/">
                     <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
@@ -36,20 +38,7 @@
 
                 <li class="sidebar-header">Gestión de Servicios</li>
 
-                <li class="sidebar-item">
-                    <a href="/tickets" class="sidebar-link active"> 
-                        <i class="lni lni-ticket-alt"></i>
-                        <span>Crear Ticket</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a href="/estado_tickets" class="sidebar-link "> 
-                        <i class="lni lni-stats-up"></i>
-                        <span>Estado de Tickets</span>
-                    </a>
-                </li>
-
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link active"><i class="lni lni-ticket-alt"></i><span>Tickets</span></a></li>
                 <li class="sidebar-item">
                     <a href="/clientes" class="sidebar-link"> 
                         <i class="lni lni-users"></i>
@@ -59,20 +48,7 @@
 
                 <li class="sidebar-header">Operativo</li>
 
-                <li class="sidebar-item">
-                    <a href="/asignacion_unidades" class="sidebar-link"> 
-                        <i class="lni lni-delivery"></i>
-                        <span>Asignar Unidades</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a href="/asignacion_equipos" class="sidebar-link"> 
-                        <i class="lni lni-network"></i>
-                        <span>Asignar Equipos</span>
-                    </a>
-                </li>
-
+                <li class="sidebar-item"><a href="/asignaciones" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignaciones</span></a></li>
                 <li class="sidebar-item">
                     <a href="/registro_equipos" class="sidebar-link"> 
                         <i class="lni lni-pencil-alt"></i>
@@ -89,26 +65,7 @@
                     </a>
                 </li>
 
-                <li class="sidebar-item">
-                    <a href="/equipos" class="sidebar-link"> 
-                        <i class="lni lni-display-alt"></i>
-                        <span>Catálogo Equipos</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a href="/unidades" class="sidebar-link"> 
-                        <i class="lni lni-car"></i>
-                        <span>Catalogo Unidades</span>
-                    </a>
-                </li>
-                
-                <li class="sidebar-item">
-                    <a href="/accesorios" class="sidebar-link"> 
-                        <i class="lni lni-plug"></i>
-                        <span> Catalogo Accesorios</span>
-                    </a>
-                </li>
+                <li class="sidebar-item"><a href="/catalogos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogos</span></a></li>
             </ul>
 
             <div class="sidebar-footer">
@@ -118,14 +75,15 @@
                 </a>
             </div>
         </aside>
-        <div class="main d-flex flex-column min-vh-100 w-100">
+        <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
+        <div class="main assignment-main d-flex flex-column min-vh-100 w-100">
             
             <nav class="navbar navbar-expand border-bottom px-3 bg-white">
-                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4"></i></button>
+                <button class="toggler-btn btn" type="button"><i class="bi bi-list fs-4" aria-hidden="true"></i><span class="ms-1">Menú</span></button>
                 <span class="ms-3 fw-bold text-secondary">Gestión de Servicios</span>
             </nav>
 
-            <main class="p-4">
+            <main class="assignment-page p-3 p-lg-4">
                 <div class="container-fluid">
                     
 

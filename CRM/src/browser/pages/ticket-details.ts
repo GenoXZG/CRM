@@ -2,15 +2,45 @@ import './common.js';
 import { delegate, element } from '../shared/dom.js';
 import { showDialog, showError } from '../shared/dialogs.js';
 import { postJson } from '../shared/http.js';
+import { confirmUnitRemoval } from '../shared/unit-removal.js';
 
 let pendingAction = false;
+let assignment: typeof import('../shared/assignment-workspace.js') | undefined;
+let protectedAssignment = false;
+const assignmentFields = document.getElementById('ticket-assignment-fields');
+const assignmentContext = document.getElementById('ticket-assignment-context');
+async function initializeAssignment() {
+  if (!(assignmentContext instanceof HTMLElement) || !(assignmentFields instanceof HTMLFieldSetElement)) return;
+  assignmentFields.disabled = true;
+  const errorPanel = element('ticket-assignment-error');
+  errorPanel.classList.add('d-none');
+  try {
+    assignment = await import('../shared/assignment-workspace.js');
+    if (!protectedAssignment) { assignment.protectAssignmentChanges(); protectedAssignment = true; }
+    await assignment.openAssignment(assignmentContext);
+    delete assignmentFields.dataset.failed;
+    assignmentFields.disabled = false;
+  } catch (error) {
+    assignmentFields.dataset.failed = 'true';
+    errorPanel.querySelector('span')!.textContent = error instanceof Error ? error.message : 'No se pudo cargar la asignación.';
+    errorPanel.classList.remove('d-none');
+  }
+}
+if (assignmentContext) void initializeAssignment();
+document.getElementById('ticket-assignment-retry')?.addEventListener('click', () => { void initializeAssignment(); });
+function setActionBusy(value: boolean) {
+  pendingAction = value;
+  document.body.dataset.ticketActionBusy = String(value);
+  if (assignmentFields instanceof HTMLFieldSetElement) assignmentFields.disabled = value || assignmentFields.dataset.failed === 'true';
+}
+
 delegate(document, 'click', '[data-ticket-action]', (button) => {
-  if (!pendingAction) void performAction(button).catch(showError);
+  if (!pendingAction && !assignment?.assignmentBusy()) void performAction(button).catch(showError);
 });
 
 async function performAction(button: HTMLElement) {
   const action = button.dataset.ticketAction;
-  pendingAction = true;
+  setActionBusy(true);
   try {
     if (action === 'copy-location') {
       const input = element<HTMLInputElement>('inputLinkMaps');
@@ -43,6 +73,10 @@ async function performAction(button: HTMLElement) {
       return;
     }
     if (action === 'complete' || action === 'reopen') {
+      if (assignment?.assignmentDirty()) {
+        await showDialog({ title: 'Hay asignaciones sin guardar', text: 'Guarda o descarta los cambios de unidades, equipos y accesorios antes de cambiar el estado del servicio.', icon: 'warning' });
+        return;
+      }
       const noPhotos = action === 'complete' && Number(button.dataset.photoCount) === 0;
       const confirmed = await showDialog({
         title:
@@ -75,13 +109,17 @@ async function performAction(button: HTMLElement) {
       form.submit();
       return;
     }
+    if (action === 'remove-unit') {
+      await confirmUnitRemoval(button.dataset.ticketId ?? '', button.dataset.unitId ?? '', button.dataset.unitLabel ?? 'seleccionada');
+      return;
+    }
     if (action === 'release-equipment' || action === 'remove-accessory') {
       const equipment = action === 'release-equipment';
       const confirmed = await showDialog({
         title: equipment ? '¿Liberar equipo GPS?' : '¿Quitar accesorio?',
-        text: equipment
+        text: (equipment
           ? "El equipo volverá a 'Pendiente de asignación' y la unidad quedará sin GPS."
-          : 'Se eliminará de la lista de esta unidad.',
+          : 'Se eliminará de la lista de esta unidad.') + (assignment?.assignmentDirty() ? ' Se descartarán las asignaciones que aún no has guardado.' : ''),
         icon: equipment ? 'warning' : 'question',
         showCancelButton: true,
         confirmButtonText: 'Sí, quitar',
@@ -98,12 +136,34 @@ async function performAction(button: HTMLElement) {
             }
           : { idUnidad: button.dataset.unitId, idAccesorio: button.dataset.accessoryId },
       );
+      document.dispatchEvent(new Event('assignment:saved'));
       location.reload();
     }
   } finally {
-    pendingAction = false;
+    setActionBusy(false);
   }
 }
+
+const approvedForms = new WeakSet<HTMLFormElement>();
+document.addEventListener('submit', event => {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement) || form.id === 'form_unidades') return;
+  if (approvedForms.delete(form)) return;
+  if (pendingAction || assignment?.assignmentBusy()) { event.preventDefault(); event.stopImmediatePropagation(); return; }
+  if (!assignment?.assignmentDirty()) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const submitter = (event as SubmitEvent).submitter;
+  setActionBusy(true);
+  void showDialog({ title: 'Asignaciones sin guardar', text: 'Al guardar este cambio se recargará el ticket y se descartarán las asignaciones pendientes. ¿Continuar?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Descartar asignaciones y continuar', cancelButtonText: 'Seguir trabajando' })
+    .then(confirmed => {
+      setActionBusy(false);
+      if (!confirmed) return;
+      approvedForms.add(form);
+      document.dispatchEvent(new Event('assignment:saved'));
+      form.requestSubmit(submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement ? submitter : undefined);
+    }).catch(showError).finally(() => { setActionBusy(false); });
+}, true);
 
 const printDate = document.getElementById('print-date');
 if (printDate) printDate.textContent = new Date().toLocaleDateString('es-MX');

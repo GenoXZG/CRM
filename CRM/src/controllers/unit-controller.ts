@@ -12,6 +12,8 @@ export async function registerUnits(request: HttpRequest, response: Response) {
     const results = await unitService.registerUnits(
       readUnitRegistration(input),
       isRecord(first) ? first.ticketId : undefined,
+      request.body?.reducirCantidad === true,
+      request.body?.cantidadPrevistaOriginal,
     );
     response.json({
       success: true,
@@ -31,4 +33,10 @@ export async function listUnitsByTicket(request: HttpRequest, response: Response
   } catch (error) {
     respondError(response, error);
   }
+}
+
+export async function removeUnit(request: HttpRequest, response: Response) {
+  try {
+    response.json(await unitService.removeUnit(request.params.id_ticket, request.params.id_unidad));
+  } catch (error) { respondError(response, error); }
 }

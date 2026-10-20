@@ -1,0 +1,12 @@
+.ticket-detail-page { max-width: 1600px; margin-inline: auto; }
+.ticket-detail-page .btn, .ticket-detail-page .form-control, .ticket-detail-page .form-select { min-height: 44px; }
+.ticket-detail-page .progress { height: 1.25rem; }
+.ticket-detail-page .badge { overflow-wrap: anywhere; }
+.ticket-detail-page section, .ticket-detail-page [id] { scroll-margin-top: 1rem; }
+.ticket-detail-page .unit-card .font-monospace { overflow-wrap: anywhere; }
+.ticket-detail-page fieldset { min-width: 0; }
+.ticket-detail-page #ticket-close-actions { border-top: 1px solid #dee2e6; }
+@media (max-width: 575.98px) {
+  .ticket-detail-page #ticket-close-actions > .btn { flex: 1 1 10rem; }
+  .ticket-detail-page .value-text { overflow-wrap: anywhere; }
+}
