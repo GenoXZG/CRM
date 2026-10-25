@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Iniciar sesión | CRM TSV</title>
+<link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
+<style>
+body{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#eff6ff,#f8fafc);font-family:system-ui,-apple-system,sans-serif}
+.login-card{width:min(94vw,420px);padding:2.5rem;background:white;border-radius:18px;box-shadow:0 15px 55px rgba(21,44,79,.12)}
+.brand{display:flex;align-items:center;gap:.7rem;color:#163f8b;font-weight:800;font-size:1.25rem}
+.brand-mark{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:#dbeafe}
+.btn-primary{background:#2356ab;border-color:#2356ab} .form-control{padding:.75rem}
+</style></head><body>
+<main class="login-card">
+<div class="brand mb-4"><span class="brand-mark">✦</span>CRM TSV</div>
+<h1 class="h3 fw-bold mb-1">Iniciar sesión</h1>
+<p class="text-secondary mb-4">Accede a tu plataforma de tickets de servicio.</p>
+<% if (error) { %><div class="alert alert-danger" role="alert"><%= error %></div><% } %>
+<form action="/login" method="post">
+<div class="mb-3"><label for="correo" class="form-label">Correo electrónico</label><input class="form-control" id="correo" name="correo" type="email" autocomplete="username" maxlength="254" required autofocus placeholder="usuario@empresa.com"></div>
+<div class="mb-4"><label for="password" class="form-label">Contraseña</label><input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required></div>
+<button class="btn btn-primary w-100 py-2 fw-semibold" type="submit">Entrar al CRM</button>
+</form>
+</main></body></html>

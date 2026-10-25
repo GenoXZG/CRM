@@ -1,0 +1,47 @@
+name: crm-demo
+services:
+  db:
+    image: mysql:8.4.6
+    environment:
+      MYSQL_DATABASE: crm_demo
+      MYSQL_USER: crm
+      MYSQL_PASSWORD: crm_demo_local
+      MYSQL_ROOT_PASSWORD: crm_root_demo_local
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro,Z
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -e "SELECT COUNT(*) FROM Tickets" >/dev/null']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+  app:
+    build: .
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: 3030
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: crm_demo
+      DB_USER: crm
+      DB_PASSWORD: crm_demo_local
+      CRM_ADMIN_EMAIL: ${CRM_ADMIN_EMAIL:?Configura CRM_ADMIN_EMAIL en .env}
+      CRM_ADMIN_PASSWORD: ${CRM_ADMIN_PASSWORD:?Configura CRM_ADMIN_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:${CRM_HTTP_PORT:-3030}:3030"
+    volumes:
+      - uploads:/app/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3030/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+volumes:
+  mysql_data:
+  uploads:

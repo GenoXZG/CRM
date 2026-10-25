@@ -1,0 +1,297 @@
+{
+  "info": {
+    "name": "CRM read-only checks",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3030"
+    },
+    {
+      "key": "ticketId",
+      "value": "2"
+    },
+    {
+      "key": "brand",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Pages",
+      "item": [
+        {
+          "name": "Page /",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/"
+          }
+        },
+        {
+          "name": "Page /clientes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/clientes"
+          }
+        },
+        {
+          "name": "Page /tecnicos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/tecnicos"
+          }
+        },
+        {
+          "name": "Page /tickets",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/tickets"
+          }
+        },
+        {
+          "name": "Page /estado_tickets",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/estado_tickets"
+          }
+        },
+        {
+          "name": "Page /equipos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/equipos"
+          }
+        },
+        {
+          "name": "Page /unidades",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/unidades"
+          }
+        },
+        {
+          "name": "Page /accesorios",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/accesorios"
+          }
+        },
+        {
+          "name": "Page /registro_equipos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/registro_equipos"
+          }
+        },
+        {
+          "name": "Page /asignacion_unidades",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/asignacion_unidades"
+          }
+        },
+        {
+          "name": "Page /asignacion_equipos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/asignacion_equipos"
+          }
+        },
+        {
+          "name": "Page /detalle_ticket/{{ticketId}}",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/detalle_ticket/{{ticketId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "API",
+      "item": [
+        {
+          "name": "Available equipment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/equipos_espera"
+          }
+        },
+        {
+          "name": "Ticket units",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/unidades-por-ticket/{{ticketId}}"
+          }
+        },
+        {
+          "name": "Unit brands",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/test"
+          }
+        },
+        {
+          "name": "Unit models",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/modelos?marca={{brand}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assets",
+      "item": [
+        {
+          "name": "Module pages/common.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/common.js"
+          }
+        },
+        {
+          "name": "Module pages/dashboard.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/dashboard.js"
+          }
+        },
+        {
+          "name": "Module pages/equipment-assignment.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/equipment-assignment.js"
+          }
+        },
+        {
+          "name": "Module pages/equipment-registration.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/equipment-registration.js"
+          }
+        },
+        {
+          "name": "Module pages/ticket-details.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/ticket-details.js"
+          }
+        },
+        {
+          "name": "Module pages/ticket-form.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/ticket-form.js"
+          }
+        },
+        {
+          "name": "Module pages/unit-assignment.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/unit-assignment.js"
+          }
+        },
+        {
+          "name": "Module shared/bootstrap.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/shared/bootstrap.js"
+          }
+        },
+        {
+          "name": "Module shared/dialogs.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/shared/dialogs.js"
+          }
+        },
+        {
+          "name": "Module shared/dom.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/shared/dom.js"
+          }
+        },
+        {
+          "name": "Module shared/http.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/shared/http.js"
+          }
+        },
+        {
+          "name": "Module state/equipment-assignment.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/state/equipment-assignment.js"
+          }
+        },
+        {
+          "name": "Stylesheet /css/styles.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/css/styles.css"
+          }
+        },
+        {
+          "name": "Stylesheet /css/dashboard.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/css/dashboard.css"
+          }
+        },
+        {
+          "name": "Stylesheet /bootstrap/css/bootstrap.min.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bootstrap/css/bootstrap.min.css"
+          }
+        },
+        {
+          "name": "Bootstrap JavaScript",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/bootstrap/js/bootstrap.bundle.min.js"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+          "const name = pm.info.requestName;",
+          "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
+          "if (name === \"Health\") {",
+          "  pm.test(\"Database available\", function () { pm.expect(pm.response.json().status).to.eql(\"ok\"); });",
+          "} else if (name.startsWith(\"Page \")) {",
+          "  pm.test(\"HTML page\", function () { pm.expect(contentType).to.include(\"text/html\"); pm.expect(pm.response.text()).to.include(\"<html\"); });",
+          "} else if (name.startsWith(\"Module \") || name === \"Bootstrap JavaScript\") {",
+          "  pm.test(\"JavaScript content\", function () { pm.expect(contentType).to.include(\"javascript\"); });",
+          "} else if (name.startsWith(\"Stylesheet \")) {",
+          "  pm.test(\"CSS content\", function () { pm.expect(contentType).to.include(\"text/css\"); });",
+          "} else {",
+          "  pm.test(\"JSON array\", function () { pm.expect(contentType).to.include(\"application/json\"); pm.expect(pm.response.json()).to.be.an(\"array\"); });",
+          "}",
+          "if (name === \"Unit brands\") {",
+          "  const brands = pm.response.json();",
+          "  pm.test(\"Brand available for model lookup\", function () { pm.expect(brands.length).to.be.above(0); });",
+          "  if (brands.length) pm.collectionVariables.set(\"brand\", encodeURIComponent(brands[0].Marca_unidad));",
+          "}"
+        ]
+      }
+    }
+  ]
+}

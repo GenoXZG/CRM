@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignaciones | CRM TSV</title>
+    
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
+</head>
+<body class="assignments-view">
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <button type="button" class="toggler-btn btn assignment-menu-close align-self-end m-2" aria-label="Cerrar menú">Cerrar menú ×</button>
+            <div class="sidebar-logo">
+                <a href="<%= currentUser && currentUser.rol === 'admin' ? '/' : '/tickets' %>">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <% if (currentUser && currentUser.rol === "admin") { %><% if (currentUser && currentUser.rol === "admin") { %><li class="sidebar-item"><a href="/" class="sidebar-link"><i class="lni lni-grid-alt"></i><span>Dashboard</span></a></li><% } %><% } %>
+                <li class="sidebar-header">Gestión de Servicios</li>
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link"><i class="lni lni-ticket-alt"></i><span>Tickets</span></a></li>
+                <li class="sidebar-item"><a href="/clientes" class="sidebar-link"><i class="lni lni-users"></i><span>Clientes</span></a></li>
+                
+                <li class="sidebar-header">Operativo</li>
+                <li class="sidebar-item"><a href="/asignaciones" class="sidebar-link active"><i class="lni lni-delivery"></i><span>Asignaciones</span></a></li>
+                <li class="sidebar-item"><a href="/registro_equipos" class="sidebar-link"><i class="lni lni-pencil-alt"></i><span>Registro Equipos</span></a></li>
+                
+                <li class="sidebar-header">Recursos</li>
+                <li class="sidebar-item"><a href="/tecnicos" class="sidebar-link"><i class="lni lni-helmet"></i><span>Técnicos</span></a></li>
+                <li class="sidebar-item"><a href="/catalogos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogos</span></a></li>
+            </ul>
+
+            <% if (currentUser && currentUser.rol === "admin") { %><div class="px-3"><a href="/usuarios" class="sidebar-link"><i class="bi bi-person-gear"></i><span>Administrar usuarios</span></a></div><% } %>
+            <div class="sidebar-footer">
+                <form action="/logout" method="post" style="margin:0"><button type="submit" class="sidebar-link text-danger" style="background:none;border:0;width:100%;text-align:left;cursor:pointer"><i class="lni lni-exit"></i><span>Salir</span></button></form>
+            </div>
+        </aside>
+        <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
+
+        <div class="main assignment-main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button" aria-label="Abrir o cerrar menú"><i class="bi bi-list fs-4" aria-hidden="true"></i><span class="ms-1">Menú</span></button>
+                <span class="ms-3 fw-bold text-secondary">Operativo / Asignación</span>
+            </nav>
+
+<main class="assignment-page p-3 p-lg-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div><h1 class="mb-1">Asignaciones</h1><p class="text-muted mb-0">Selecciona un ticket, registra sus unidades y continúa con equipos y accesorios.</p></div>
+    <a class="btn btn-outline-primary" href="/registro_equipos">Registrar equipo</a>
+  </div>
+  <section class="soft-card mb-4" aria-labelledby="assignment-queue-title">
+    <h2 class="h5 mb-3" id="assignment-queue-title">Seleccionar ticket</h2>
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-8"><label class="form-label" for="assignment-search">Buscar por ticket, cliente o técnico</label><input class="form-control" type="search" id="assignment-search" placeholder="Escribe un número o nombre…"></div>
+      <div class="col-12 col-md-4"><label class="form-label" for="assignment-stage">Etapa de asignación</label><select class="form-select" id="assignment-stage"><option value="">Todas las etapas</option value="units">Pendiente de unidades</option><option value="equipment">Pendiente de equipos</option><option value="partial">Asignación parcial</option><option value="ready">Asignación completa</option></select></div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle assignment-queue">
+        <caption class="visually-hidden">Tickets abiertos para asignación de unidades, equipos y accesorios</caption>
+        <thead><tr><th scope="col">Ticket</th><th scope="col">Cliente / Técnico</th><th scope="col">Servicio</th><th scope="col">Unidades</th><th scope="col">Etapa</th><th scope="col" class="text-end">Acción</th></tr></thead>
+        <tbody>
+          <% assignmentTickets.forEach(ticket => {
+            const stage = ticket.Estatus_servicio === 'En espera' ? 'units' : ticket.Estatus_unidades === 1 ? 'ready' : ticket.Estatus_unidades === 2 ? 'partial' : 'equipment';
+            const labels = { units: 'Pendiente de unidades', equipment: 'Pendiente de equipos', partial: 'Asignación parcial', ready: 'Asignación completa' };
+          %>
+          <tr data-assignment-row data-stage="<%= stage %>">
+            <td data-label="Ticket" class="fw-bold">#<%= ticket.ID_ticket %></td>
+            <td data-label="Cliente / Técnico"><div class="fw-semibold"><%= ticket.Cliente?.Nombre_empresa ?? 'Sin cliente' %></div><small class="text-muted"><%= ticket.Tecnico?.Nombre_tecnico ?? 'Técnico por asignar' %></small></td>
+            <td data-label="Servicio"><%= ticket.Tipo_servicio ?? 'Sin especificar' %></td><td data-label="Unidades"><%= ticket.Numero_unidades %></td>
+            <td data-label="Etapa"><span class="badge <%= stage === 'ready' ? 'text-bg-success' : stage === 'partial' ? 'text-bg-warning' : 'text-bg-light border' %>"><%= labels[stage] %></span></td>
+            <td class="text-end" data-label="Acción"><button type="button" class="btn btn-outline-primary assignment-ticket" data-id_ticket="<%= ticket.ID_ticket %>" data-cliente="<%= ticket.Cliente?.Nombre_empresa ?? 'Sin cliente' %>" data-tecnico="<%= ticket.Tecnico?.Nombre_tecnico ?? 'Por asignar' %>" data-num_unidades="<%= ticket.Numero_unidades %>" data-stage="<%= stage %>" aria-pressed="false">Seleccionar</button></td>
+          </tr>
+          <% }) %>
+          <tr id="assignment-empty" <%= assignmentTickets.length ? 'hidden' : '' %>><td colspan="6" class="text-center text-muted py-4"><%= assignmentTickets.length ? 'No hay coincidencias para esta búsqueda.' : 'No hay tickets abiertos pendientes de atención.' %></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="assignment-footer">
+      <div class="d-flex flex-wrap align-items-center gap-3"><label class="d-flex align-items-center gap-2" for="assignment-size">Filas por página<select id="assignment-size" class="form-select w-auto"><% [5,10,25,50].forEach(size => { %><option value="<%= size %>" <%= size === 5 ? 'selected' : '' %>><%= size %></option><% }) %></select></label><span class="small text-muted" id="assignment-results" role="status"></span></div>
+      <nav class="d-flex flex-wrap align-items-center gap-2" aria-label="Paginación de tickets"><button class="btn btn-outline-secondary" id="assignment-prev" type="button">Anterior</button><span class="small" id="assignment-page"></span><button class="btn btn-outline-secondary" id="assignment-next" type="button">Siguiente</button></nav>
+    </div>
+  </section>
+  <div id="assignment-notice" class="alert alert-warning d-none" role="status"></div>
+  <%- include('partials/assignment-workspace', { embedded: false }) %>
+</main></div></div>
+<%- include('partials/assignment-equipment-modals') %>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="module" src="/assets/pages/assignments.js"></script>
+</body></html>

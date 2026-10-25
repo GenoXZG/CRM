@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets | CRM TSV</title>
+    
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
+    <link rel="stylesheet" href="/css/ticket-list.css">
+</head>
+<body class="assignments-view">
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <button type="button" class="toggler-btn btn assignment-menu-close align-self-end m-2" aria-label="Cerrar menú">Cerrar menú ×</button>
+            <div class="sidebar-logo">
+                <a href="<%= '/' %>">
+                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="lni lni-consulting text-primary"></i>
+                    </div>
+                    <span class="ms-2">CRM TSV</span>
+                </a>
+            </div>
+
+            <ul class="sidebar-nav">
+                <% if (currentUser) { %><li class="sidebar-item">
+                    <a href="/" class="sidebar-link"> 
+                        <i class="lni lni-grid-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li><% } %>
+
+                <li class="sidebar-header">Gestión de Servicios</li>
+
+                <li class="sidebar-item"><a href="/tickets" class="sidebar-link active"><i class="lni lni-ticket-alt"></i><span>Tickets</span></a></li>
+                <% if (currentUser.rol !== "tecnico") { %><li class="sidebar-item">
+                    <a href="/clientes" class="sidebar-link"> 
+                        <i class="lni lni-users"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Operativo</li>
+
+                <li class="sidebar-item"><a href="/asignaciones" class="sidebar-link"><i class="lni lni-delivery"></i><span>Asignaciones</span></a></li>
+                <li class="sidebar-item">
+                    <a href="/registro_equipos" class="sidebar-link"> 
+                        <i class="lni lni-pencil-alt"></i>
+                        <span>Registro Equipos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-header">Recursos</li>
+
+                <li class="sidebar-item">
+                    <a href="/tecnicos" class="sidebar-link"> 
+                        <i class="lni lni-helmet"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item"><a href="/catalogos" class="sidebar-link"><i class="lni lni-display-alt"></i><span>Catálogos</span></a></li>
+                <% } %>
+            </ul>
+
+            <% if (currentUser && currentUser.rol === "admin") { %><div class="px-3"><a href="/usuarios" class="sidebar-link"><i class="bi bi-person-gear"></i><span>Administrar usuarios</span></a></div><% } %>
+            <div class="sidebar-footer">
+                <form action="/logout" method="post" style="margin:0"><button type="submit" class="sidebar-link text-danger" style="background:none;border:0;width:100%;text-align:left;cursor:pointer">
+                    <i class="lni lni-exit"></i>
+                    <span>Salir</span>
+                </button></form>
+            </div>
+        </aside>
+        <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
+
+        <div class="main assignment-main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button" aria-label="Abrir o cerrar menú">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <span class="ms-3 fw-bold text-secondary">Gestion de Servicios</span>
+            </nav>
+
+<main class="assignment-page ticket-list-page p-3 p-lg-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div><h1 class="mb-1">Tickets</h1><p class="text-muted mb-0">Crea servicios, consulta su avance y abre un ticket para gestionarlo.</p></div>
+    <% if (currentUser.rol !== "tecnico") { %><a id="new-ticket" class="btn btn-primary" href="/tickets/nuevo">+ Nuevo ticket</a><% } %>
+  </div>
+  <section class="soft-card" aria-labelledby="ticket-list-title">
+    <h2 class="h5 mb-3" id="ticket-list-title">Bandeja de servicios</h2>
+    <form action="/tickets" method="GET" id="ticket-filters" class="row g-3 mb-4">
+      <div class="col-12 col-lg-8"><label class="form-label" for="ticket-search">Buscar por ticket, cliente o técnico</label><input id="ticket-search" class="form-control" type="search" name="search" value="<%= filters.search %>" maxlength="255" placeholder="Número de ticket, empresa o técnico…"></div>
+      <div class="col-12 col-lg-4"><label class="form-label" for="ticket-status">Estado del servicio</label><select id="ticket-status" class="form-select" name="status"><option value="">Todos los estados</option value="waiting" <%= filters.status === 'waiting' ? 'selected' : '' %>>En espera</option><option value="in_progress" <%= filters.status === 'in_progress' ? 'selected' : '' %>>En seguimiento</option><option value="completed" <%= filters.status === 'completed' ? 'selected' : '' %>>Finalizado</option></select></div>
+      <div class="col-12 col-md-6 col-xl-3"><label class="form-label" for="ticket-client">Cliente</label><select id="ticket-client" class="form-select" name="client"><option value="">Todos los clientes</option><% clientes.forEach(client => { %><option value="<%= client.ID_cliente %>" <%= filters.client === client.ID_cliente ? 'selected' : '' %>><%= client.Nombre_empresa %></option><% }) %></select></div>
+      <div class="col-12 col-md-6 col-xl-3"><label class="form-label" for="ticket-technician">Técnico</label><select id="ticket-technician" class="form-select" name="technician"><option value="">Todos los técnicos</option><% tecnicos.forEach(technician => { %><option value="<%= technician.ID_Tecnico %>" <%= filters.technician === technician.ID_Tecnico ? 'selected' : '' %>><%= technician.Nombre_tecnico %><%= technician.Estatus_tecnico === 'Inactivo' ? ' (inactivo)' : '' %></option><% }) %></select></div>
+      <div class="col-6 col-xl-3"><label class="form-label" for="ticket-date-from">Servicio desde</label><input class="form-control" type="date" id="ticket-date-from" name="dateFrom" value="<%= filters.dateFrom %>"></div>
+      <div class="col-6 col-xl-3"><label class="form-label" for="ticket-date-to">Servicio hasta</label><input class="form-control" type="date" id="ticket-date-to" name="dateTo" value="<%= filters.dateTo %>"></div>
+      <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">Aplicar filtros</button><a class="btn btn-outline-secondary" href="/tickets">Limpiar filtros</a></div>
+    </form>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle ticket-list-table">
+        <caption class="visually-hidden">Servicios registrados y acceso a su espacio de trabajo</caption>
+        <thead><tr><th scope="col">Ticket</th><th scope="col">Cliente / Servicio</th><th scope="col">Técnico</th><th scope="col">Fecha de servicio</th><th scope="col">Unidades</th><th scope="col">Estado</th><th scope="col" class="text-end">Acciones</th></tr></thead>
+        <tbody>
+        <% tickets.forEach(ticket => { %>
+          <tr data-ticket-row>
+            <td data-label="Ticket" class="fw-bold">#<%= ticket.ID_ticket %></td>
+            <td data-label="Cliente / Servicio"><div class="fw-semibold"><%= ticket.Cliente?.Nombre_empresa ?? 'Sin cliente' %></div><small class="text-muted"><%= ticket.Tipo_servicio ?? 'Sin especificar' %></small></td>
+            <td data-label="Técnico"><%= ticket.Tecnico?.Nombre_tecnico ?? 'Por asignar' %></td>
+            <td data-label="Fecha"><%= ticket.Fecha_servicio ? new Date(ticket.Fecha_servicio).toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Por programar' %></td>
+            <td data-label="Unidades"><%= ticket.Numero_unidades %></td>
+            <td data-label="Estado"><span class="badge <%= ticket.Estatus_servicio === 'Finalizado' ? 'text-bg-success' : ticket.Estatus_servicio === 'En seguimiento' ? 'text-bg-primary' : 'text-bg-warning' %>"><%= ticket.Estatus_servicio %></span><% if (ticket.Estatus_servicio !== 'Finalizado') { %><small class="d-block text-muted mt-1"><%= ticket.Estatus_servicio === 'En espera' ? 'Unidades pendientes' : ticket.Estatus_unidades === 1 ? 'Asignación completa' : ticket.Estatus_unidades === 2 ? 'Equipos parciales' : 'Equipos pendientes' %></small><% } %></td>
+            <td class="text-end" data-label="Acción"><a class="btn btn-outline-primary" href="/detalle_ticket/<%= ticket.ID_ticket %>"><%= ticket.Estatus_servicio === 'Finalizado' ? 'Consultar' : 'Gestionar' %></a></td>
+          </tr>
+        <% }) %>
+        <% if (!tickets.length) { %><tr><td colspan="7" class="text-center text-muted py-4">No hay tickets que coincidan con los filtros. Puedes limpiar la búsqueda o crear un nuevo ticket.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+    <div class="assignment-footer">
+      <div class="d-flex flex-wrap align-items-center gap-3"><label class="d-flex align-items-center gap-2" for="ticket-size">Filas por página<select class="form-select w-auto" id="ticket-size" name="size" form="ticket-filters"><% [5,10,25,50].forEach(value => { %><option value="<%= value %>" <%= value === size ? 'selected' : '' %>><%= value %></option><% }) %></select></label><span class="small text-muted" role="status"><%= count ? (page - 1) * size + 1 : 0 %>–<%= Math.min(page * size, count) %> de <%= count %> tickets</span></div>
+      <nav class="d-flex flex-wrap align-items-center gap-2" aria-label="Paginación de tickets">
+        <% if (page > 1) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(page - 1) %>">Anterior</a><% } else { %><button class="btn btn-outline-secondary" disabled>Anterior</button><% } %>
+        <span class="small">Página <%= page %> de <%= pages %></span>
+        <% if (page < pages) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(page + 1) %>">Siguiente</a><% } else { %><button class="btn btn-outline-secondary" disabled>Siguiente</button><% } %>
+      </nav>
+    </div>
+  </section>
+</main></div></div>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="/assets/pages/ticket-list.js"></script>
+</body></html>

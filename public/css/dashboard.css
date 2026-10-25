@@ -1,0 +1,372 @@
+
+
+/* --- Definición de Variables --- */
+:root {
+    --bg-body: #f4f7fe;
+    --text-dark: #2b3674;
+    --text-muted: #a3aed0;
+    --card-radius: 30px;
+    
+    /* Colores Pastel */
+    --pastel-yellow-bg: #fff5cc;
+    --pastel-yellow-text: #d9a600;
+    
+    --pastel-blue-bg: #dbeafe;
+    --pastel-blue-text: #1e40af;
+    
+    --pastel-green-bg: #d1fae5;
+    --pastel-green-text: #065f46;
+    
+    --pastel-purple-bg: #ede9fe;
+    --pastel-purple-text: #5b21b6;
+}
+
+body {
+    background-color: var(--bg-body);
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+}
+
+h1, h2, h3, h4, h5 {
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+/* --- Tarjetas Soft UI --- */
+.soft-card {
+    background: #ffffff;
+    border-radius: var(--card-radius);
+    border: none;
+    box-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    padding: 1.5rem;
+    height: 100%;
+    transition: all 0.3s ease;
+}
+
+.soft-card:hover {
+     transform: translateY(-5px);
+}
+
+.card-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.card-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 1rem;
+}
+
+/* --- Utilidades de Color --- */
+.bg-pastel-yellow { background-color: var(--pastel-yellow-bg); color: var(--pastel-yellow-text); }
+.bg-pastel-blue { background-color: var(--pastel-blue-bg); color: var(--pastel-blue-text); }
+.bg-pastel-green { background-color: var(--pastel-green-bg); color: var(--pastel-green-text); }
+
+.kpi-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    background: rgba(255,255,255,0.4);
+}
+
+.card-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+.card-link:hover { opacity: 1; }
+
+/* --- Header y Búsqueda --- */
+.search-bar {
+    background: #fff;
+    border-radius: 30px;
+    padding: 0.8rem 1.5rem;
+    box-shadow: 0px 18px 40px rgba(112, 144, 176, 0.12);
+    display: flex;
+    align-items: center;
+}
+.search-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    margin-left: 10px;
+    width: 100%;
+    color: var(--text-dark);
+}
+.profile-pic {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0px 10px 20px rgba(112, 144, 176, 0.2);
+}
+
+
+/* --- Personalización de FullCalendar --- */
+
+#calendar {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-dark);
+}
+
+
+.fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+    border-color: #f1f5f9; 
+}
+
+
+.fc-col-header-cell-cushion {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-decoration: none;
+    padding: 10px 0;
+}
+
+.fc-daygrid-day-number {
+    color: var(--text-dark);
+    font-weight: 500;
+    text-decoration: none;
+    margin: 5px;
+}
+
+/* Botones del header (Mes, Hoy, Flechas)  */
+.fc .fc-button-primary {
+    background-color: #fff;
+    color: var(--text-dark);
+    border: none;
+    box-shadow: 0 4px 10px rgba(112, 144, 176, 0.12);
+    border-radius: 20px;
+    font-weight: 600;
+    padding: 6px 16px;
+    text-transform: capitalize;
+    transition: all 0.2s;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: var(--bg-body);
+    color: var(--pastel-blue-text);
+    box-shadow: 0 6px 15px rgba(112, 144, 176, 0.2);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active, 
+.fc .fc-button-primary:not(:disabled):active {
+    background-color: var(--pastel-blue-bg);
+    color: var(--pastel-blue-text);
+    box-shadow: none;
+}
+
+/* Eventos */
+.fc-event {
+    border-radius: 8px;
+    padding: 2px 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: none !important; 
+}
+
+/* Título del Mes */
+.fc-toolbar-title {
+    font-size: 1.5rem !important;
+    font-weight: 700;
+}
+
+/* Día actual */
+.fc-day-today {
+    background-color: rgba(237, 233, 254, 0.3) !important; /* Fondo púrpura muy suave */
+}
+
+
+
+/* --- SIDEBAR SOFT UI --- */
+
+#sidebar {
+    min-width: 260px;
+    max-width: 260px;
+    background: #ffffff; 
+    transition: all 0.35s ease-in-out;
+    border-top-right-radius: 30px; 
+    border-bottom-right-radius: 30px;
+    box-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
+    position: relative;
+    z-index: 100;
+    margin-right: 20px; /
+}
+
+/* Logo */
+.sidebar-logo {
+    padding: 1.5rem 2rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar-logo a {
+    color: var(--text-dark); 
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-decoration: none;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Navegación */
+.sidebar-nav {
+    list-style: none;
+    padding: 0 1rem !important; 
+}
+
+.sidebar-header {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 1.5rem 0 0.5rem 1rem;
+}
+
+.sidebar-item {
+    margin-bottom: 0.5rem;
+}
+
+/* Enlaces*/
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    color: #707eae; 
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-radius: 15px; 
+    transition: all 0.2s ease;
+}
+
+.sidebar-link i {
+    font-size: 1.2rem;
+    margin-right: 12px;
+    color: inherit;
+}
+
+/* Hover */
+.sidebar-link:hover {
+    color: var(--text-dark);
+    background-color: #f4f7fe; 
+    transform: translateX(3px); 
+}
+
+.sidebar-link.active {
+    background: linear-gradient(90deg, #4318ff 0%, #6a40ff 100%); 
+    color: #ffffff !important; 
+    box-shadow: 0 5px 15px rgba(67, 24, 255, 0.3); 
+}
+
+/* Footer del Sidebar */
+.sidebar-footer {
+    padding: 1rem;
+    margin-top: auto; 
+    border-top: 1px solid #f4f7fe;
+}
+
+#sidebar.collapsed {
+    margin-left: -260px;
+}
+
+/* --- Media para pantallas pequeñas --- */
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -260px;
+        position: fixed;
+        height: 100vh;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}
+
+
+/* ==========================================
+   ASISTENTE DE CONFIGURACIÓN INICIAL
+   ========================================== */
+.setup-assistant {
+  background: #fff; border: 1px solid #e7eaf2; border-radius: 22px; padding: 28px;
+  box-shadow: 0 12px 32px rgba(46, 58, 89, .07);
+}
+.setup-assistant-header, .setup-progress-summary, .setup-assistant-footer, .setup-reopen-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+}
+.setup-assistant-header { align-items: flex-start; margin-bottom: 22px; }
+.setup-eyebrow { display: block; color: #6753d7; font-size: .72rem; font-weight: 800; letter-spacing: 1.2px; margin-bottom: 8px; }
+.setup-assistant-header h2 { color: #26324b; font-size: 1.45rem; font-weight: 750; margin-bottom: 7px; }
+.setup-assistant-header p, .setup-step-main > p { color: #7d879c; font-size: .9rem; line-height: 1.55; margin: 0; }
+.setup-close { color: #778198; border: 1px solid #e7eaf2; border-radius: 10px; width: 36px; height: 36px; }
+.setup-progress-summary { display: block; margin-bottom: 18px; }
+.setup-muted { color: #8791a5; font-size: .8rem; }
+.setup-progress-label { display: flex; align-items: baseline; gap: 12px; margin: 2px 0 10px; }
+.setup-progress-label strong { color: #5140c8; font-size: 1.55rem; }
+.setup-progress-label span { color: #8791a5; font-size: .8rem; }
+.setup-progress-track { width: 100%; height: 9px; border-radius: 99px; background: #edf0f7; overflow: hidden; }
+.setup-progress-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #6753d7, #9989fb); transition: width .25s ease; }
+.setup-steps { border-top: 1px solid #edf0f5; }
+.setup-step { display: flex; align-items: flex-start; gap: 16px; padding: 22px 0; border-bottom: 1px solid #edf0f5; }
+.setup-step-icon { display: flex; flex: 0 0 44px; width: 44px; height: 44px; align-items: center; justify-content: center; border-radius: 14px; background: #f0edff; color: #6753d7; font-size: 1.2rem; }
+.setup-step.is-done .setup-step-icon { background: #e2f7eb; color: #16834a; }
+.setup-step.is-skipped .setup-step-icon, .setup-catalog-row.is-skipped > div:first-child > i { background: #f1f3f7; color: #68738a; }
+.setup-step-main { flex: 1; min-width: 0; }
+.setup-step-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 6px; }
+.setup-step-heading h3 { color: #293651; font-size: 1rem; font-weight: 750; margin: 0; }
+.setup-step-number { color: #9ba4b5; font-size: .72rem; font-weight: 800; letter-spacing: .6px; }
+.setup-state { display: inline-flex; align-items: center; border-radius: 99px; padding: 3px 9px; color: #9a6b1d; background: #fff5dc; font-size: .7rem; font-weight: 750; }
+.setup-step.is-done .setup-state, .setup-catalog-row.is-done [data-setup-state] { color: #16834a; background: #e2f7eb; }
+.setup-step.is-skipped .setup-state, .setup-catalog-row.is-skipped [data-setup-state] { color: #68738a; background: #f1f3f7; }
+.setup-step-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.setup-btn-primary, .setup-btn-secondary, .setup-btn-skip-all { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 9px; padding: 8px 12px; font-size: .82rem; font-weight: 700; text-decoration: none; }
+.setup-btn-primary { color: #fff; background: #5b46cf; border: 1px solid #5b46cf; }
+.setup-btn-primary:hover { color: #fff; background: #4936b5; border-color: #4936b5; }
+.setup-btn-secondary { color: #6554b5; background: #fff; border: 1px solid #e1e4ee; }
+.setup-btn-secondary:hover { color: #4535a3; background: #f6f4ff; border-color: #d6d0fa; }
+.setup-catalog-grid { display: grid; gap: 9px; margin-top: 16px; }
+.setup-catalog-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; background: #f9faff; border: 1px solid #edf0f6; border-radius: 12px; }
+.setup-catalog-row > div:first-child { display: flex; align-items: center; gap: 10px; min-width: 120px; }
+.setup-catalog-row > div:first-child > i { display: grid; place-items: center; width: 34px; height: 34px; background: #eeebff; color: #6753d7; border-radius: 10px; }
+.setup-catalog-row > div:first-child span { display: flex; flex-direction: column; gap: 4px; }
+.setup-catalog-row strong { color: #34405a; font-size: .85rem; }
+.setup-catalog-row small { color: #9a6b1d; font-size: .72rem; }
+.setup-catalog-row .setup-step-actions { margin: 0; }
+.setup-catalog-footer { margin-top: 9px; }
+.setup-assistant-footer { margin-top: 20px; padding: 17px; background: #f6f5ff; border: 1px solid #e8e3ff; border-radius: 14px; }
+.setup-assistant-footer > div, .setup-reopen-card > div { display: flex; flex-direction: column; gap: 4px; }
+.setup-assistant-footer strong, .setup-reopen-card strong { color: #342b75; font-size: .9rem; }
+.setup-assistant-footer span, .setup-reopen-card span { color: #7d879c; font-size: .8rem; }
+.setup-assistant-footer > .setup-footer-actions { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.setup-btn-skip-all { flex-shrink: 0; color: #4c3ab8; background: #fff; border: 1px solid #dcd5ff; }
+.setup-btn-skip-all:hover { color: #3b2a9f; background: #eeebff; }
+.setup-completed-banner { display: flex; gap: 12px; align-items: center; padding: 14px 16px; margin-bottom: 14px; border-radius: 12px; background: #e7f8ed; color: #167344; }
+.setup-completed-banner > i { font-size: 1.5rem; }
+.setup-completed-banner div { display: flex; flex-direction: column; gap: 3px; }
+.setup-completed-banner span { font-size: .82rem; }
+.setup-reopen-card { padding: 17px 20px; border: 1px solid #e7eaf2; border-radius: 15px; background: #fff; }
+@media (max-width: 768px) {
+  .setup-assistant { padding: 18px; border-radius: 17px; }
+  .setup-assistant-header h2 { font-size: 1.2rem; }
+  .setup-step { gap: 11px; }
+  .setup-step-icon { flex-basis: 38px; width: 38px; height: 38px; }
+  .setup-catalog-row { align-items: flex-start; flex-direction: column; }
+  .setup-catalog-row .setup-step-actions { width: 100%; }
+  .setup-assistant-footer, .setup-reopen-card { align-items: stretch; flex-direction: column; }
+  .setup-btn-skip-all { width: 100%; }
+}

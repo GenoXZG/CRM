@@ -1,0 +1,10 @@
+.ticket-list-table td, .ticket-list-table th { padding: .85rem .75rem; }
+.ticket-list-table .badge { white-space: normal; }
+@media (max-width: 575.98px) {
+  .ticket-list-table thead { display: none; }
+  .ticket-list-table tbody { display: block; }
+  .ticket-list-table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem; border-bottom: 1px solid #dee2e6; padding: 1rem 0; }
+  .ticket-list-table td { display: block; border: 0; padding: .25rem; text-align: left !important; overflow-wrap: anywhere; }
+  .ticket-list-table td[data-label]::before { content: attr(data-label); display: block; color: #64748b; font-size: .75rem; margin-bottom: .35rem; }
+  .ticket-list-table td[colspan] { grid-column: 1 / -1; }
+}

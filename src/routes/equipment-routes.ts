@@ -1,0 +1,18 @@
+import { renderCatalogs } from '../controllers/catalog-controller';
+import { Router } from 'express';
+import { equipmentCatalog } from '../controllers/master-data-controller';
+import * as equipment from '../controllers/equipment-controller';
+import { renderAssignments } from '../controllers/assignment-controller';
+const router = Router();
+router.get('/equipos', renderCatalogs);
+router.post('/add_equipo_catalogo', equipmentCatalog.create);
+router.post('/editar_equipo_stock', equipmentCatalog.update);
+router.post('/eliminar_equipo_stock', equipmentCatalog.remove);
+router.get('/registro_equipos', equipment.renderEquipmentInventory);
+router.post('/add_equipo', equipment.createEquipment);
+router.get('/equipos_espera', equipment.listAvailableEquipment);
+router.get('/asignacion_equipos', renderAssignments);
+router.post('/desvincular_equipo', equipment.releaseEquipment);
+router.post('/desvincular_accesorio', equipment.removeAccessory);
+router.post('/asignar_equipos', equipment.assignEquipment);
+export default router;
