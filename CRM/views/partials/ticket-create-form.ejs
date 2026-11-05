@@ -1,0 +1,40 @@
+<% const draftTicket = typeof data !== 'undefined' && data ? data : {}; %>
+<form action="/add_ticket" method="POST" id="ticket-create-form" data-embedded="<%= typeof embedded !== 'undefined' && embedded %>">
+  <input type="hidden" name="returnTo" value="<%= ticketListState %>">
+  <div class="alert alert-danger d-none" id="ticket-create-error" role="alert" tabindex="-1"></div>
+  <fieldset id="ticket-create-editable">
+  <% if (setupWizard) { %><input type="hidden" name="setupWizard" value="ticket"><% } %>
+  <div class="row g-4">
+    <div class="col-12 col-xl-5">
+      <section class="soft-card mb-4" aria-labelledby="ticket-client-title">
+        <div class="ticket-section-header"><h2 class="h5 mb-0" id="ticket-client-title">Cliente</h2><button type="button" class="btn btn-outline-primary" id="ticket-select-client" data-bs-toggle="modal" data-bs-target="#modalClientes">Seleccionar cliente</button></div>
+        <p class="text-danger small d-none" role="alert" id="ticket-client-error">Selecciona un cliente para crear el ticket.</p>
+        <input type="hidden" name="ID_cliente" id="id_cliente" value="<%= draftTicket.ID_cliente || '' %>">
+        <div class="mb-3"><label class="form-label" for="nombre_cliente">Empresa</label><input class="form-control bg-light" id="nombre_cliente" name="Nombre_cliente" readonly value="<%= draftTicket.Nombre_cliente || '' %>" placeholder="Sin cliente seleccionado"></div>
+        <div class="row g-3"><div class="col-12 col-md-6 col-xl-12 col-xxl-6"><label class="form-label" for="encargado">Encargado</label><input class="form-control bg-light" id="encargado" name="encargado" readonly value="<%= draftTicket.encargado || '' %>" placeholder="—"></div><div class="col-12 col-md-6 col-xl-12 col-xxl-6"><label class="form-label" for="telefono_cliente">Teléfono</label><input type="tel" class="form-control bg-light" id="telefono_cliente" name="telefono_cliente" readonly value="<%= draftTicket.telefono_cliente || '' %>" placeholder="—"></div></div>
+      </section>
+      <section class="soft-card mb-4" aria-labelledby="ticket-service-title">
+        <h2 class="h5 mb-3" id="ticket-service-title">Servicio</h2>
+        <div class="mb-3"><label for="Tipo_servicio" class="form-label">Tipo de servicio</label><select class="form-select" name="Tipo_servicio" id="Tipo_servicio" required><option value="" disabled <%= !draftTicket.Tipo_servicio ? 'selected' : '' %>>Selecciona un servicio</option><% [['Instalacion','Instalación'],['Desinstalacion','Desinstalación'],['Revision','Revisión'],['Rescate','Rescate']].forEach(([value,label]) => { %><option value="<%= value %>" <%= draftTicket.Tipo_servicio === value ? 'selected' : '' %>><%= label %></option><% }) %></select></div>
+        <div class="row g-3"><div class="col-12 col-md-4 col-xl-12 col-xxl-4"><label for="numero_unidades" class="form-label">Unidades</label><input class="form-control" type="number" id="numero_unidades" name="numero_unidades" required min="1" value="<%= draftTicket.numero_unidades || 1 %>"></div><div class="col-12 col-md-8 col-xl-12 col-xxl-8"><label for="fecha" class="form-label">Fecha y hora <span class="text-muted small">· Opcional</span></label><input class="form-control" type="datetime-local" id="fecha" name="fecha_registro" value="<%= draftTicket.fecha_registro || '' %>"></div></div>
+      </section>
+      <section class="soft-card" aria-labelledby="ticket-technician-title">
+        <div class="ticket-section-header"><div><h2 class="h5 mb-1" id="ticket-technician-title">Técnico</h2><span class="small text-muted" id="ticket-technician-state">Pendiente de asignación</span></div><button type="button" class="btn btn-outline-primary" id="ticket-select-technician" data-bs-toggle="modal" data-bs-target="#modalTecnicos">Asignar técnico</button></div>
+        <input type="hidden" name="ID_Tecnico" id="id_tecnico" value="<%= draftTicket.ID_Tecnico || 'null' %>">
+        <div class="row g-3"><div class="col-12 col-md-7 col-xl-12 col-xxl-7"><label class="form-label" for="nombre_tecnico">Nombre</label><input class="form-control bg-light" id="nombre_tecnico" name="Nombre_tecnico" readonly value="<%= draftTicket.Nombre_tecnico || '' %>" placeholder="Sin asignar"></div><div class="col-12 col-md-5 col-xl-12 col-xxl-5"><label class="form-label" for="numero_tecnico">Teléfono</label><input class="form-control bg-light" type="tel" id="numero_tecnico" name="Numero_tecnico" readonly value="<%= draftTicket.Numero_tecnico || '' %>" placeholder="—"></div></div>
+        <button type="button" class="btn btn-link text-danger px-0 mt-2 d-none btn_tecnico_pendiente" id="ticket-remove-technician">Quitar técnico</button>
+      </section>
+    </div>
+    <div class="col-12 col-xl-7">
+      <section class="soft-card ticket-location-card" aria-labelledby="ticket-location-title">
+        <h2 class="h5 mb-1" id="ticket-location-title">Ubicación del servicio <span class="text-muted small fw-normal">· Opcional</span></h2>
+        <p class="text-muted small mb-3">Pega el enlace de Maps; el punto aparecerá automáticamente. También puedes elegirlo en el mapa.</p>
+        <label for="direccion_servicio" class="form-label">Enlace de Maps</label><input type="text" class="form-control" id="direccion_servicio" name="direccion_servicio" maxlength="255" value="<%= draftTicket.direccion_servicio || '' %>" placeholder="https://maps.app.goo.gl/…" autocomplete="off">
+        <%- include('location-picker', { inputId: 'direccion_servicio', readonly: false }) %>
+      </section>
+    </div>
+    <div class="col-12"><section class="soft-card" aria-labelledby="ticket-notes-title"><h2 class="h5 mb-3" id="ticket-notes-title">Indicaciones para el servicio <span class="text-muted small fw-normal">· Opcional</span></h2><label class="visually-hidden" for="comentarios_servicios">Comentarios e indicaciones</label><textarea class="form-control" name="comentarios" id="comentarios_servicios" rows="3" placeholder="Accesos, referencias del lugar o instrucciones para el técnico…"><%= draftTicket.comentarios || '' %></textarea></section></div>
+  </div>
+  <footer class="ticket-form-actions mt-4"><p class="text-muted small mb-0">Podrás registrar las unidades y asignar los equipos después de crear el ticket.</p><button type="submit" class="btn btn-primary btn-lg">Crear ticket</button></footer>
+  </fieldset>
+</form>

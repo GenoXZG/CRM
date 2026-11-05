@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario de Equipos | CRM TSV</title>
+    
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
+    <link rel="stylesheet" href="/css/inventory.css">
+</head>
+<body class="assignments-view">
+    
+    <div class="d-flex">
+        
+        <aside id="sidebar">
+            <%- include('partials/session-navigation') %>
+        </aside>
+        <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
+
+        <div class="main assignment-main d-flex flex-column min-vh-100 w-100">
+            
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button" aria-label="Abrir o cerrar menú"><i class="bi bi-list fs-4" aria-hidden="true"></i><span class="ms-1">Menú</span></button>
+                <span class="ms-3 fw-bold text-secondary">Operativo / Equipos</span>
+            </nav>
+
+<main class="assignment-page inventory-page p-3 p-lg-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div><h1 class="mb-1">Inventario de Equipos</h1><p class="text-muted mb-0">Consulta los dispositivos físicos, su disponibilidad y el servicio al que están vinculados.</p></div>
+    <button type="button" class="btn btn-primary" id="inventory-add" data-bs-toggle="modal" data-bs-target="#modalNuevoEquipo">+ Registrar equipo</button>
+  </div>
+  <% if (created) { %><div class="alert alert-success d-flex flex-wrap align-items-center justify-content-between gap-2" role="status">Equipo #<%= created %> registrado correctamente.<a class="btn btn-outline-success" href="/inventario?search=<%= encodeURIComponent('#' + created) %>">Ver equipo registrado</a></div><% } %>
+  <% if (notice) { %><div class="alert alert-success" role="status"><%= notice %></div><% } %>
+  <section aria-labelledby="inventory-totals-title" class="mb-4">
+    <h2 class="h6 text-muted" id="inventory-totals-title">Existencias generales</h2>
+    <div class="row g-3">
+      <% [ { label:'Total de equipos', count:totals.total, status:'', color:'primary' }, { label:'Disponibles', count:totals.available, status:'pending_assignment', color:'success' }, { label:'Asignados', count:totals.assigned, status:'assigned', color:'warning' }, { label:'Instalados', count:totals.installed, status:'installed', color:'secondary' } ].forEach(metric => { %>
+      <div class="col-6 col-xl-3"><a class="soft-card inventory-metric d-block h-100 border-start border-4 border-<%= metric.color %>" href="/inventario<%= metric.status ? '?status=' + metric.status : '' %>"><span class="d-block small text-muted"><%= metric.label %></span><strong class="fs-3 text-dark" data-inventory-total="<%= metric.status || 'all' %>"><%= metric.count %></strong></a></div>
+      <% }) %>
+    </div>
+  </section>
+  <section class="soft-card" aria-labelledby="inventory-list-title">
+    <h2 class="h5 mb-3" id="inventory-list-title">Dispositivos registrados</h2>
+    <form id="inventory-filters" action="/inventario" method="GET" class="row g-3 mb-4">
+      <div class="col-12 col-lg-8"><label class="form-label" for="inventory-search">Buscar por marca, modelo, IMEI, módem o número de equipo</label><input class="form-control" type="search" id="inventory-search" name="search" maxlength="255" value="<%= filters.search %>" placeholder="Marca, modelo, IMEI, módem o #ID…"></div>
+      <div class="col-12 col-lg-4"><label class="form-label" for="inventory-status">Estado</label><select class="form-select" id="inventory-status" name="status"><option value="">Todos los estados</option><option value="pending_assignment" <%= filters.status === 'pending_assignment' ? 'selected' : '' %>>Disponible</option><option value="assigned" <%= filters.status === 'assigned' ? 'selected' : '' %>>Asignado</option><option value="installed" <%= filters.status === 'installed' ? 'selected' : '' %>>Instalado</option></select></div>
+      <div class="col-12 col-md-6"><label class="form-label" for="inventory-brand">Marca</label><select class="form-select" id="inventory-brand" name="brand"><option value="">Todas las marcas</option><% brands.forEach(brand => { %><option value="<%= brand %>" <%= filters.brand === brand ? 'selected' : '' %>><%= brand %></option><% }) %></select></div>
+      <div class="col-12 col-md-6"><label class="form-label" for="inventory-model">Modelo</label><select class="form-select" id="inventory-model" name="model"><option value="">Todos los modelos</option><% equipos_stock.forEach(model => { %><option value="<%= model.ID_equipo_modelo %>" data-brand="<%= model.Marca_equipo %>" <%= filters.model === model.ID_equipo_modelo ? 'selected' : '' %>><%= model.Marca_equipo %> · <%= model.Modelo_equipo %></option><% }) %></select></div>
+      <div class="col-12 d-flex flex-wrap gap-2"><button class="btn btn-primary" type="submit">Aplicar filtros</button><a class="btn btn-outline-secondary" href="/inventario">Limpiar filtros</a></div>
+    </form>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle inventory-table">
+        <caption class="visually-hidden">Inventario de dispositivos y su asignación actual</caption>
+        <thead><tr><th scope="col">ID</th><th scope="col">Marca / Modelo</th><th scope="col">IMEI / Serie</th><th scope="col">ID Módem</th><th scope="col">Estado</th><th scope="col">Asignación</th><th scope="col">Acciones</th></tr></thead>
+        <tbody>
+          <% equipment.forEach(device => { %><tr data-inventory-row>
+            <td data-label="Equipo" class="fw-bold">#<%= device.id %></td>
+            <td data-label="Marca / Modelo"><div class="fw-semibold"><%= device.model?.brand ?? 'Sin marca' %></div><small class="text-muted"><%= device.model?.model ?? 'Sin modelo' %></small></td>
+            <td data-label="IMEI / Serie" class="font-monospace"><%= device.imei || 'Sin registrar' %></td><td data-label="ID Módem" class="font-monospace"><%= device.modemId || 'Sin registrar' %></td>
+            <td data-label="Estado"><span class="badge <%= device.status === 'pending_assignment' ? 'text-bg-success' : device.status === 'assigned' ? 'text-bg-warning' : 'text-bg-secondary' %>"><%= device.status === 'pending_assignment' ? 'Disponible' : device.status === 'assigned' ? 'Asignado' : 'Instalado' %></span></td>
+            <td data-label="Asignación"><% if (device.assignment) { %><a class="btn btn-outline-primary" href="/detalle_ticket/<%= device.assignment.ticketId %>#assignment-workspace">Ticket #<%= device.assignment.ticketId %></a><small class="d-block text-muted mt-1">Unidad <%= device.assignment.licensePlate || '#' + device.assignment.unitId %></small><% } else { %><span class="text-muted"><%= device.status === 'pending_assignment' ? 'Disponible para asignar' : 'Sin ticket vinculado' %></span><% } %></td>
+            <td data-label="Acciones"><div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-outline-primary" data-equipment-edit="<%= device.id %>" data-model="<%= device.modelId %>" data-imei="<%= device.imei || '' %>" data-modem="<%= device.modemId || '' %>" data-linked="<%= Boolean(device.assignment) %>" data-bs-toggle="modal" data-bs-target="#modalEditarEquipo" aria-label="Editar equipo #<%= device.id %>">Editar</button>
+              <button type="button" class="btn btn-outline-danger" data-equipment-delete="<%= device.id %>" <%= device.assignment ? 'disabled' : '' %> aria-label="Eliminar equipo #<%= device.id %>">Eliminar</button>
+            </div><% if (device.assignment) { %><small class="d-block text-muted mt-2">No se puede eliminar: asignado a una unidad.</small><% } %></td>
+          </tr><% }) %>
+          <% if (!equipment.length) { %><tr><td colspan="7" class="text-center text-muted py-4">No hay equipos que coincidan con estos filtros. Puedes limpiar la búsqueda o registrar un dispositivo.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+    <div class="assignment-footer">
+      <div class="d-flex flex-wrap align-items-center gap-3"><label class="d-flex align-items-center gap-2" for="inventory-size">Filas por página<select class="form-select w-auto" id="inventory-size" name="size" form="inventory-filters"><% [5,10,25,50].forEach(value => { %><option value="<%= value %>" <%= value === size ? 'selected' : '' %>><%= value %></option><% }) %></select></label><span class="small text-muted" role="status"><%= count ? (page - 1) * size + 1 : 0 %>–<%= Math.min(page * size, count) %> de <%= count %> equipos</span></div>
+      <nav class="d-flex flex-wrap align-items-center gap-2" aria-label="Paginación de inventario">
+        <% if (page > 1) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(page - 1) %>">Anterior</a><% } else { %><button class="btn btn-outline-secondary" disabled>Anterior</button><% } %>
+        <span class="small">Página <%= page %> de <%= pages %></span>
+        <% if (page < pages) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(page + 1) %>">Siguiente</a><% } else { %><button class="btn btn-outline-secondary" disabled>Siguiente</button><% } %>
+      </nav>
+    </div>
+  </section>
+</main></div></div>
+<div class="modal fade" id="modalNuevoEquipo" tabindex="-1" aria-labelledby="equipment-create-title" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h2 class="modal-title fs-5" id="equipment-create-title">Registrar equipo</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+  <div class="modal-body"><%- include('partials/equipment-registration-form', { contextual: false }) %></div>
+</div></div></div>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<div class="modal fade" id="modalEditarEquipo" tabindex="-1" aria-labelledby="equipment-edit-title" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h2 class="modal-title fs-5" id="equipment-edit-title">Editar equipo</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+  <form id="equipment-edit-form"><div class="modal-body">
+    <div class="alert alert-warning" id="equipment-edit-warning">Puedes corregir los datos capturados. No se puede eliminar un equipo mientras esté asignado a una unidad.</div>
+    <div class="alert alert-danger d-none" id="equipment-edit-error" role="alert"></div>
+    <fieldset id="equipment-edit-fields" class="row g-3">
+      <div class="col-12"><label class="form-label" for="equipment-edit-model">Marca / Modelo</label><select class="form-select" id="equipment-edit-model" required><option value="">Selecciona un modelo</option><% equipos_stock.forEach(model => { %><option value="<%= model.ID_equipo_modelo %>"><%= model.Marca_equipo %> · <%= model.Modelo_equipo %></option><% }) %></select></div>
+      <div class="col-12 col-md-6"><label class="form-label" for="equipment-edit-imei">IMEI / Serie</label><input class="form-control" id="equipment-edit-imei" maxlength="100"></div>
+      <div class="col-12 col-md-6"><label class="form-label" for="equipment-edit-modem">ID Módem</label><input class="form-control" id="equipment-edit-modem" maxlength="100"></div>
+    </fieldset>
+  </div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary" id="equipment-edit-save">Guardar cambios</button></div></form>
+</div></div></div>
+<script type="module" src="/assets/pages/equipment-registration.js"></script>
+</body></html>

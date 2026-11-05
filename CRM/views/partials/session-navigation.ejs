@@ -1,0 +1,12 @@
+<button type="button" class="toggler-btn btn assignment-menu-close align-self-end m-2" aria-label="Cerrar menú">Cerrar menú ×</button>
+<div class="sidebar-logo"><a href="/"><span class="ms-2">CRM TSV</span></a></div>
+<ul class="sidebar-nav">
+  <% const navLinks = [['/', 'Dashboard'], ['/tickets', 'Tickets'], ...(canManage ? [['/directorio', 'Directorio'], ['/asignaciones', 'Asignaciones'], ['/inventario', 'Inventario'], ['/catalogos', 'Catálogos']] : []), ...(isAdmin ? [['/usuarios', 'Administrar usuarios']] : [])]; %>
+  <% navLinks.forEach(([href, label]) => { const active = currentPath === href || (href === '/tickets' && ['/estado_tickets', '/tickets/nuevo'].includes(currentPath)) || (href === '/directorio' && ['/clientes','/tecnicos'].includes(currentPath)) || (href === '/catalogos' && ['/equipos','/unidades','/accesorios'].includes(currentPath)) || (href === '/inventario' && currentPath === '/registro_equipos'); %>
+  <li class="sidebar-item"><a href="<%= href %>" class="sidebar-link <%= active ? 'active' : '' %>" <%- active ? 'aria-current="page"' : '' %>><span><%= label %></span></a></li>
+  <% }) %>
+</ul>
+<div class="sidebar-footer">
+  <p class="small text-muted mb-2" style="overflow-wrap:anywhere"><%= currentUser.correo %><br><strong><%= ({admin:'Administrador',coordinador:'Coordinador',tecnico:'Técnico'})[currentUser.rol] %></strong></p>
+  <form action="/logout" method="POST" class="m-0"><button class="btn btn-outline-danger w-100" type="submit" style="min-height:44px">Cerrar sesión</button></form>
+</div>

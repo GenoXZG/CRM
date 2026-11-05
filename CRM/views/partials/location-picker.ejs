@@ -1,0 +1,16 @@
+<section class="location-picker mt-3" data-location-picker data-location-input="<%= inputId %>" data-location-readonly="<%= readonly %>" data-tile-url="<%= mapTiles.tileUrl %>" data-tile-attribution="<%= mapTiles.attribution %>" aria-label="<%= readonly ? 'Mapa de ubicación del servicio' : 'Seleccionar ubicación del servicio' %>">
+  <p class="location-feedback small mb-2" role="status" aria-live="polite" data-location-status></p>
+  <button type="button" class="btn btn-outline-primary d-none mb-3" data-location-resolve>Reintentar ubicación</button>
+  <p class="small text-warning d-none" role="status" data-location-tile-error>No se pudo cargar el mapa base. Puedes conservar el enlace o capturar las coordenadas en las opciones de ubicación.</p>
+  <div class="location-map" data-location-map role="region" aria-label="Mapa del servicio" tabindex="0"></div>
+  <% if (!readonly) { %>
+  <div class="location-toolbar mt-2"><button type="button" class="btn btn-outline-secondary" data-location-current>Usar mi ubicación</button><button type="button" class="btn btn-link text-danger d-none" data-location-clear>Quitar ubicación</button></div>
+  <details class="location-options mt-3" data-location-options><summary>Capturar coordenadas manualmente</summary>
+  <div class="row g-2 mt-1">
+    <div class="col-6"><label class="form-label small" for="<%= inputId %>-latitude">Latitud</label><input class="form-control" id="<%= inputId %>-latitude" type="number" step="any" min="-90" max="90" placeholder="Ej. 19.432608" data-location-lat></div>
+    <div class="col-6"><label class="form-label small" for="<%= inputId %>-longitude">Longitud</label><input class="form-control" id="<%= inputId %>-longitude" type="number" step="any" min="-180" max="180" placeholder="Ej. -99.133209" data-location-lng></div>
+    <div class="col-12"><button type="button" class="btn btn-outline-primary" data-location-apply>Aplicar coordenadas</button></div>
+  </div>
+  </details>
+  <% } %>
+</section>

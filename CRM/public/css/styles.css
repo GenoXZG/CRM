@@ -1,0 +1,187 @@
+body{
+    font-family: 'Poppins', sans-serif;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+::after,
+::before {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+
+
+
+.form{
+    width: 60%;
+    margin: 0 auto;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px;
+    background-color: white;
+    box-shadow: -2px 1px 29px 0px rgba(0,0,0,0.75);
+    -webkit-box-shadow: -2px 1px 29px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: -2px 1px 29px 0px rgba(0,0,0,0.75);
+}
+
+.form label{
+    font-weight: bold;
+    color:  black;
+}
+/* .form input, .form select, .modal-input{
+    border: 1px solid black;
+} */
+
+.form legend{
+    text-align: center;
+    font-weight: bold;
+}
+
+.table-m{
+
+    width: 80%;
+    margin: 20px auto;
+    
+}
+
+.container-m{
+    
+    padding: 10px;
+    border-radius: 10px;
+    margin: 0 ;
+    box-shadow: -2px 1px 29px 0px rgba(0,0,0,0.75);
+    -webkit-box-shadow: -2px 1px 29px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: -2px 1px 29px 0px rgba(0,0,0,0.75);
+}
+
+.title{
+    text-align: center;
+    color: rgb(0, 0, 0);
+    margin: 20px auto;
+    font-weight: bold;
+}
+
+li{
+    list-style: none;
+}
+
+a{
+    text-decoration: none;
+}
+
+.main{
+    width: 100%;
+}
+
+#sidebar{
+    max-width: 264px;
+    min-width: 264px;
+    transition: all 0.35s ease-in-out;
+    background-color: black;
+    display: flex;
+    flex-direction:column ;
+}
+
+#sidebar.collapsed{
+    margin-left: -264px;
+}
+
+.toggler-btn{
+    background-color: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.toggler-btn i{
+    font-size: 60px;
+    color: black;
+}
+
+.navbar{
+    padding: 10px;
+}
+
+.sidebar-nav{
+    flex: 1 1 auto;
+}
+
+.sidebar-logo{
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+
+.sidebar-logo a{
+    text-decoration: none;
+    color: white;
+}
+
+.sidebar-header{
+    color: white;
+    font-size: 13px;
+    text-align: left;
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+a.sidebar-link{
+    padding: 10px;
+    position: relative;
+    transition: all 0.35s;
+    display: block;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+a.sidebar-link:hover{
+    background-color: #d5e57e;
+    color: black;
+}
+
+
+.footer_container{
+    height: 122px;
+    background-color: black;
+    color: white;
+}
+
+.btn-seleccion{
+    margin-left: 10px;
+}
+
+.span-ticket{
+    font-weight: bold;
+}
+
+
+.unidad-equipo-row {
+  margin-bottom: 1.5rem;
+}
+.unidad-equipo-row .card {
+  transition: transform 0.2s;
+}
+.unidad-equipo-row .card:hover {
+  transform: translateY(-3px);
+}
+.border-end {
+  border-right: 1px solid #dee2e6 !important;
+}
+
+
+.fade-container {
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+/* Estado oculto */
+.fade-container.fade-out {
+  opacity: 0;
+}
+
+.ticketSeleccionado{
+    margin: 0 500px;
+}

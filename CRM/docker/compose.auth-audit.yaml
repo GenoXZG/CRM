@@ -1,0 +1,17 @@
+services:
+  app:
+    command: ["node", "/app/mock-auth-mail.cjs"]
+    volumes:
+      - ./tests/node/mock-auth-mail.cjs:/app/mock-auth-mail.cjs:ro,Z
+    ports: !override
+      - "127.0.0.1:3031:3030"
+    environment:
+      CRM_ADMIN_EMAIL: admin@audit.example
+      CRM_ADMIN_PASSWORD: Audit-Only-Password-2026
+      COOKIE_SECURE: "false"
+      EMAIL_PROVIDER: "resend"
+      GMAIL_USER: ""
+      GMAIL_APP_PASSWORD: ""
+      AUTH_2FA_TO: "shared@audit.example"
+      RESEND_API_KEY: "audit-key-not-real"
+      RESEND_TEST_TO: ""

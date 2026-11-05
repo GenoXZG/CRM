@@ -1,0 +1,62 @@
+<section class="dashboard-kpis" aria-label="Resumen operativo">
+  <% [
+    ['Servicios de hoy', operations.today, `/tickets?dateFrom=${period.today}&dateTo=${period.today}`, 'Todos los estados', 'blue'],
+    ['En espera', metrics.counts.espera, '/tickets?status=waiting', 'Pendientes de iniciar', 'yellow'],
+    ['En seguimiento', metrics.counts.seguimiento, '/tickets?status=in_progress', 'Servicios en proceso', 'blue'],
+    ['Vencidos', operations.overdue, '/tickets?attention=overdue', 'Abiertos de días anteriores', 'red']
+  ].forEach(([label, count, href, description, color]) => { %>
+  <a class="soft-card dashboard-kpi dashboard-tone-<%= color %>" href="<%= href %>"><span><%= label %></span><strong><%= count %></strong><small><%= description %> →</small></a>
+  <% }) %>
+</section>
+<section class="soft-card dashboard-section" aria-labelledby="attention-title">
+  <div class="dashboard-section-heading"><div><h2 id="attention-title">Requieren atención</h2><p>Un servicio puede aparecer en más de un grupo. Se excluyen los finalizados.</p></div><% if (canManage) { %><a class="btn btn-outline-primary" href="/asignaciones">Ir a asignaciones</a><% } %></div>
+  <div class="dashboard-attention">
+    <a href="/tickets?attention=overdue"><strong><%= operations.overdue %></strong><span>Servicios vencidos<small>Revisa su programación y seguimiento.</small></span><span aria-hidden="true">→</span></a>
+    <% if (canManage) { %><a href="/tickets?attention=unassigned"><strong><%= operations.unassigned %></strong><span>Sin técnico<small>Asigna a la persona que atenderá el servicio.</small></span><span aria-hidden="true">→</span></a><% } %>
+    <a href="/tickets?attention=incomplete"><strong><%= operations.incomplete %></strong><span>Preparación incompleta<small>Faltan unidades previstas o equipos por asignar.</small></span><span aria-hidden="true">→</span></a>
+  </div>
+</section>
+<section class="soft-card dashboard-section" id="calendar" aria-labelledby="agenda-title">
+  <div class="dashboard-section-heading"><div><h2 id="agenda-title">Agenda de servicios</h2><p>Del <%= formatDate(period.start) %> al <%= formatDate(new Date(Date.parse(period.end) - 86400000).toISOString().slice(0,10)) %></p></div><a class="btn btn-outline-primary" href="/tickets?dateFrom=<%= period.start %>&dateTo=<%= new Date(Date.parse(period.end)-86400000).toISOString().slice(0,10) %>">Ver en bandeja (<%= agenda.count %>)</a></div>
+  <form method="GET" action="/#calendar" class="dashboard-agenda-controls">
+    <div><label for="agenda-date">Fecha</label><input class="form-control" type="date" id="agenda-date" name="date" value="<%= period.date %>" min="1000-02-01" max="9999-11-30" required></div>
+    <div><label for="agenda-view">Periodo</label><select class="form-select" name="view" id="agenda-view"><% [['day','Día'],['week','Semana'],['month','Mes']].forEach(([value,label]) => { %><option value="<%= value %>" <%= period.view === value ? 'selected' : '' %>><%= label %></option><% }) %></select></div>
+    <button class="btn btn-primary" type="submit">Consultar</button>
+    <nav aria-label="Navegar por la agenda"><a class="btn btn-outline-secondary" href="/?date=<%= period.previous %>&view=<%= period.view %>#calendar" aria-label="Periodo anterior">←</a><a class="btn btn-outline-secondary" href="/?date=<%= period.today %>&view=<%= period.view %>#calendar">Hoy</a><a class="btn btn-outline-secondary" href="/?date=<%= period.next %>&view=<%= period.view %>#calendar" aria-label="Periodo siguiente">→</a></nav>
+  </form>
+  <div class="dashboard-legend"><span>● En espera</span><span>● En seguimiento</span><span>● Finalizado</span></div>
+  <% if (agenda.count === 0) { %><p class="dashboard-empty" role="status">No hay servicios programados en este periodo.</p><% } %>
+  <% if (agenda.count > agenda.tickets.length) { %><p class="alert alert-info">Se muestran los primeros <%= agenda.tickets.length %> servicios. Consulta la bandeja para ver todos.</p><% } %>
+  <div class="dashboard-agenda <%= period.view === 'month' ? 'dashboard-month' : '' %>">
+    <% agendaDays.forEach((day, index) => { %>
+    <section class="dashboard-agenda-day <%= day.date === period.today ? 'is-today' : '' %>" <%- period.view === 'month' && index === 0 ? `style="grid-column-start:${(new Date(day.date).getUTCDay()+6)%7+1}"` : '' %> aria-label="<%= formatDate(day.date) %>">
+      <h3><a href="/tickets?dateFrom=<%= day.date %>&dateTo=<%= day.date %>"><%= period.view === 'month' ? new Intl.DateTimeFormat('es-MX', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(day.date)) : formatDate(day.date) %><%= day.date === period.today ? ' · Hoy' : '' %></a></h3>
+      <% if (!day.tickets.length) { %><p class="text-muted small mb-0">Sin servicios<%= agenda.count > agenda.tickets.length ? ' entre los resultados mostrados' : '' %></p><% } %>
+      <% day.tickets.forEach(ticket => { %>
+      <a class="dashboard-event status-<%= ticket.status || 'unknown' %>" href="/detalle_ticket/<%= ticket.id %>?returnTo=<%= encodeURIComponent(`/tickets?dateFrom=${period.start}&dateTo=${new Date(Date.parse(period.end)-86400000).toISOString().slice(0,10)}`) %>">
+        <strong><time><%= ticket.scheduledAt.toISOString().slice(11,16) %></time> · #<%= ticket.id %> · <%= ticket.client?.companyName || 'Cliente sin nombre' %></strong>
+        <span><%= ({installation:'Instalación',removal:'Desinstalación',inspection:'Revisión',recovery:'Rescate'})[ticket.serviceType] || 'Sin tipo' %> · <%= ({waiting:'En espera',in_progress:'En seguimiento',completed:'Finalizado'})[ticket.status] || 'Sin estado' %></span>
+        <small><%= ticket.technician?.name || 'Sin técnico asignado' %></small>
+      </a>
+      <% }) %>
+    </section>
+    <% }) %>
+  </div>
+  <p class="small text-muted mt-3 mb-0">Horarios según la captura del servicio. El día operativo corresponde a Ciudad de México; “vencidos” son servicios abiertos con fecha anterior a hoy.</p>
+</section>
+<div class="dashboard-resources" <%- !canManage ? 'style="grid-template-columns:1fr"' : '' %>>
+<section class="soft-card dashboard-section" aria-labelledby="workload-title">
+  <div class="dashboard-section-heading"><div><h2 id="workload-title"><%= canManage ? 'Carga por técnico' : 'Mi carga de trabajo' %></h2><p><%= canManage ? 'Los cinco técnicos con más servicios abiertos.' : 'Tus servicios abiertos asignados.' %></p></div></div>
+  <% if (!technicians.length) { %><p class="dashboard-empty">No hay servicios abiertos asignados a técnicos.</p><% } %>
+  <div class="dashboard-resource-list"><% technicians.forEach(tech => { %><a href="/tickets?attention=active&technician=<%= tech.technicianId %>"><span><strong><%= tech.name || 'Técnico sin nombre' %></strong><meter min="0" max="<%= Math.max(1, ...technicians.map(t => t.activeTickets)) %>" value="<%= tech.activeTickets %>" aria-label="Servicios abiertos de <%= tech.name %>"><%= tech.activeTickets %></meter></span><span class="badge text-bg-primary"><%= tech.activeTickets %> abiertos →</span></a><% }) %></div>
+  <% if (canManage) { %><a class="btn btn-outline-primary mt-3" href="/tickets?attention=unassigned">Sin técnico: <%= operations.unassigned %></a><% } %>
+</section>
+<% if (canManage) { %>
+<section class="soft-card dashboard-section" aria-labelledby="stock-title">
+  <div class="dashboard-section-heading"><div><h2 id="stock-title">Disponibilidad de equipos</h2><p>Los cinco modelos con menos equipos disponibles.</p></div><a href="/inventario" class="btn btn-outline-primary">Ver inventario</a></div>
+  <% if (!stock.length) { %><p class="dashboard-empty">Aún no hay modelos en el catálogo. <a href="/catalogos#equipment">Registrar modelos</a></p><% } %>
+  <div class="dashboard-resource-list"><% stock.forEach(model => { %><a href="/inventario?model=<%= model.modelId %>&status=pending_assignment"><strong><%= model.model %></strong><span class="badge <%= model.available === 0 ? 'text-bg-danger' : 'text-bg-success' %>"><%= model.available === 0 ? 'Sin existencias' : `${model.available} disponibles` %> →</span></a><% }) %></div>
+</section>
+<% } %>
+</div>
+<div class="dashboard-history"><a href="/tickets?status=completed">Finalizados: <strong><%= metrics.counts.finalizado %></strong></a><a href="/tickets">Total histórico: <strong><%= metrics.totalTickets %></strong></a><span>Estos totales incluyen todo el historial.</span></div>
