@@ -1,0 +1,16 @@
+.ticket-create-page { max-width: 1600px; margin-inline: auto; }
+.ticket-create-page fieldset { min-width: 0; }
+.ticket-section-header, .ticket-form-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; }
+.ticket-section-header { margin-bottom: 1rem; }
+.ticket-location-card { height: 100%; display: flex; flex-direction: column; }
+.ticket-location-card .location-picker { flex: 1; display: flex; flex-direction: column; }
+.ticket-form-actions { border-top: 1px solid #dee2e6; padding-top: 1.25rem; }
+.ticket-create-page .soft-card { padding: 1.5rem; }
+.ticket-create-page .location-map { height: 380px; min-height: 380px; flex: 1 1 auto; }
+.ticket-create-page .form-label { font-size: .9rem; }
+@media (max-width: 575.98px) {
+  .ticket-create-page .soft-card { padding: 1rem; }
+  .ticket-create-page .location-map { height: 280px; min-height: 280px; }
+  .ticket-form-actions .btn { width: 100%; }
+  .ticket-section-header { align-items: flex-start; }
+}

@@ -1,0 +1,98 @@
+<div class="modal fade" id="modalClientes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold ms-2">Seleccionar Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3 py-3">Empresa</th>
+                                <th>Encargado</th>
+                                <th>Teléfono</th>
+                                <th class="text-end pe-3">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(typeof clientes !== 'undefined') { %>
+                                <% clientes.forEach(cliente => { %>
+                                <%
+                                   const nombreEmpresa = cliente.Nombre_empresa  || 'Sin nombre';
+                                   const nombreEncargado = cliente.Encargado  || '---';
+                                   const telefono = cliente.Numero  || '---';
+                                %>
+                                <tr>
+                                    <td class="ps-3 fw-medium"><%= nombreEmpresa %></td>
+                                    <td class="text-muted"><%= nombreEncargado %></td>
+                                    <td><%= telefono %></td>
+                                    <td class="text-end pe-3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill btn_confirmar_cliente"
+                                                data-id="<%= cliente.ID_cliente %>"
+                                                data-nombre="<%= nombreEmpresa %>"
+                                                data-encargado="<%= nombreEncargado %>"
+                                                data-numero="<%= telefono %>"
+                                                data-bs-dismiss="modal">
+                                            Seleccionar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalTecnicos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold ms-2">Asignar Técnico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3 py-3">Nombre</th>
+                                <th>Numero de Telefono</th>
+                                <th class="text-end pe-3">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if(typeof tecnicos !== 'undefined') { %>
+                                <% tecnicos.forEach(tecnico => { %>
+                                <tr>
+                                    <td class="ps-3 fw-medium">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-light p-1 text-primary"><i class="bi bi-person-fill"></i></div>
+                                            <%= tecnico.Nombre_tecnico %>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted"><%= tecnico.Numero_tecnico %></td>
+                                    <td class="text-end pe-3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill btn_confirmar_tecnico"
+                                                data-id="<%= tecnico.ID_Tecnico %>"
+                                                data-nombre="<%= tecnico.Nombre_tecnico %>"
+                                                data-numero="<%= tecnico.Numero_tecnico %>"
+                                                data-bs-dismiss="modal">
+                                            Asignar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

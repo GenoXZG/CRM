@@ -1,0 +1,15 @@
+.location-map { height: 320px; width: 100%; border: 1px solid #cbd5e1; border-radius: .75rem; z-index: 0; }
+.location-picker { min-width: 0; }
+.location-feedback { color: #64748b; overflow-wrap: anywhere; }
+.location-picker[data-location-state="ready"] .location-feedback { color: #166534; }
+.location-picker[data-location-state="error"] .location-feedback { color: #b45309; }
+.location-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.location-options { border-top: 1px solid #e2e8f0; padding-top: .75rem; }
+.location-options summary { cursor: pointer; min-height: 44px; display: list-item; align-content: center; color: #475569; }
+.location-picker .btn, .location-picker .form-control { min-height: 44px; }
+.location-map .leaflet-control-attribution { font-size: 11px; background: #fff; }
+.location-map .leaflet-control-zoom a { width: 36px; height: 36px; line-height: 36px; }
+.location-map .leaflet-marker-icon { cursor: grab; }
+.location-picker[data-location-readonly="true"] .location-map { height: 260px; }
+@media (max-width: 575.98px) { .location-map { height: 280px; } }
+@media print { .location-picker { display: none; } }

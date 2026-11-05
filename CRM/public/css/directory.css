@@ -1,0 +1,11 @@
+.directory-page .directory-table td { overflow-wrap: anywhere; }
+.directory-modal .btn, .directory-modal .form-control, .directory-modal .form-select { min-height: 44px; }
+.directory-fields { min-width: 0; }
+@media (max-width: 575.98px) {
+  .directory-table thead { display: none; }
+  .directory-table tbody { display: block; }
+  .directory-table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem; padding: 1rem 0; border-bottom: 1px solid #dee2e6; }
+  .directory-page .directory-table td { display: block; border: 0; padding: .25rem; }
+  .directory-table td[data-label]::before { content: attr(data-label); display: block; color: #64748b; font-size: .75rem; margin-bottom: .35rem; font-weight: normal; }
+  .directory-table td[data-label="Acciones"], .directory-table td[colspan] { grid-column: 1 / -1; }
+}
