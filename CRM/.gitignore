@@ -3,6 +3,12 @@ node_modules/
 
 # Local credentials
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Generated compilation output
 dist/

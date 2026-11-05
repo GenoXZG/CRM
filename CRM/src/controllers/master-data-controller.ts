@@ -31,6 +31,22 @@ interface MasterDataService<Entity> {
   update(id: unknown, input: unknown): Promise<void>;
   remove(id: unknown): Promise<void>;
 }
+function mutationDestination(request: Request, redirect: string): string {
+  const catalogState: unknown = request.body?.catalogState;
+  if (redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000)
+    return catalogState;
+  const directoryState: unknown = request.body?.directoryState;
+  if (redirect.startsWith('/directorio') && typeof directoryState === 'string' && directoryState.startsWith('/directorio?') && directoryState.length < 5000)
+    return directoryState;
+  return redirect;
+}
+function mutationResponse(request: Request, response: Response, destination: string, created = false) {
+  if (request.get('accept')?.includes('application/json')) {
+    response.status(created ? 201 : 200).json({ success: true, redirect: destination });
+    return;
+  }
+  response.redirect(destination);
+}
 function controller<Entity>(
   service: MasterDataService<Entity>,
   read: (input: Record<string, unknown>) => unknown,
@@ -57,11 +73,10 @@ function controller<Entity>(
         const setupWizard = request.body?.setupWizard;
         const allowedSetupSteps = new Set(['clients', 'technicians', 'equipment', 'units', 'accessories']);
         if (typeof setupWizard === 'string' && allowedSetupSteps.has(setupWizard)) {
-          response.redirect(`/?setupReturn=${encodeURIComponent(setupWizard)}`);
+          mutationResponse(request, response, `/?setupReturn=${encodeURIComponent(setupWizard)}`, true);
           return;
         }
-        const catalogState = request.body?.catalogState;
-        response.redirect(redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000 ? catalogState : redirect);
+        mutationResponse(request, response, mutationDestination(request, redirect), true);
       } catch (error) {
         respondError(response, error);
       }
@@ -70,8 +85,7 @@ function controller<Entity>(
       try {
         const input = requestBody(request.body as unknown);
         await service.update(input[idField], read(input));
-        const catalogState = request.body?.catalogState;
-        response.redirect(redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000 ? catalogState : redirect);
+        mutationResponse(request, response, mutationDestination(request, redirect));
       } catch (error) {
         respondError(response, error);
       }
@@ -79,8 +93,7 @@ function controller<Entity>(
     async remove(request: Request, response: Response) {
       try {
         await service.remove(requestBody(request.body as unknown)[idField]);
-        const catalogState = request.body?.catalogState;
-        response.redirect(redirect.startsWith('/catalogos') && typeof catalogState === 'string' && catalogState.startsWith('/catalogos?') && catalogState.length < 5000 ? catalogState : redirect);
+        mutationResponse(request, response, mutationDestination(request, redirect));
       } catch (error) {
         respondError(response, error);
       }
@@ -93,7 +106,7 @@ export const clients = controller(
   serializeClient,
   'clientes',
   'clientes',
-  '/clientes',
+  '/directorio#clients',
   'ID_cliente',
 );
 export const technicians = controller(
@@ -102,7 +115,7 @@ export const technicians = controller(
   serializeTechnician,
   'tecnicos',
   'tecnicos',
-  '/tecnicos',
+  '/directorio#technicians',
   'ID_Tecnico',
 );
 export const equipmentCatalog = controller(

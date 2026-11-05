@@ -9,15 +9,45 @@ import {
 } from '../infrastructure/database/repositories';
 import { getTicket, updateAssignmentStatus } from './ticket-lifecycle';
 
-export const createEquipment = (input: CreateEquipmentInput) =>
-  equipment.create(
-    positiveInteger(input.modelId, 'Modelo de equipo'),
-    nullableText(input.imei, 'IMEI', 100),
-    nullableText(input.modemId, 'Módem', 100),
-  );
+export async function createEquipment(input: CreateEquipmentInput) {
+  const modelId = positiveInteger(input.modelId, 'Modelo de equipo');
+  const imei = nullableText(input.imei, 'IMEI', 100)?.trim() || null;
+  const modemId = nullableText(input.modemId, 'Módem', 100)?.trim() || null;
+  return withTransaction(async transaction => {
+    const model = await catalogs.findEquipmentModel(modelId, transaction);
+    if (!model) throw new BusinessError(400, 'Modelo de equipo no encontrado');
+    const saved = await equipment.create(modelId, imei, modemId, transaction);
+    return { ...saved, model };
+  });
+}
 export const getEquipmentModels = () => catalogs.listEquipmentModels();
-export const getEquipmentInventory = () => equipment.list();
 export const getAvailableEquipment = () => equipment.list('pending_assignment');
+
+export async function updateEquipment(id: unknown, input: CreateEquipmentInput) {
+  const equipmentId = positiveInteger(id, 'Equipo');
+  const modelId = positiveInteger(input.modelId, 'Modelo de equipo');
+  const imei = nullableText(input.imei, 'IMEI', 100)?.trim() || null;
+  const modemId = nullableText(input.modemId, 'Módem', 100)?.trim() || null;
+  return withTransaction(async transaction => {
+    const device = await equipment.findById(equipmentId, transaction);
+    if (!device) throw new BusinessError(404, 'Equipo no encontrado');
+    const model = await catalogs.findEquipmentModel(modelId, transaction);
+    if (!model) throw new BusinessError(400, 'Modelo de equipo no encontrado');
+    await equipment.update(equipmentId, modelId, imei, modemId, transaction);
+    return { ...device, modelId, imei, modemId, model };
+  });
+}
+
+export async function deleteEquipment(id: unknown) {
+  const equipmentId = positiveInteger(id, 'Equipo');
+  return withTransaction(async transaction => {
+    const device = await equipment.findById(equipmentId, transaction);
+    if (!device) throw new BusinessError(404, 'Equipo no encontrado');
+    if (await units.findByEquipmentId(equipmentId, transaction))
+      throw new BusinessError(409, 'No se puede eliminar el equipo porque está asignado a una unidad. Primero retira su asignación desde el ticket correspondiente.');
+    await equipment.remove(equipmentId, transaction);
+  });
+}
 
 export async function assignEquipment(input: unknown, ticketId: unknown) {
   if (!isRecord(input)) throw new BusinessError(400, 'Formato de asignación inválido');

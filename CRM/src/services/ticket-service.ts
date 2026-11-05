@@ -1,8 +1,12 @@
+import { QueryTypes } from 'sequelize';
+import { database } from '../infrastructure/database/connection';
+import { requireActiveTechnician } from '../domain/technician-access';
 import type { Transaction } from 'sequelize';
 import { BusinessError, nullableText, positiveInteger } from '../domain/business-error';
 import {
   AssignmentStatus,
   type CreateTicketInput,
+  type EquipmentStatus,
   type ServiceType,
   type Ticket,
   type TicketPhoto,
@@ -11,12 +15,15 @@ import {
 } from '../domain/entities';
 import {
   clients,
+  equipment,
   photos,
   technicians,
   tickets,
+  units,
   withTransaction,
 } from '../infrastructure/database/repositories';
 import { getAssignmentSummary, getTicket } from './ticket-lifecycle';
+import { locationUrl as validateLocationUrl } from '../domain/location';
 
 const OPEN_STATES: readonly TicketStatus[] = ['waiting', 'in_progress'];
 function isServiceType(value: unknown): value is ServiceType {
@@ -50,7 +57,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
   const scheduledAt = dateValue ? new Date(dateValue) : null;
   if (scheduledAt && Number.isNaN(scheduledAt.getTime()))
     throw new BusinessError(400, 'Fecha de servicio inválida');
-  const locationUrl = nullableText(input.locationUrl, 'Ubicación', 255);
+  const locationUrl = validateLocationUrl(input.locationUrl);
   const comments = nullableText(input.comments, 'Comentarios');
   return withTransaction(async (transaction) => {
     if (!(await clients.findById(clientId, transaction)))
@@ -63,6 +70,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
         serviceType,
         unitCount,
         scheduledAt,
+        closedAt: null,
         locationUrl,
         comments,
         status: 'waiting',
@@ -72,9 +80,9 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
     );
   });
 }
-export async function getTicketDetails(id: unknown) {
+export async function getTicketDetails(id: unknown, technicianScope?: number) {
   const ticket = await tickets.findDetails(positiveInteger(id, 'Ticket'));
-  if (!ticket) throw new BusinessError(404, 'Ticket no encontrado');
+  if (!ticket || (technicianScope !== undefined && ticket.technicianId !== technicianScope)) throw new BusinessError(404, 'Ticket no encontrado');
   return ticket;
 }
 export async function getEquipmentAssignmentTickets() {
@@ -91,17 +99,7 @@ export const confirmCompleteAssignment = (id: unknown) =>
 export const updateLocation = (id: unknown, value: unknown) =>
   withTransaction(async (transaction) => {
     const ticket = await getTicket(id, transaction, OPEN_STATES);
-    const url = nullableText(value, 'Ubicación', 255);
-    if (url) {
-      let parsed: URL;
-      try {
-        parsed = new URL(url);
-      } catch {
-        throw new BusinessError(400, 'Enlace de ubicación inválido');
-      }
-      if (!['https:', 'http:'].includes(parsed.protocol))
-        throw new BusinessError(400, 'Enlace de ubicación inválido');
-    }
+    const url = validateLocationUrl(value);
     await tickets.update(ticket.id, { locationUrl: url }, transaction);
   });
 export const updateComments = (id: unknown, value: unknown) =>
@@ -115,15 +113,23 @@ export const assignTechnician = (id: unknown, technicianId: unknown) =>
     const technician = await getActiveTechnician(technicianId, transaction);
     await tickets.update(ticket.id, { technicianId: technician.id }, transaction);
   });
-export const completeTicket = (id: unknown) =>
+export const completeTicket = (id: unknown, actor?: { userId: number; technicianId: number }) =>
   withTransaction(async (transaction) => {
-    const ticket = await getTicket(id, transaction, ['in_progress']);
+    if (actor) {
+      const [user] = await database.query<{ rol: string; id_tecnico: number | null; tecnico_estado: string | null }>('SELECT u.rol,u.id_tecnico,(SELECT Estatus_tecnico FROM Tecnicos WHERE ID_Tecnico=u.id_tecnico) AS tecnico_estado FROM usuarios u WHERE u.id=? FOR UPDATE', { replacements: [actor.userId], transaction, type: QueryTypes.SELECT });
+      if (!user || user.rol !== 'tecnico' || user.id_tecnico !== actor.technicianId) throw new BusinessError(403, 'La vinculación de tu cuenta cambió. Inicia sesión nuevamente.');
+      requireActiveTechnician(user);
+    }
+    const ticket = await getTicket(id, transaction);
+    if (actor && ticket.technicianId !== actor.technicianId) throw new BusinessError(404, 'Ticket no encontrado');
+    if (ticket.status !== 'in_progress') throw new BusinessError(409, 'El ticket debe estar en seguimiento para finalizar');
     const summary = await getAssignmentSummary(ticket, transaction);
     if (!summary.complete)
       throw new BusinessError(
         409,
         'Todas las unidades previstas deben tener equipo antes de finalizar',
       );
+    await updateTicketEquipmentStatus(ticket.id, 'installed', transaction);
     await tickets.update(
       ticket.id,
       { status: 'completed', assignmentStatus: summary.status },
@@ -133,8 +139,25 @@ export const completeTicket = (id: unknown) =>
 export const reopenTicket = (id: unknown) =>
   withTransaction(async (transaction) => {
     const ticket = await getTicket(id, transaction, ['completed']);
+    await updateTicketEquipmentStatus(ticket.id, 'assigned', transaction);
     await tickets.update(ticket.id, { status: 'in_progress' }, transaction);
   });
+
+async function updateTicketEquipmentStatus(
+  ticketId: number,
+  status: EquipmentStatus,
+  transaction: Transaction,
+): Promise<void> {
+  // Keep the same lock order as assignments: ticket, units, then equipment.
+  const ticketUnits = await units.findByTicket(ticketId, transaction);
+  const ids = [...new Set(ticketUnits.flatMap((unit) => unit.equipmentId === null ? [] : [unit.equipmentId]))];
+  if (!ids.length) return;
+  const devices = await equipment.findForAssignment(ids, transaction);
+  if (devices.length !== ids.length)
+    throw new BusinessError(409, 'No se encontraron todos los equipos del servicio');
+  for (const device of devices)
+    await equipment.setStatus(device.id, status, transaction);
+}
 export const requireOpenTicket = (id: unknown) => getTicket(id, undefined, OPEN_STATES);
 export const savePhotos = (id: unknown, files: readonly UploadedPhoto[]) =>
   withTransaction(async (transaction) => {

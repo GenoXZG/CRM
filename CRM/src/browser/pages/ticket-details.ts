@@ -3,6 +3,9 @@ import { delegate, element } from '../shared/dom.js';
 import { showDialog, showError } from '../shared/dialogs.js';
 import { postJson } from '../shared/http.js';
 import { confirmUnitRemoval } from '../shared/unit-removal.js';
+import { initializeLocationMaps } from '../shared/location-map.js';
+
+initializeLocationMaps();
 
 let pendingAction = false;
 let assignment: typeof import('../shared/assignment-workspace.js') | undefined;
@@ -87,10 +90,10 @@ async function performAction(button: HTMLElement) {
               : '¿Finalizar Servicio?',
         text:
           action === 'reopen'
-            ? "El estatus regresará a 'En seguimiento' y podrás editar la información nuevamente."
+            ? "El servicio regresará a 'En seguimiento' y sus equipos a 'Asignado'. Podrás editar la información nuevamente."
             : noPhotos
-              ? 'No has subido fotos. ¿Deseas finalizar el servicio sin evidencia?'
-              : "El estatus cambiará a 'Finalizado'.",
+              ? "No has subido fotos. Los equipos pasarán a 'Instalado'. ¿Deseas finalizar el servicio sin evidencia?"
+              : "El servicio cambiará a 'Finalizado' y sus equipos a 'Instalado'.",
         icon: noPhotos || action === 'reopen' ? 'warning' : 'question',
         showCancelButton: true,
         confirmButtonText:
@@ -105,6 +108,11 @@ async function performAction(button: HTMLElement) {
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = `/tickets/${action === 'complete' ? 'finalizar' : 'reabrir'}/${button.dataset.ticketId}`;
+      const returnTo = document.createElement('input');
+      returnTo.type = 'hidden';
+      returnTo.name = 'returnTo';
+      returnTo.value = document.body.dataset.ticketListReturn ?? '/tickets';
+      form.append(returnTo);
       document.body.append(form);
       form.submit();
       return;
@@ -147,7 +155,7 @@ async function performAction(button: HTMLElement) {
 const approvedForms = new WeakSet<HTMLFormElement>();
 document.addEventListener('submit', event => {
   const form = event.target;
-  if (!(form instanceof HTMLFormElement) || form.id === 'form_unidades') return;
+  if (!(form instanceof HTMLFormElement) || form.id === 'form_unidades' || form.id === 'equipment-create-form') return;
   if (approvedForms.delete(form)) return;
   if (pendingAction || assignment?.assignmentBusy()) { event.preventDefault(); event.stopImmediatePropagation(); return; }
   if (!assignment?.assignmentDirty()) return;
@@ -266,3 +274,22 @@ function setupPhotoSelection(input: HTMLInputElement) {
   });
   window.addEventListener('pagehide', releaseUrls);
 }
+
+const historySize = document.getElementById('ticket-history-size');
+historySize?.addEventListener('change', () => {
+  const form = document.getElementById('ticket-history-filters');
+  if (form instanceof HTMLFormElement) form.requestSubmit();
+});
+
+// History links (including pagination/filter submissions) reveal the disclosure.
+function revealHistoryAnchor() {
+  if (window.location.hash !== '#ticket-history') return;
+  const disclosure = document.getElementById('ticket-history-disclosure');
+  if (disclosure instanceof HTMLDetailsElement) disclosure.open = true;
+}
+window.addEventListener('hashchange', revealHistoryAnchor);
+document.querySelector('a[href="#ticket-history"]')?.addEventListener('click', () => {
+  const disclosure = document.getElementById('ticket-history-disclosure');
+  if (disclosure instanceof HTMLDetailsElement) disclosure.open = true;
+});
+revealHistoryAnchor();

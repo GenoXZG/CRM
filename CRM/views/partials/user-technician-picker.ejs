@@ -1,0 +1,10 @@
+<div class="col-12" data-technician-field>
+  <label for="<%= fieldId %>" class="form-label">Técnico del catálogo</label>
+  <select id="<%= fieldId %>" name="id_tecnico" class="form-select" data-technician-select>
+    <option value="">Selecciona un técnico activo</option>
+    <% technicians.forEach(tech => { const own = tech.id === currentTechnician; const unavailable = tech.status !== 'Activo' || (tech.owner && tech.owner !== ownerId); %>
+    <option value="<%= tech.id %>" <%= own ? 'selected' : '' %> <%= unavailable && !own ? 'disabled' : '' %>><%= tech.name %> · #<%= tech.id %><%= tech.status !== 'Activo' ? ' · Inactivo' : tech.owner && tech.owner !== ownerId ? ' · Ya vinculado' : '' %></option>
+    <% }) %>
+  </select>
+  <p class="small text-muted mt-2 mb-0">Obligatorio para cuentas técnicas. Cada técnico puede tener una sola cuenta y solo verá sus servicios asignados.</p>
+</div>

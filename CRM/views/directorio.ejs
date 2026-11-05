@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directorio | CRM TSV</title>
+
+    <link href="/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.lineicons.com/5.0/lineicons.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
+    <link rel="stylesheet" href="/css/directory.css">
+</head>
+<body class="assignments-view" data-directory-focus="<%= focus %>">
+
+    <div class="d-flex">
+
+        <aside id="sidebar">
+            <%- include('partials/session-navigation') %>
+        </aside>
+        <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
+
+        <div class="main assignment-main d-flex flex-column min-vh-100 w-100">
+
+            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
+                <button class="toggler-btn btn" type="button" aria-label="Abrir o cerrar menú"><i class="bi bi-list fs-4" aria-hidden="true"></i><span class="ms-1">Menú</span></button>
+                <span class="ms-3 fw-bold text-secondary">Gestión / Directorio</span>
+            </nav>
+
+<main class="assignment-page directory-page p-3 p-lg-4">
+  <div class="mb-4"><h1 class="mb-1">Directorio</h1><p class="text-muted mb-3">Administra clientes y técnicos desde una sola pantalla.</p><nav class="d-flex flex-wrap gap-2" aria-label="Secciones del directorio"><a class="btn btn-outline-primary" href="#clients">Clientes</a><a class="btn btn-outline-primary" href="#technicians">Técnicos</a></nav></div>
+  <% if (notice) { %><div class="alert alert-success" role="status"><%= notice %></div><% } %>
+  <% directories.forEach(directory => { %>
+    <%- include('partials/directory-card', { directory, state, setupWizard, pageUrl }) %>
+  <% }) %>
+</main></div></div>
+<script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="/assets/pages/directory.js"></script>
+</body></html>

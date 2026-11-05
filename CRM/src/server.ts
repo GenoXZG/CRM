@@ -1,3 +1,4 @@
+import { initializeAuthentication } from './auth';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Server } from 'node:http';
@@ -8,6 +9,7 @@ import { database } from './infrastructure/database/connection';
 export async function startServer() {
   await fs.mkdir(path.join(rootDirectory, 'public/uploads/tickets'), { recursive: true });
   await database.authenticate();
+  await initializeAuthentication();
   const app = createApplication();
   const server = await new Promise<Server>((resolve, reject) => {
     const instance = app.listen(configuration.port, '0.0.0.0', () => {

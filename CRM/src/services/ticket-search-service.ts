@@ -9,7 +9,10 @@ function date(value: unknown, field: string) {
     throw new BusinessError(400, `${field} no es una fecha válida`);
   return input;
 }
-export async function getTicketList(input: Record<string, unknown>) {
+export function readTicketFilters(input: Record<string, unknown>, technicianScope?: number): TicketSearch {
+  if (technicianScope !== undefined) input = { ...input, technician: String(technicianScope) };
+  const attention = text(input.attention);
+  if (!['', 'active', 'overdue', 'unassigned', 'incomplete'].includes(attention)) throw new BusinessError(400, 'Filtro de atención inválido');
   const status = text(input.status);
   if (status && status !== 'waiting' && status !== 'in_progress' && status !== 'completed')
     throw new BusinessError(400, 'Estatus de ticket inválido');
@@ -19,6 +22,7 @@ export async function getTicketList(input: Record<string, unknown>) {
   const page = Number(input.page);
   const size = Number(input.size);
   const filters: TicketSearch = {
+    attention: attention as TicketSearch['attention'],
     search: text(input.search).slice(0, 255), status: status as TicketSearch['status'],
     client: text(input.client) ? positiveInteger(input.client, 'Cliente') : null,
     technician: text(input.technician) ? positiveInteger(input.technician, 'Técnico') : null,
@@ -26,5 +30,10 @@ export async function getTicketList(input: Record<string, unknown>) {
     page: Number.isSafeInteger(page) && page > 0 ? page : 1,
     size: [5, 10, 25, 50].includes(size) ? size : 10,
   };
-  return { ...(await searchTickets(filters)), filters };
+  return filters;
+}
+
+export async function getTicketList(input: Record<string, unknown>, technicianScope?: number) {
+  const filters = readTicketFilters(input, technicianScope);
+  return { ...(await searchTickets(filters, technicianScope)), filters };
 }

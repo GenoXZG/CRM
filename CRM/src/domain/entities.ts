@@ -58,6 +58,7 @@ export interface Ticket {
   status: TicketStatus | null;
   unitCount: number | null;
   scheduledAt: Date | null;
+  closedAt: Date | null;
   locationUrl: string | null;
   comments: string | null;
   assignmentStatus: AssignmentStatus;

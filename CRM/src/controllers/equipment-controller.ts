@@ -7,29 +7,56 @@ import {
   serializeEquipmentModel,
 } from '../adapters/legacy-http';
 import * as equipmentService from '../services/equipment-service';
+import { getInventory } from '../services/inventory-service';
+import { getInventoryTotals } from '../infrastructure/database/inventory-repository';
 type HttpRequest = Request<Record<string, string>, unknown, Record<string, unknown>>;
+
+export async function updateEquipment(request: HttpRequest, response: Response) {
+  try {
+    const device = await equipmentService.updateEquipment(request.params.id, readCreateEquipmentRequest(request.body));
+    response.json({ success: true, data: serializeEquipment(device) });
+  } catch (error) { respondError(response, error); }
+}
+export async function deleteEquipment(request: HttpRequest, response: Response) {
+  try {
+    await equipmentService.deleteEquipment(request.params.id);
+    response.json({ success: true });
+  } catch (error) { respondError(response, error); }
+}
 
 export async function createEquipment(request: HttpRequest, response: Response) {
   try {
-    await equipmentService.createEquipment(readCreateEquipmentRequest(request.body));
-    response.redirect('/registro_equipos');
+    const device = await equipmentService.createEquipment(readCreateEquipmentRequest(request.body));
+    if (request.get('accept')?.includes('application/json')) {
+      response.status(201).json({ success: true, data: serializeEquipment(device) });
+      return;
+    }
+    const state = request.body?.inventoryState;
+    const url = new URL(typeof state === 'string' && state.startsWith('/inventario?') && state.length < 5000 ? state : '/inventario', 'http://localhost');
+    url.searchParams.set('created', String(device.id));
+    response.redirect(url.pathname + url.search);
   } catch (error) {
     respondError(response, error);
   }
 }
-export async function renderEquipmentInventory(_request: Request, response: Response) {
+export async function renderEquipmentInventory(request: Request, response: Response) {
   try {
-    const [models, inventory] = await Promise.all([
-      equipmentService.getEquipmentModels(),
-      equipmentService.getEquipmentInventory(),
+    const [models, result, totals] = await Promise.all([
+      equipmentService.getEquipmentModels(), getInventory(request.query), getInventoryTotals(),
     ]);
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(result.filters)) if (value !== null && value !== '') params.set(key, String(value));
+    const created = Number(request.query.created);
     response.render('registro_equipos', {
+      ...result, totals,
       equipos_stock: models.map(serializeEquipmentModel),
-      equiposAsignados: inventory.map(serializeEquipment),
+      brands: [...new Set(models.map(model => model.brand))].sort((left, right) => left.localeCompare(right, 'es')),
+      created: Number.isSafeInteger(created) && created > 0 && created <= 2147483647 ? created : null,
+      notice: request.query.result === 'updated' ? 'Datos del equipo actualizados correctamente.' : request.query.result === 'deleted' ? 'Equipo eliminado correctamente.' : null,
+      inventoryState: `/inventario?${params}`,
+      pageUrl: (page: number) => { const next = new URLSearchParams(params); next.set('page', String(page)); return `/inventario?${next}`; },
     });
-  } catch (error) {
-    respondError(response, error);
-  }
+  } catch (error) { respondError(response, error); }
 }
 export async function listAvailableEquipment(_request: Request, response: Response) {
   try {

@@ -1,9 +1,9 @@
--- Initial application schema v1. Existing databases are not modified.
+-- Base application schema. Applied automatically only to empty MySQL volumes.
 CREATE TABLE IF NOT EXISTS `Cliente` (`ID_cliente` INTEGER NOT NULL auto_increment , `Nombre_empresa` VARCHAR(100) NOT NULL, `Encargado` VARCHAR(50) NOT NULL, `Numero` VARCHAR(10) NOT NULL, PRIMARY KEY (`ID_cliente`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `Tecnicos` (`ID_Tecnico` INTEGER NOT NULL auto_increment , `Nombre_tecnico` VARCHAR(255) NOT NULL, `Estatus_tecnico` ENUM('Activo', 'Inactivo') NOT NULL, `Numero_tecnico` VARCHAR(255) NOT NULL, PRIMARY KEY (`ID_Tecnico`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS `Tickets` (`ID_ticket` INTEGER NOT NULL auto_increment , `ID_tecnico` INTEGER, `ID_cliente` INTEGER NOT NULL, `Tipo_servicio` ENUM('Instalacion', 'Desinstalacion', 'Revision', 'Rescate'), `Estatus_servicio` ENUM('En espera', 'En seguimiento', 'Finalizado') DEFAULT 'En espera', `Numero_unidades` INTEGER, `Fecha_servicio` DATETIME, `Link_maps` VARCHAR(255), `Comentarios` TEXT, `Estatus_unidades` TINYINT DEFAULT 0, PRIMARY KEY (`ID_ticket`), FOREIGN KEY (`ID_tecnico`) REFERENCES `Tecnicos` (`ID_Tecnico`) ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE TABLE IF NOT EXISTS `Tickets` (`ID_ticket` INTEGER NOT NULL auto_increment , `ID_tecnico` INTEGER, `ID_cliente` INTEGER NOT NULL, `Tipo_servicio` ENUM('Instalacion', 'Desinstalacion', 'Revision', 'Rescate'), `Estatus_servicio` ENUM('En espera', 'En seguimiento', 'Finalizado') DEFAULT 'En espera', `Numero_unidades` INTEGER, `Fecha_servicio` DATETIME, `Fecha_cierre` DATETIME(3) NULL, `Link_maps` VARCHAR(255), `Comentarios` TEXT, `Estatus_unidades` TINYINT DEFAULT 0, PRIMARY KEY (`ID_ticket`), FOREIGN KEY (`ID_tecnico`) REFERENCES `Tecnicos` (`ID_Tecnico`) ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (`ID_cliente`) REFERENCES `Cliente` (`ID_cliente`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `Equipos_catalogo` (`ID_equipo_modelo` INTEGER NOT NULL auto_increment , `Marca_equipo` VARCHAR(255) NOT NULL, `Modelo_equipo` VARCHAR(255) NOT NULL, PRIMARY KEY (`ID_equipo_modelo`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -18,3 +18,66 @@ CREATE TABLE IF NOT EXISTS `Accesorios_catalogo` (`ID_accesorio_modelo` INTEGER 
 CREATE TABLE IF NOT EXISTS `Ticket_fotos` (`ID_foto` INTEGER auto_increment , `Ruta_archivo` VARCHAR(255) NOT NULL, `Nombre_original` VARCHAR(255), `createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, `ID_ticket` INTEGER, PRIMARY KEY (`ID_foto`), FOREIGN KEY (`ID_ticket`) REFERENCES `Tickets` (`ID_ticket`) ON DELETE SET NULL ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `Unidad_Accesorio` (`ID_unidad` INTEGER , `ID_accesorio` INTEGER , PRIMARY KEY (`ID_unidad`, `ID_accesorio`), FOREIGN KEY (`ID_unidad`) REFERENCES `Unidades` (`ID_unidad`) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (`ID_accesorio`) REFERENCES `Accesorios_catalogo` (`ID_accesorio_modelo`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Authentication baseline. Safe to apply to existing databases; preserves rows.
+CREATE TABLE IF NOT EXISTS usuarios (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  correo VARCHAR(254) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  rol ENUM('admin','coordinador','tecnico') NOT NULL DEFAULT 'coordinador',
+  creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id_tecnico INT NULL,
+  UNIQUE KEY uq_usuarios_tecnico (id_tecnico),
+  CONSTRAINT fk_usuarios_tecnico FOREIGN KEY (id_tecnico) REFERENCES Tecnicos(ID_Tecnico) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS sesiones_usuario (
+  token_hash CHAR(64) NOT NULL PRIMARY KEY,
+  id_usuario INT NOT NULL,
+  expira_en DATETIME NOT NULL,
+  segundo_factor TINYINT NOT NULL DEFAULT 0,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
+  INDEX (expira_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS desafios_login (
+  token_hash CHAR(64) NOT NULL PRIMARY KEY,
+  id_usuario INT NOT NULL UNIQUE,
+  code_hash CHAR(64) NOT NULL,
+  credential_hash CHAR(64) NOT NULL,
+  intentos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  enviado TINYINT NOT NULL DEFAULT 0,
+  creado_en DATETIME NOT NULL,
+  expira_en DATETIME NOT NULL,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
+  INDEX (expira_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Ticket audit history.
+CREATE TABLE IF NOT EXISTS ticket_historial (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  id_ticket INT NOT NULL,
+  evento VARCHAR(50) NOT NULL,
+  cambios JSON NOT NULL,
+  id_usuario INT NULL,
+  usuario_correo VARCHAR(254) NULL,
+  usuario_rol VARCHAR(20) NULL,
+  ocurrido_en DATETIME(3) NOT NULL,
+  CONSTRAINT fk_historial_ticket FOREIGN KEY (id_ticket) REFERENCES Tickets(ID_ticket) ON DELETE CASCADE,
+  CONSTRAINT fk_historial_usuario FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX ix_historial_ticket (id_ticket,id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Password recovery.
+CREATE TABLE IF NOT EXISTS recuperaciones_password (
+  token_hash CHAR(64) NOT NULL PRIMARY KEY,
+  id_usuario INT NOT NULL UNIQUE,
+  code_hash CHAR(64) NOT NULL,
+  credential_hash CHAR(64) NOT NULL,
+  intentos TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  enviado TINYINT NOT NULL DEFAULT 0,
+  creado_en DATETIME NOT NULL,
+  expira_en DATETIME NOT NULL,
+  FOREIGN KEY (id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
+  INDEX (expira_en)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

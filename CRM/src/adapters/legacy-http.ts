@@ -125,6 +125,7 @@ export const serializeTicket = (ticket: Ticket) => ({
   Estatus_servicio: ticket.status ? ticketStatusToDatabase[ticket.status] : null,
   Numero_unidades: ticket.unitCount,
   Fecha_servicio: ticket.scheduledAt,
+  Fecha_cierre: ticket.closedAt,
   Link_maps: ticket.locationUrl,
   Comentarios: ticket.comments,
   Estatus_unidades: ticket.assignmentStatus,

@@ -1,5 +1,5 @@
     <div class="modal fade" id="modalSeleccionEquipo" tabindex="-1" aria-labelledby="assignment-equipment-title" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 rounded-4 shadow-lg">
                 <div class="modal-header border-0 pb-0">
                     <h5 id="assignment-equipment-title" class="modal-title fw-bold ms-2">Inventario Disponible</h5>
@@ -11,6 +11,10 @@
                         Selecciona el dispositivo GPS para vincularlo a la unidad.
                     </div>
 
+                    <details id="assignment-register-equipment" class="border rounded-3 p-3 mb-3">
+                        <summary class="fw-semibold text-primary" role="button">+ Registrar equipo sin salir del ticket</summary>
+                        <div class="mt-3"><%- include('equipment-registration-form', { contextual: true }) %></div>
+                    </details>
                     <label class="form-label small" for="assignment-equipment-search">Buscar por marca, modelo, IMEI o módem</label>
                     <input type="search" id="assignment-equipment-search" class="form-control mb-3" placeholder="Buscar equipo disponible…">
                     <div class="table-responsive rounded-3 border" style="max-height: 400px; overflow-y: auto;">
@@ -55,9 +59,7 @@
                                                 <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
                                                 No hay equipos disponibles en inventario.
                                             </div>
-                                            <a href="/registro_equipos" class="btn btn-sm btn-primary rounded-pill px-4">
-                                                <i class="bi bi-plus-lg me-1"></i> Ir a Registrar Equipo
-                                            </a>
+                                            <p class="small mb-0">Abre «Registrar equipo sin salir del ticket» para agregar uno.</p>
                                         </td>
                                     </tr>
                                 <% } %>

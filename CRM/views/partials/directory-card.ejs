@@ -1,0 +1,59 @@
+<% const destination = '/directorio?' + state + '#' + directory.key; %>
+<section class="soft-card mb-4" id="<%= directory.key %>" aria-labelledby="<%= directory.key %>-title">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div><h2 class="h4 mb-1" id="<%= directory.key %>-title"><%= directory.title %></h2><p class="text-muted mb-0"><%= directory.description %></p></div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#<%= directory.key %>-create">+ Registrar <%= directory.singular %></button>
+  </div>
+  <% if (setupWizard === directory.key) { %><p class="alert alert-info">Registra un <%= directory.singular %><%= directory.key === 'technicians' ? ' activo' : '' %> para continuar con la guía de inicio.</p><% } %>
+  <form action="/directorio#<%= directory.key %>" method="GET" id="<%= directory.key %>-filters" class="row g-3 mb-4">
+    <% for (const [key, value] of state) { if (!key.startsWith(directory.key + '_')) { %><input type="hidden" name="<%= key %>" value="<%= value %>"><% } } %>
+    <div class="col-12 <%= directory.key === 'technicians' ? 'col-lg-8' : '' %>"><label for="<%= directory.key %>-search" class="form-label"><%= directory.searchLabel %></label><input class="form-control" type="search" id="<%= directory.key %>-search" name="<%= directory.key %>_search" maxlength="255" value="<%= directory.search %>" placeholder="<%= directory.key === 'clients' ? 'Empresa, encargado o teléfono…' : 'Nombre o teléfono…' %>"></div>
+    <% if (directory.key === 'technicians') { %><div class="col-12 col-lg-4"><label class="form-label" for="technicians-status">Estado</label><select class="form-select" id="technicians-status" name="technicians_status"><option value="">Todos los estados</option><option value="active" <%= directory.status === 'active' ? 'selected' : '' %>>Activo</option><option value="inactive" <%= directory.status === 'inactive' ? 'selected' : '' %>>Inactivo</option></select></div><% } %>
+    <div class="col-12 d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">Aplicar filtros</button><a class="btn btn-outline-secondary" href="<%= (() => { const params = new URLSearchParams(state); params.delete(directory.key + '_search'); params.delete(directory.key + '_page'); params.delete(directory.key + '_status'); return '/directorio?' + params + '#' + directory.key; })() %>">Limpiar filtros</a></div>
+  </form>
+  <div class="table-responsive"><table class="table table-hover align-middle directory-table">
+    <caption class="visually-hidden">Directorio de <%= directory.title %></caption>
+    <thead><tr><th scope="col">ID</th><% directory.fields.forEach(field => { %><th scope="col"><%= field.label %></th><% }) %><th scope="col">Acciones</th></tr></thead>
+    <tbody>
+      <% directory.rows.forEach(row => { %><tr data-directory-row="<%= directory.key %>">
+        <td data-label="ID" class="fw-bold">#<%= row.id %></td>
+        <% directory.fields.forEach(field => { %><td data-label="<%= field.label %>"><% if (field.type === 'status') { %><span class="badge <%= row.status === 'active' ? 'text-bg-success' : 'text-bg-secondary' %>"><%= row.status === 'active' ? 'Activo' : 'Inactivo' %></span><% } else { %><%= row[field.property] %><% } %></td><% }) %>
+        <td data-label="Acciones"><div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-primary" aria-label="Editar <%= directory.singular %> #<%= row.id %>" data-bs-toggle="modal" data-bs-target="#<%= directory.key %>-edit" data-id="<%= row.id %>" <% directory.fields.forEach(field => { %>data-<%= field.property.toLowerCase() %>="<%= field.type === 'status' ? (row.status === 'active' ? 'Activo' : 'Inactivo') : row[field.property] %>"<% }) %>>Editar</button>
+          <button type="button" class="btn btn-outline-danger" aria-label="Eliminar <%= directory.singular %> #<%= row.id %>" data-bs-toggle="modal" data-bs-target="#<%= directory.key %>-delete" data-id="<%= row.id %>" data-description="<%= directory.key === 'clients' ? row.companyName : row.name %>" <%= row.linked ? 'disabled' : '' %>>Eliminar</button>
+        </div><% if (row.linked) { %><small class="d-block text-muted mt-2"><%= directory.key === 'technicians' ? 'Tiene tickets o una cuenta de acceso asociados' : 'Tiene tickets asociados' %> y no se puede eliminar.<%= directory.key === 'technicians' ? ' Puedes cambiar su estado a Inactivo.' : '' %></small><% } %></td>
+      </tr><% }) %>
+      <% if (!directory.rows.length) { %><tr><td colspan="<%= directory.fields.length + 2 %>" class="text-center text-muted py-4">No hay <%= directory.title.toLowerCase() %> que coincidan con estos filtros.</td></tr><% } %>
+    </tbody>
+  </table></div>
+  <div class="assignment-footer">
+    <div class="d-flex flex-wrap align-items-center gap-3"><label class="d-flex align-items-center gap-2" for="<%= directory.key %>-size">Filas por página<select class="form-select w-auto" id="<%= directory.key %>-size" name="<%= directory.key %>_size" form="<%= directory.key %>-filters"><% [5,10,25,50].forEach(size => { %><option value="<%= size %>" <%= directory.size === size ? 'selected' : '' %>><%= size %></option><% }) %></select></label><span class="small text-muted" role="status"><%= directory.count ? (directory.page - 1) * directory.size + 1 : 0 %>–<%= Math.min(directory.page * directory.size, directory.count) %> de <%= directory.count %> registros</span></div>
+    <nav class="d-flex flex-wrap align-items-center gap-2" aria-label="Paginación de <%= directory.title %>">
+      <% if (directory.page > 1) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(directory.key, directory.page - 1) %>">Anterior</a><% } else { %><button class="btn btn-outline-secondary" disabled>Anterior</button><% } %>
+      <span class="small">Página <%= directory.page %> de <%= directory.pages %></span>
+      <% if (directory.page < directory.pages) { %><a class="btn btn-outline-secondary" href="<%= pageUrl(directory.key, directory.page + 1) %>">Siguiente</a><% } else { %><button class="btn btn-outline-secondary" disabled>Siguiente</button><% } %>
+    </nav>
+  </div>
+</section>
+<% ['create', 'edit', 'delete'].forEach(action => { const modal = directory.key + '-' + action; const mapping = { [modal + '-id']: 'id' }; if (action === 'edit') directory.fields.forEach(field => { mapping[modal + '-' + field.property] = field.property.toLowerCase(); }); if (action === 'delete') mapping[modal + '-description'] = 'description'; %>
+<div class="modal fade directory-modal" id="<%= modal %>" tabindex="-1" aria-labelledby="<%= modal %>-title" aria-hidden="true" <% if (action !== 'create') { %>data-field-map='<%= JSON.stringify(mapping) %>'<% } %>>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
+    <div class="modal-header"><h2 class="modal-title fs-5" id="<%= modal %>-title"><%= action === 'create' ? 'Registrar' : action === 'edit' ? 'Editar' : 'Eliminar' %> <%= directory.singular %></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+    <form action="<%= directory[action === 'create' ? 'create' : action === 'edit' ? 'update' : 'remove'] %>" method="POST" data-directory-form data-directory-action="<%= action %>">
+      <div class="modal-body">
+        <input type="hidden" name="directoryState" value="<%= destination %>">
+        <% if (action === 'create' && setupWizard === directory.key) { %><input type="hidden" name="setupWizard" value="<%= setupWizard %>"><% } %>
+        <% if (action !== 'create') { %><input type="hidden" name="<%= directory.idField %>" id="<%= modal %>-id"><% } %>
+        <div class="alert alert-danger d-none" role="alert" data-directory-error></div>
+        <% if (action === 'delete') { %><p>¿Eliminar a <strong id="<%= modal %>-description"></strong>?</p><p class="text-muted mb-0">Esta acción es permanente. Solo se pueden eliminar registros sin tickets asociados.</p><% } else { %>
+        <fieldset class="directory-fields">
+          <% directory.fields.forEach(field => { %><div class="mb-3"><label class="form-label" for="<%= modal %>-<%= field.property %>"><%= field.label %></label>
+          <% if (field.type === 'status') { %><select class="form-select" name="<%= field.name %>" id="<%= modal %>-<%= field.property %>" required><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select><small class="text-muted">Inactivar conserva los servicios existentes y evita nuevas asignaciones.</small><% } else { %><input class="form-control" type="<%= field.type %>" name="<%= field.name %>" id="<%= modal %>-<%= field.property %>" maxlength="<%= field.maximum %>" <%- field.type === 'tel' ? 'inputmode="tel" placeholder="10 dígitos"' : '' %> required><% } %>
+          </div><% }) %>
+        </fieldset><% } %>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn <%= action === 'delete' ? 'btn-danger' : 'btn-primary' %>"><%= action === 'delete' ? 'Sí, eliminar' : 'Guardar' %></button></div>
+    </form>
+  </div></div>
+</div>
+<% }) %>

@@ -4,6 +4,7 @@ import { hideModal, refreshTooltips } from '../shared/bootstrap.js';
 import { showDialog, showError } from '../shared/dialogs.js';
 import { postJson, requestJson } from '../shared/http.js';
 import { confirmUnitRemoval } from '../shared/unit-removal.js';
+import { equipmentRegistrationBusy, initializeEquipmentRegistration, type RegisteredEquipment } from '../shared/equipment-registration.js';
 import { AssignmentState } from '../state/equipment-assignment.js';
 
 interface UnitResponse {
@@ -25,7 +26,7 @@ let selectionVersion = 0;
 let pendingRequest: AbortController | undefined;
 let saving = false;
 const embedded = document.body.dataset.ticketWorkspace === 'true';
-function actionBusy() { return saving || document.body.dataset.ticketActionBusy === 'true'; }
+function actionBusy() { return saving || equipmentRegistrationBusy() || document.body.dataset.ticketActionBusy === 'true'; }
 
 export const equipmentAssignmentBusy = () => saving;
 export function equipmentAssignmentDirty() {
@@ -211,6 +212,28 @@ function updateEquipmentChoices() {
     button.textContent = occupied ? 'En otra unidad' : 'Seleccionar';
   }
 }
+initializeEquipmentRegistration(device => {
+  const body = element('tablaEquipos').querySelector('tbody')!;
+  for (const row of body.querySelectorAll('tr')) if (!row.querySelector('.btn_seleccion_equipo')) row.remove();
+  const row = document.createElement('tr');
+  row.innerHTML = `<td><div class="fw-bold">${escapeHtml(device.Equipo_stock.Modelo_equipo)}</div><small>${escapeHtml(device.Equipo_stock.Marca_equipo)}</small></td><td class="font-monospace">${escapeHtml(device.IMEI)}</td><td>${escapeHtml(device.ID_modem)}</td><td class="text-end"><button type="button" class="btn btn-outline-primary btn_seleccion_equipo" data-bs-dismiss="modal">Seleccionar</button></td>`;
+  const button = row.querySelector<HTMLButtonElement>('button')!;
+  Object.assign(button.dataset, { id_equipo: String(device.ID_equipo), marca: device.Equipo_stock.Marca_equipo, modelo: device.Equipo_stock.Modelo_equipo, imei: device.IMEI ?? '', id_modem: device.ID_modem ?? '' });
+  body.prepend(row);
+  const id = element('modalSeleccionEquipo').dataset.unitId;
+  if (id && !state.lockedUnits.has(id)) {
+    selectEquipment(id, device);
+  }
+  const details = document.getElementById('assignment-register-equipment');
+  if (details instanceof HTMLDetailsElement) details.open = false;
+  hideModal('modalSeleccionEquipo');
+});
+function selectEquipment(id: string, device: RegisteredEquipment) {
+  state.assign(id, String(device.ID_equipo));
+  element(`equipo-info-${id}`).innerHTML = renderEquipmentInfo(device.Equipo_stock.Modelo_equipo, device.IMEI ?? '');
+  updateEquipmentCard(id);
+}
+
 element('modalSeleccionEquipo').addEventListener('show.bs.modal', updateEquipmentChoices);
 element<HTMLInputElement>('assignment-equipment-search').addEventListener('input', event => {
   const term = (event.target as HTMLInputElement).value.trim().toLocaleLowerCase('es');

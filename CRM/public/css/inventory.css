@@ -1,0 +1,13 @@
+.inventory-table th, .inventory-table td { padding: .85rem .75rem; }
+.inventory-table .font-monospace { overflow-wrap: anywhere; }
+.inventory-metric { text-decoration: none; }
+.inventory-table .btn, #modalNuevoEquipo .btn, #modalNuevoEquipo .form-control, #modalNuevoEquipo .form-select,
+#modalEditarEquipo .btn, #modalEditarEquipo .form-control, #modalEditarEquipo .form-select { min-height: 44px; }
+@media (max-width: 575.98px) {
+  .inventory-table thead { display: none; }
+  .inventory-table tbody { display: block; }
+  .inventory-table tr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem; padding: 1rem 0; border-bottom: 1px solid #dee2e6; }
+  .inventory-table td { display: block; border: 0; padding: .25rem; overflow-wrap: anywhere; }
+  .inventory-table td[data-label]::before { content: attr(data-label); display: block; color: #64748b; font-size: .75rem; margin-bottom: .35rem; }
+  .inventory-table td[colspan] { grid-column: 1 / -1; }
+}

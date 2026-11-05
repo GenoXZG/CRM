@@ -1,0 +1,24 @@
+<form action="/add_equipo" method="POST" id="equipment-create-form">
+  <% if (!contextual) { %><input type="hidden" name="inventoryState" value="<%= inventoryState %>"><% } %>
+  <div class="alert alert-danger d-none" id="equipment-create-error" role="alert"></div>
+  <fieldset class="border-0 p-0 m-0" id="equipment-create-fields">
+    <legend class="visually-hidden">Registrar dispositivo físico</legend>
+    <div class="mb-3"><label class="form-label" for="equipment-model-search">Buscar marca o modelo del catálogo</label><input type="search" id="equipment-model-search" class="form-control" placeholder="Filtrar modelos…" autocomplete="off"></div>
+    <div class="mb-3"><label class="form-label" for="id_equipo_modelo">Marca / Modelo <span aria-hidden="true">*</span></label>
+      <select class="form-select" id="id_equipo_modelo" name="id_equipo_modelo" required>
+        <option value="">Selecciona un modelo</option>
+        <% equipos_stock.forEach(model => { %><option value="<%= model.ID_equipo_modelo %>"><%= model.Marca_equipo %> · <%= model.Modelo_equipo %></option><% }) %>
+      </select>
+      <p class="small text-muted mt-2 mb-0" id="equipment-model-hint"><%= equipos_stock.length ? 'Selecciona el modelo que corresponde al dispositivo.' : 'Primero registra una marca y modelo en Catálogos.' %></p>
+      <a class="small" href="/catalogos#equipment" target="_blank" rel="noopener">Administrar modelos en Catálogos ↗</a>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-sm-6"><label class="form-label" for="imei">IMEI / Serie <span aria-hidden="true">*</span></label><input type="text" class="form-control" id="imei" name="imei" maxlength="100" required placeholder="Identificador del dispositivo" autocomplete="off"></div>
+      <div class="col-12 col-sm-6"><label class="form-label" for="id_modem">ID Módem <span aria-hidden="true">*</span></label><input type="text" class="form-control" id="id_modem" name="id_modem" maxlength="100" required placeholder="Identificador del módem" autocomplete="off"></div>
+    </div>
+    <p class="small text-muted">El equipo se registrará como disponible.<% if (contextual) { %> Se seleccionará para esta unidad; confirma su vínculo al guardar las asignaciones.<% } %></p>
+    <div class="d-flex flex-wrap justify-content-end gap-2">
+      <button type="submit" id="equipment-create-submit" class="btn btn-primary" <%= equipos_stock.length ? '' : 'disabled' %>><%= contextual ? 'Registrar y seleccionar' : 'Guardar equipo' %></button>
+    </div>
+  </fieldset>
+</form>

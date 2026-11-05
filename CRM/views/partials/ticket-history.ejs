@@ -1,0 +1,48 @@
+<section class="soft-card mt-4" id="ticket-history" aria-labelledby="ticket-history-title">
+  <details id="ticket-history-disclosure">
+    <summary class="ticket-history-toggle"><h2 class="h5 d-inline mb-0" id="ticket-history-title">Historial del servicio</h2><span class="small text-muted ms-2"><%= history.count %> eventos</span></summary>
+    <div class="pt-3">
+  <p class="small text-muted">Cambios registrados desde esta actualización. Fechas y horas de Ciudad de México; las operaciones anteriores no se reconstruyen.</p>
+  <% const events = {ticket_creado:'Ticket creado',ticket_actualizado:'Información actualizada',estado_actualizado:'Estado actualizado',servicio_finalizado:'Servicio finalizado',ticket_reabierto:'Ticket reabierto',unidad_registrada:'Unidad registrada',unidad_retirada:'Unidad retirada',equipo_asignado:'Equipo asignado',equipo_retirado:'Equipo retirado',accesorio_asignado:'Accesorio asignado',accesorio_retirado:'Accesorio retirado',evidencia_agregada:'Evidencia agregada'};
+  const formatValue = (field,value) => {
+    if (value === null || value === undefined || value === '') return 'Sin dato';
+    if (field === 'Estado de preparación') return ({0:'Pendiente',1:'Completa',2:'Parcial'})[value] ?? String(value);
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(value) && field.startsWith('Fecha')) return new Date(value).toLocaleString('es-MX',{timeZone:field === 'Fecha programada' ? 'UTC' : 'America/Mexico_City'});
+    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+  }; %>
+  <% if (!history.rows.length) { %><p class="text-muted py-3 mb-0">Todavía no hay cambios registrados para este servicio.</p><% } %>
+  <ol class="list-unstyled mb-3">
+    <% history.rows.forEach(event => { %>
+    <li class="border-top py-3" data-history-event="<%= event.evento %>">
+      <div class="d-flex flex-wrap justify-content-between gap-2"><strong><%= events[event.evento] || event.evento %></strong><time datetime="<%= event.ocurrido_en.toISOString() %>" class="small text-muted"><%= event.ocurrido_en.toLocaleString('es-MX',{timeZone:'America/Mexico_City'}) %></time></div>
+      <p class="small text-muted mb-2" style="overflow-wrap:anywhere"><%= event.usuario_correo || 'Sistema' %><%= event.usuario_rol ? ' · ' + ({admin:'Administrador',coordinador:'Coordinador',tecnico:'Técnico'})[event.usuario_rol] : '' %></p>
+      <dl class="history-changes small mb-0">
+        <% event.cambios.forEach(change => { %>
+        <div class="history-change">
+          <dt><%= change.field %></dt>
+          <dd>
+            <% if (JSON.stringify(change.before) === JSON.stringify(change.after)) { %>
+              <span><%= change.afterLabel || formatValue(change.field,change.after) %></span>
+            <% } else { %>
+              <span class="text-muted"><span class="visually-hidden">Antes: </span><%= change.beforeLabel || formatValue(change.field,change.before) %></span>
+              <span class="history-change-arrow" aria-hidden="true">→</span>
+              <span><span class="visually-hidden">Después: </span><%= change.afterLabel || formatValue(change.field,change.after) %></span>
+            <% } %>
+          </dd>
+        </div>
+        <% }) %>
+      </dl>
+    </li>
+    <% }) %>
+  </ol>
+  <div class="assignment-footer">
+    <form id="ticket-history-filters" method="GET" action="/detalle_ticket/<%= ticket.ID_ticket %>#ticket-history" class="d-flex flex-wrap align-items-center gap-2">
+      <input type="hidden" name="returnTo" value="<%= backToTickets %>">
+      <label for="ticket-history-size">Filas por página</label><select name="history_size" id="ticket-history-size" class="form-select w-auto"><% [5,10,25,50].forEach(size => { %><option value="<%= size %>" <%= history.size === size ? 'selected' : '' %>><%= size %></option><% }) %></select><button type="submit" class="btn btn-outline-secondary">Aplicar</button>
+    </form>
+    <span class="small text-muted"><%= history.count %> eventos · Página <%= history.page %> de <%= history.pages %></span>
+    <nav aria-label="Paginación del historial" class="d-flex gap-2"><% if (history.page>1) { %><a class="btn btn-outline-secondary" href="<%= historyPageUrl(history.page-1) %>">Anterior</a><% } %><% if (history.page<history.pages) { %><a class="btn btn-outline-secondary" href="<%= historyPageUrl(history.page+1) %>">Siguiente</a><% } %></nav>
+  </div>
+    </div>
+  </details>
+</section>

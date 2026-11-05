@@ -1,10 +1,11 @@
+import { equipmentRegistrationBusy, equipmentRegistrationDirty } from './equipment-registration.js';
 import { element } from './dom.js';
 import { selectUnitTicket, resetUnitAssignment, unitAssignmentBusy, unitAssignmentDirty } from '../pages/unit-assignment.js';
 import { selectEquipmentTicket, resetEquipmentAssignment, equipmentAssignmentBusy, equipmentAssignmentDirty } from '../pages/equipment-assignment.js';
 
 let loading = false;
-export const assignmentBusy = () => loading || unitAssignmentBusy() || equipmentAssignmentBusy();
-export const assignmentDirty = () => unitAssignmentDirty() || equipmentAssignmentDirty();
+export const assignmentBusy = () => loading || unitAssignmentBusy() || equipmentAssignmentBusy() || equipmentRegistrationBusy();
+export const assignmentDirty = () => unitAssignmentDirty() || equipmentAssignmentDirty() || equipmentRegistrationDirty();
 export function resetAssignment() {
   resetUnitAssignment();
   resetEquipmentAssignment();

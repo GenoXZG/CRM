@@ -14,6 +14,7 @@ export interface TicketAttributes {
   Estatus_servicio: DatabaseTicketStatus | null;
   Numero_unidades: number | null;
   Fecha_servicio: Date | null;
+  Fecha_cierre: Date | null;
   Link_maps: string | null;
   Comentarios: string | null;
   Estatus_unidades: 0 | 1 | 2 | null;
@@ -89,7 +90,7 @@ export type UnitRow = Row<UnitAttributes, 'ID_unidad'> & {
 };
 export type TicketRow = Row<
   TicketAttributes,
-  'ID_ticket' | 'Estatus_servicio' | 'Estatus_unidades'
+  'ID_ticket' | 'Estatus_servicio' | 'Estatus_unidades' | 'Fecha_cierre'
 > & {
   Cliente?: ClientRow;
   Tecnico?: TechnicianRow;
@@ -143,6 +144,7 @@ export const ticketModel = database.define<TicketRow>(
     },
     Numero_unidades: { type: DataTypes.INTEGER, allowNull: true },
     Fecha_servicio: { type: DataTypes.DATE, allowNull: true },
+    Fecha_cierre: { type: DataTypes.DATE(3), allowNull: true },
     Link_maps: { type: DataTypes.STRING(255), allowNull: true },
     Comentarios: { type: DataTypes.TEXT, allowNull: true },
     Estatus_unidades: { type: DataTypes.TINYINT, defaultValue: 0, allowNull: true },

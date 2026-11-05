@@ -15,9 +15,99 @@
     {
       "key": "brand",
       "value": ""
+    },
+    {
+      "key": "authEmail",
+      "value": ""
+    },
+    {
+      "key": "authPassword",
+      "value": ""
+    },
+    {
+      "key": "sessionCookie",
+      "value": ""
+    },
+    {
+      "key": "authCode",
+      "value": ""
+    },
+    {
+      "key": "pendingCookie",
+      "value": ""
     }
   ],
   "item": [
+    {
+      "name": "1. Login — enviar código",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/login",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "correo",
+              "value": "{{authEmail}}"
+            },
+            {
+              "key": "password",
+              "value": "{{authPassword}}"
+            }
+          ]
+        }
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Segundo factor requerido\", function () { pm.expect(pm.response.code).to.equal(302); pm.expect(pm.response.headers.get(\"Location\")).to.equal(\"/login/verificar\"); });",
+              "pm.collectionVariables.unset(\"sessionCookie\");",
+              "const cookie = pm.response.headers.all().filter(h => h.key.toLowerCase() === \"set-cookie\").map(h => h.value).find(v => v.startsWith(\"crm_pending=\"));",
+              "if (cookie) pm.collectionVariables.set(\"pendingCookie\", cookie.split(\";\")[0]);",
+              "else pm.collectionVariables.unset(\"pendingCookie\");"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Verificar código — completar authCode con el correo recibido",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/login/verificar",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "code",
+              "value": "{{authCode}}"
+            }
+          ]
+        }
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Verificación correcta\", function () { pm.expect(pm.response.code).to.equal(302); pm.expect(pm.response.headers.get(\"Location\")).to.equal(\"/\"); });",
+              "const cookie = pm.response.headers.all().filter(h => h.key.toLowerCase() === \"set-cookie\").map(h => h.value).find(v => v.startsWith(\"crm_session=\") && !v.includes(\"Max-Age=0\"));",
+              "if (pm.response.code === 302 && cookie) { pm.collectionVariables.set(\"sessionCookie\", cookie.split(\";\")[0]); pm.collectionVariables.unset(\"pendingCookie\"); pm.collectionVariables.unset(\"authCode\"); }"
+            ]
+          }
+        }
+      ]
+    },
     {
       "name": "Health",
       "request": {
@@ -33,35 +123,100 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Dashboard operativo y agenda disponibles\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"attention-title\"', 'id=\"agenda-title\"', 'id=\"workload-title\"', 'id=\"stock-title\"', '/tickets#nuevo-ticket'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "  pm.expect(html).not.to.include(\"Finalizados Hoy\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Page /clientes",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/clientes"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directorio unificado y controles independientes\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"clients\"', 'id=\"technicians\"', 'id=\"clients-filters\"', 'id=\"technicians-filters\"', 'id=\"clients-size\"', 'id=\"technicians-size\"', 'id=\"technicians-status\"', '/assets/pages/directory.js'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Page /tecnicos",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/tecnicos"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directorio unificado y controles independientes\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"clients\"', 'id=\"technicians\"', 'id=\"clients-filters\"', 'id=\"technicians-filters\"', 'id=\"clients-size\"', 'id=\"technicians-size\"', 'id=\"technicians-status\"', '/assets/pages/directory.js'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Page /tickets",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/tickets"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Creación integrada en la bandeja\", function () { const html = pm.response.text(); ['id=\"ticket-list-workspace\"', 'id=\"ticket-create-panel\"', 'id=\"ticket-create-form\"', 'data-embedded=\"true\"', 'id=\"ticket-create-back\"'].forEach(marker => pm.expect(html).to.include(marker)); });"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Page /estado_tickets",
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/estado_tickets"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Creación integrada en la bandeja\", function () { const html = pm.response.text(); ['id=\"ticket-list-workspace\"', 'id=\"ticket-create-panel\"', 'id=\"ticket-create-form\"', 'data-embedded=\"true\"', 'id=\"ticket-create-back\"'].forEach(marker => pm.expect(html).to.include(marker)); });"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Page /equipos",
@@ -82,6 +237,13 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/accesorios"
+          }
+        },
+        {
+          "name": "Page /inventario",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/inventario"
           }
         },
         {
@@ -110,7 +272,111 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/detalle_ticket/{{ticketId}}"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Mapa de ubicación incluido\", function () { const html = pm.response.text(); ['data-location-picker', '/leaflet/leaflet.js', '/css/location-map.css'].forEach(marker => pm.expect(html).to.include(marker)); });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Historial del servicio disponible\", function () { pm.expect(pm.response.text()).to.include('id=\"ticket-history\"'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Page /directorio",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/directorio"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directorio unificado y controles independientes\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"clients\"', 'id=\"technicians\"', 'id=\"clients-filters\"', 'id=\"technicians-filters\"', 'id=\"clients-size\"', 'id=\"technicians-size\"', 'id=\"technicians-status\"', '/assets/pages/directory.js'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Page /directorio?clients_size=5&technicians_size=10&technicians_status=active",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/directorio?clients_size=5&technicians_size=10&technicians_status=active"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directorio unificado y controles independientes\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"clients\"', 'id=\"technicians\"', 'id=\"clients-filters\"', 'id=\"technicians-filters\"', 'id=\"clients-size\"', 'id=\"technicians-size\"', 'id=\"technicians-status\"', '/assets/pages/directory.js'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Page /directorio?setup=clients",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/directorio?setup=clients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directorio unificado y controles independientes\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"clients\"', 'id=\"technicians\"', 'id=\"clients-filters\"', 'id=\"technicians-filters\"', 'id=\"clients-size\"', 'id=\"technicians-size\"', 'id=\"technicians-status\"', '/assets/pages/directory.js'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Page /directorio?setup=technicians",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/directorio?setup=technicians"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Directorio unificado y controles independientes\", function () {",
+                  "  const html = pm.response.text();",
+                  "  ['id=\"clients\"', 'id=\"technicians\"', 'id=\"clients-filters\"', 'id=\"technicians-filters\"', 'id=\"clients-size\"', 'id=\"technicians-size\"', 'id=\"technicians-status\"', '/assets/pages/directory.js'].forEach(marker => pm.expect(html).to.include(marker));",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -261,8 +527,106 @@
             "method": "GET",
             "url": "{{baseUrl}}/bootstrap/js/bootstrap.bundle.min.js"
           }
+        },
+        {
+          "name": "Module pages/directory.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/pages/directory.js"
+          }
+        },
+        {
+          "name": "Stylesheet /css/directory.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/css/directory.css"
+          }
+        },
+        {
+          "name": "Module shared/location-map.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/shared/location-map.js"
+          }
+        },
+        {
+          "name": "Module shared/location-coordinates.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assets/shared/location-coordinates.js"
+          }
+        },
+        {
+          "name": "Stylesheet /css/location-map.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/css/location-map.css"
+          }
+        },
+        {
+          "name": "Stylesheet /leaflet/leaflet.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/leaflet/leaflet.css"
+          }
+        },
+        {
+          "name": "Module leaflet/leaflet.js",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/leaflet/leaflet.js"
+          }
+        },
+        {
+          "name": "Stylesheet /css/ticket-form.css",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/css/ticket-form.css"
+          }
         }
       ]
+    },
+    {
+      "name": "Resolve coordinate link",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/tickets/resolver_ubicacion",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"url\": \"https://www.google.com/maps/search/19.406313,+-99.046890\"}"
+        }
+      }
+    },
+    {
+      "name": "Exportar tickets CSV (filtros aplicados)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tickets/exportar?status=completed",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tickets",
+            "exportar"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "completed"
+            }
+          ]
+        },
+        "description": "Requiere login y verificación 2FA previos (cookie de sesión). Descarga todos los resultados filtrados; ignora página y tamaño. Técnicos: únicamente servicios propios. Usar Send and Download para guardar el CSV. Filtros opcionales: search, attention, status, client, technician, dateFrom, dateTo."
+      },
+      "response": []
     }
   ],
   "event": [
@@ -282,6 +646,8 @@
           "  pm.test(\"JavaScript content\", function () { pm.expect(contentType).to.include(\"javascript\"); });",
           "} else if (name.startsWith(\"Stylesheet \")) {",
           "  pm.test(\"CSS content\", function () { pm.expect(contentType).to.include(\"text/css\"); });",
+          "} else if (name === \"Resolve coordinate link\") {",
+          "  pm.test(\"Resolved map coordinates\", function () { const result = pm.response.json(); pm.expect(result.success).to.eql(true); pm.expect(result.data.lat).to.eql(19.406313); pm.expect(result.data.lng).to.eql(-99.04689); pm.expect(result.data.normalizedUrl).to.eql(\"https://www.google.com/maps?q=19.406313,-99.046890\"); });",
           "} else {",
           "  pm.test(\"JSON array\", function () { pm.expect(contentType).to.include(\"application/json\"); pm.expect(pm.response.json()).to.be.an(\"array\"); });",
           "}",
@@ -290,6 +656,17 @@
           "  pm.test(\"Brand available for model lookup\", function () { pm.expect(brands.length).to.be.above(0); });",
           "  if (brands.length) pm.collectionVariables.set(\"brand\", encodeURIComponent(brands[0].Marca_unidad));",
           "}"
+        ]
+      }
+    },
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const verify = pm.request.url.toString().includes(\"/login/verificar\");",
+          "const session = pm.collectionVariables.get(verify ? \"pendingCookie\" : \"sessionCookie\");",
+          "if (session) pm.request.headers.upsert({key:\"Cookie\", value:session});"
         ]
       }
     }

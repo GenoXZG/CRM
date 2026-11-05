@@ -1,3 +1,9 @@
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { exportTickets } from '../infrastructure/database/ticket-search-repository';
+import { ticketCsv } from '../adapters/ticket-csv';
+import { ticketHistory } from '../infrastructure/database/ticket-history-repository';
+import { getScopedTicketFilterOptions } from '../infrastructure/database/ticket-search-repository';
 import fs from 'node:fs/promises';
 import type { NextFunction, Request, Response } from 'express';
 import { respondError } from '../adapters/http-errors';
@@ -5,6 +11,7 @@ import {
   readCreateTicketRequest,
   serializeAccessory,
   serializeEquipment,
+  serializeEquipmentModel,
   serializeClient,
   serializeTechnician,
   serializeTicketDetails,
@@ -12,10 +19,11 @@ import {
 } from '../adapters/legacy-http';
 import { catalogs, clients, technicians } from '../infrastructure/database/repositories';
 import * as ticketService from '../services/ticket-service';
-import { getTicketList } from '../services/ticket-search-service';
-import { getAvailableEquipment } from '../services/equipment-service';
+import { getTicketList, readTicketFilters } from '../services/ticket-search-service';
+import { getAvailableEquipment, getEquipmentModels } from '../services/equipment-service';
 import { getTicketPreparation } from '../services/ticket-lifecycle';
-import { isRecord } from '../domain/business-error';
+import { BusinessError, isRecord } from '../domain/business-error';
+import { ticketDetailsDestination, ticketListReturn } from '../adapters/ticket-navigation';
 
 type HttpRequest = Request<Record<string, string>, unknown, Record<string, unknown>>;
 export async function renderTicketForm(request: Request, response: Response) {
@@ -27,6 +35,7 @@ export async function renderTicketForm(request: Request, response: Response) {
         .filter((technician) => technician.status === 'active')
         .map(serializeTechnician),
       setupWizard: request.query.setup === 'ticket',
+      ticketListState: ticketListReturn(request.query.returnTo),
     });
   } catch (error) {
     respondError(response, error);
@@ -35,6 +44,7 @@ export async function renderTicketForm(request: Request, response: Response) {
 export async function createTicket(request: HttpRequest, response: Response) {
   try {
     if (!request.body?.ID_cliente) {
+      if (request.get('accept')?.includes('application/json')) throw new BusinessError(400, 'El campo Cliente es obligatorio');
       const [clientList, technicianList] = await Promise.all([clients.list(), technicians.list()]);
       response.status(400).render('tickets', {
         alert: true,
@@ -47,15 +57,17 @@ export async function createTicket(request: HttpRequest, response: Response) {
           .map(serializeTechnician),
         data: request.body,
         setupWizard: request.body?.setupWizard === 'ticket',
+        ticketListState: ticketListReturn(request.body?.returnTo),
       });
       return;
     }
     const ticket = await ticketService.createTicket(readCreateTicketRequest(request.body));
-    if (request.body?.setupWizard === 'ticket') {
-      response.redirect('/?setupTicketCreated=1');
+    const destination = request.body?.setupWizard === 'ticket' ? '/?setupTicketCreated=1' : ticketDetailsDestination(ticket.id, request.body?.returnTo);
+    if (request.get('accept')?.includes('application/json')) {
+      response.status(201).json({ success: true, redirect: destination, ticketId: ticket.id });
       return;
     }
-    response.redirect(`/detalle_ticket/${ticket.id}`);
+    response.redirect(destination);
   } catch (error) {
     respondError(response, error);
   }
@@ -63,13 +75,19 @@ export async function createTicket(request: HttpRequest, response: Response) {
 export async function renderTicketDetails(request: HttpRequest, response: Response) {
   try {
     const [ticket, technicianList] = await Promise.all([
-      ticketService.getTicketDetails(request.params.id),
-      technicians.list(),
+      ticketService.getTicketDetails(request.params.id, response.locals.technicianScope),
+      response.locals.canManage ? technicians.list() : Promise.resolve([]),
     ]);
-    const canAssign = ticket.status === 'waiting' || ticket.status === 'in_progress';
-    const [availableEquipment, accessoryList] = canAssign ? await Promise.all([getAvailableEquipment(), catalogs.listAccessories()]) : [[], []];
+    const canAssign = response.locals.canManage && (ticket.status === 'waiting' || ticket.status === 'in_progress');
+    const [availableEquipment, accessoryList, models] = canAssign ? await Promise.all([getAvailableEquipment(), catalogs.listAccessories(), getEquipmentModels()]) : [[], [], []];
+    const history = await ticketHistory(ticket.id, request.query);
+    const historyParams = new URLSearchParams({ returnTo: ticketListReturn(request.query.returnTo), history_size: String(history.size) });
     response.render('detalles_servicio', {
+      history,
+      historyPageUrl: (page: number) => { const params=new URLSearchParams(historyParams); params.set('history_page',String(page)); return `/detalle_ticket/${ticket.id}?${params}#ticket-history`; },
+      backToTickets: ticketListReturn(request.query.returnTo),
       canAssign,
+      equipos_stock: models.map(serializeEquipmentModel),
       preparation: getTicketPreparation(ticket),
       equiposEnEspera: availableEquipment.map(serializeEquipment),
       accesoriosDisponibles: accessoryList.map(serializeAccessory),
@@ -81,14 +99,14 @@ export async function renderTicketDetails(request: HttpRequest, response: Respon
   }
 }
 function redirectMutation(
-  operation: (id: unknown, body: Record<string, unknown>) => Promise<unknown>,
+  operation: (id: unknown, body: Record<string, unknown>, response: Response) => Promise<unknown>,
 ) {
   return async (request: HttpRequest, response: Response) => {
     try {
       const input: Record<string, unknown> = isRecord(request.body) ? request.body : {};
       const id = request.params.id || input.ID_ticket;
-      await operation(id, input);
-      response.redirect(`/detalle_ticket/${id}`);
+      await operation(id, input, response);
+      response.redirect(ticketDetailsDestination(String(id), input.returnTo));
     } catch (error) {
       respondError(response, error);
     }
@@ -103,7 +121,7 @@ export const updateComments = redirectMutation((id, input) =>
 export const assignTechnician = redirectMutation((id, input) =>
   ticketService.assignTechnician(id, input.ID_tecnico),
 );
-export const completeTicket = redirectMutation((id) => ticketService.completeTicket(id));
+export const completeTicket = redirectMutation((id, _input, response) => ticketService.completeTicket(id, response.locals.technicianScope === undefined ? undefined : { userId: response.locals.currentUser.id_usuario, technicianId: response.locals.technicianScope }));
 export const reopenTicket = redirectMutation((id) => ticketService.reopenTicket(id));
 export async function requireOpenTicket(
   request: HttpRequest,
@@ -121,7 +139,7 @@ export async function uploadPhotos(request: HttpRequest, response: Response) {
   const files = Array.isArray(request.files) ? request.files : [];
   try {
     await ticketService.savePhotos(request.params.id, files);
-    response.redirect(`/detalle_ticket/${request.params.id}`);
+    response.redirect(ticketDetailsDestination(request.params.id!, request.body?.returnTo));
   } catch (error) {
     // Clean files if the ticket closes while the upload is in progress.
     await Promise.allSettled(files.map((file) => fs.unlink(file.path)));
@@ -138,18 +156,24 @@ export async function confirmCompleteAssignment(request: HttpRequest, response: 
 }
 export async function renderTicketDashboard(request: Request, response: Response) {
   try {
-    const [result, clientList, technicianList] = await Promise.all([
-      getTicketList(request.query), clients.list(), technicians.list(),
+    const scope = response.locals.technicianScope as number | undefined;
+    const [result, options] = await Promise.all([
+      getTicketList(request.query, scope),
+      scope === undefined ? Promise.all([clients.list(), technicians.list()]).then(([clients, technicians]) => ({ clients, technicians })) : getScopedTicketFilterOptions(scope),
     ]);
+    const clientList = options.clients, technicianList = options.technicians;
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(result.filters)) {
       if (value !== null && value !== '') params.set(key, String(value));
     }
+    params.set('page', String(result.page));
     response.render('estado_tickets', {
       ...result,
       tickets: result.tickets.map(serializeTicketSummary),
       clientes: clientList.map(serializeClient),
       tecnicos: technicianList.map(serializeTechnician),
+      ticketListState: `/tickets?${params}`,
+      exportUrl: `/tickets/exportar?${params}`,
       pageUrl: (page: number) => { const next = new URLSearchParams(params); next.set('page', String(page)); return `/tickets?${next}`; },
     });
   } catch (error) { respondError(response, error); }
@@ -157,4 +181,16 @@ export async function renderTicketDashboard(request: Request, response: Response
 export async function renderTicketEntry(request: Request, response: Response) {
   if (request.query.setup === 'ticket') return renderTicketForm(request, response);
   return renderTicketDashboard(request, response);
+}
+
+export async function downloadTickets(request: Request, response: Response) {
+  try {
+    const filters = readTicketFilters(request.query, response.locals.technicianScope as number | undefined);
+    response.type('text/csv; charset=utf-8');
+    response.attachment(`tickets-${new Date().toISOString().slice(0, 10)}.csv`);
+    await pipeline(Readable.from(ticketCsv(exportTickets(filters, response.locals.technicianScope as number | undefined))), response);
+  } catch (error) {
+    if (!response.headersSent && !response.destroyed) respondError(response, error);
+    else if (!request.destroyed) console.error('Ticket export failed:', error instanceof Error ? error.name : 'unknown');
+  }
 }

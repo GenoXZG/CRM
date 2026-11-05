@@ -83,3 +83,5 @@
   #form_unidades td::before { content: attr(data-label); display: block; margin-bottom: .35rem; }
   #form_unidades input, #form_unidades select { width: 100%; }
 }
+#modalSeleccionEquipo .form-control, #modalSeleccionEquipo .form-select { min-height: 44px; }
+#assignment-register-equipment > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }

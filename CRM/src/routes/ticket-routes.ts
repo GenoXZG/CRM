@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'node:path';
 import * as tickets from '../controllers/ticket-controller';
 import { renderAssignments } from '../controllers/assignment-controller';
+import { resolveLocationLink } from '../controllers/maps-link-controller';
 const router = Router();
 router.get('/asignaciones', renderAssignments);
 const storage = multer.diskStorage({
@@ -16,7 +17,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 router.get('/tickets', tickets.renderTicketEntry);
+router.get('/tickets/exportar', tickets.downloadTickets);
 router.get('/tickets/nuevo', tickets.renderTicketForm);
+router.post('/tickets/resolver_ubicacion', resolveLocationLink);
 router.post('/tickets/finalizar/:id', tickets.completeTicket);
 router.post('/tickets/reabrir/:id', tickets.reopenTicket);
 router.post('/tickets/asignar_tecnico', tickets.assignTechnician);

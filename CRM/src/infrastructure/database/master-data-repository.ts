@@ -1,4 +1,5 @@
 import {
+  QueryTypes,
   col,
   fn,
   type Attributes,
@@ -16,6 +17,7 @@ import type {
   UnitModel,
 } from '../../domain/entities';
 import {
+  database,
   accessoryModel,
   clientModel,
   equipmentCatalogModel,
@@ -85,7 +87,10 @@ export const technicianRepository = repository(
     Numero_tecnico: input.phone,
     Estatus_tecnico: input.status === 'active' ? ('Activo' as const) : ('Inactivo' as const),
   }),
-  (id, transaction) => ticketModel.count({ where: { ID_tecnico: id }, transaction }),
+  async (id, transaction) => {
+    const [account] = await database.query<{ total: number }>('SELECT COUNT(*) AS total FROM usuarios WHERE id_tecnico=?', { replacements: [id], transaction, type: QueryTypes.SELECT });
+    return (await ticketModel.count({ where: { ID_tecnico: id }, transaction })) + Number(account!.total);
+  },
 );
 export const equipmentCatalogRepository = repository(
   equipmentCatalogModel,

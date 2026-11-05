@@ -2,14 +2,16 @@ import { Router } from 'express';
 import { accessoryCatalog, clients, technicians } from '../controllers/master-data-controller';
 
 import { renderCatalogs } from '../controllers/catalog-controller';
+import { renderDirectory } from '../controllers/directory-controller';
 
 const router = Router();
 router.get('/catalogos', renderCatalogs);
-router.get('/clientes', clients.list);
+router.get('/directorio', renderDirectory);
+router.get('/clientes', renderDirectory);
 router.post('/add_cliente', clients.create);
 router.post('/editar_cliente', clients.update);
 router.post('/eliminar_cliente', clients.remove);
-router.get('/tecnicos', technicians.list);
+router.get('/tecnicos', renderDirectory);
 router.post('/add_tecnico', technicians.create);
 router.post('/editar_tecnico', technicians.update);
 router.post('/eliminar_tecnico', technicians.remove);

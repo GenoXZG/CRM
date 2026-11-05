@@ -127,6 +127,7 @@ export const mapTicket = (row: TicketRow): Ticket => ({
   status: row.Estatus_servicio ? ticketStatusFromDatabase[row.Estatus_servicio] : null,
   unitCount: row.Numero_unidades,
   scheduledAt: row.Fecha_servicio,
+  closedAt: row.Fecha_cierre,
   locationUrl: row.Link_maps,
   comments: row.Comentarios,
   assignmentStatus: row.Estatus_unidades ?? 0,
@@ -157,6 +158,7 @@ export function mapTicketPatch(patch: Partial<Ticket>): Partial<TicketAttributes
   if (patch.status !== undefined)
     result.Estatus_servicio = patch.status ? ticketStatusToDatabase[patch.status] : null;
   if (patch.unitCount !== undefined) result.Numero_unidades = patch.unitCount;
+  if (patch.closedAt !== undefined) result.Fecha_cierre = patch.closedAt;
   if (patch.scheduledAt !== undefined) result.Fecha_servicio = patch.scheduledAt;
   if (patch.locationUrl !== undefined) result.Link_maps = patch.locationUrl;
   if (patch.comments !== undefined) result.Comentarios = patch.comments;

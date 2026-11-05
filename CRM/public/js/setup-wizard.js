@@ -30,7 +30,9 @@
     return count > Number(readBaseline()[item.dataset.setupItem] || 0);
   };
   const hasTicketCreated = () => safeRead(STORAGE.ticketCreated, '0') === '1';
-  const isDismissed = () => safeRead(STORAGE.dismissed, '0') === '1';
+  const established = [...assistant.querySelectorAll('[data-setup-count]')].some(item => Number(item.dataset.setupCount) > 0);
+  const setupRequested = new URLSearchParams(location.search).has('setupReturn') || new URLSearchParams(location.search).has('setupTicketCreated');
+  const isDismissed = () => !setupRequested && safeRead(STORAGE.dismissed, established ? '1' : '0') === '1';
   const ticketCreatedParam = new URLSearchParams(window.location.search).get('setupTicketCreated');
   if (ticketCreatedParam === '1') {
     try { localStorage.setItem(STORAGE.ticketCreated, '1'); localStorage.removeItem(STORAGE.ticketDeferred); } catch {}
