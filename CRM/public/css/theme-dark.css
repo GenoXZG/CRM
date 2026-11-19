@@ -1,0 +1,670 @@
+
+/* CRM - Tema minimalista oscuro */
+
+:root {
+  color-scheme: dark;
+  --crm-bg: #0b1120;
+  --crm-surface: #151e30;
+  --crm-surface-hover: #1d2940;
+  --crm-border: #2a364b;
+  --crm-text: #f1f5f9;
+  --crm-muted: #94a3b8;
+  --crm-primary: #3b82f6;
+}
+
+body {
+  background-color: var(--crm-bg);
+  color: var(--crm-text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+/* Tarjetas */
+.card {
+  background-color: var(--crm-surface);
+  color: var(--crm-text);
+  border: 1px solid var(--crm-border);
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.card-header,
+.card-footer {
+  background-color: transparent;
+  border-color: var(--crm-border);
+}
+
+/* Botones */
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: var(--crm-primary);
+  border-color: var(--crm-primary);
+}
+
+/* Tablas */
+.table {
+  --bs-table-bg: var(--crm-surface);
+  --bs-table-color: var(--crm-text);
+  --bs-table-border-color: var(--crm-border);
+  --bs-table-hover-bg: var(--crm-surface-hover);
+  --bs-table-hover-color: var(--crm-text);
+}
+
+/* Formularios */
+.form-control,
+.form-select {
+  background-color: var(--crm-bg);
+  color: var(--crm-text);
+  border: 1px solid var(--crm-border);
+  border-radius: 8px;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--crm-bg);
+  color: var(--crm-text);
+  border-color: var(--crm-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.form-control::placeholder {
+  color: var(--crm-muted);
+}
+
+/* Modales y menús */
+.modal-content,
+.dropdown-menu {
+  background-color: var(--crm-surface);
+  color: var(--crm-text);
+  border: 1px solid var(--crm-border);
+}
+
+.dropdown-item {
+  color: var(--crm-text);
+}
+
+.dropdown-item:hover {
+  background-color: var(--crm-surface-hover);
+  color: white;
+}
+
+/* Textos secundarios */
+.text-muted {
+  color: var(--crm-muted) !important;
+}
+
+
+/* ===================================
+   CRM TSV - Sidebar minimalista oscuro
+   =================================== */
+
+#sidebar {
+  background: #101827;
+  min-width: 260px;
+  max-width: 260px;
+  border-radius: 0;
+  border-right: 1px solid #263247;
+  box-shadow: none;
+  margin-right: 0;
+  min-height: 100vh;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 20px 22px;
+  margin-bottom: 22px;
+}
+
+.sidebar-logo a {
+  color: #f8fafc;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+.crm-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #2563eb;
+  color: white;
+  font-size: 18px;
+}
+
+.crm-brand-accent {
+  color: #60a5fa;
+}
+
+.sidebar-section-title {
+  padding: 0 24px;
+  margin-bottom: 14px;
+  color: #64748b;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+
+.sidebar-nav {
+  list-style: none;
+  padding: 0 12px !important;
+  margin: 0;
+  flex: 1;
+}
+
+.sidebar-item {
+  margin-bottom: 5px;
+}
+
+#sidebar .sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  color: #94a3b8;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+#sidebar .sidebar-link i {
+  font-size: 18px;
+  margin-right: 0;
+}
+
+#sidebar .sidebar-link:hover {
+  background: #1e293b;
+  color: #f8fafc;
+  transform: none;
+}
+
+#sidebar .sidebar-link.active {
+  background: #1d4ed8;
+  color: #ffffff;
+  box-shadow: none;
+}
+
+.sidebar-footer {
+  padding: 20px 15px;
+  border-top: 1px solid #263247;
+  margin-top: auto;
+}
+
+.crm-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.crm-user-avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e293b;
+  color: #93c5fd;
+  border-radius: 10px;
+  font-size: 18px;
+}
+
+.crm-user-details {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.crm-user-email {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+  overflow-wrap: anywhere;
+}
+
+.crm-user-details small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.crm-logout-btn {
+  color: #fca5a5;
+  background: #281d2b;
+  border: 1px solid #493040;
+  border-radius: 9px;
+  min-height: 44px;
+  font-size: 13px;
+}
+
+.crm-logout-btn:hover {
+  background: #3d2635;
+  color: #fecaca;
+  border-color: #7f1d1d;
+}
+
+/* Barra superior del dashboard */
+.dashboard-view .navbar {
+  background: #101827 !important;
+  border-color: #263247 !important;
+}
+
+.dashboard-view .navbar .toggler-btn {
+  color: #e2e8f0;
+  font-size: 20px;
+}
+
+/* Adaptación para móviles */
+@media (max-width: 768px) {
+  .assignments-view #sidebar {
+    height: 100dvh;
+    min-height: 0;
+    margin-right: 0;
+    overflow-y: auto;
+  }
+
+  .assignment-menu-close {
+    color: #e2e8f0;
+    font-size: 20px;
+  }
+
+  .assignments-view #sidebar.collapsed {
+    margin-left: 0;
+  }
+}
+
+
+/* =========================================
+   DASHBOARD - INDICADORES Y OPERACIONES
+   ========================================= */
+
+/* Indicadores principales */
+
+.dashboard-view .dashboard-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.dashboard-view .dashboard-kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+    padding: 24px;
+    background: #151e30;
+    border: 1px solid #2a364b;
+    border-radius: 14px;
+    color: #f1f5f9;
+    text-decoration: none;
+    box-shadow: none;
+    transition: border-color .2s ease,
+                background .2s ease;
+}
+
+.dashboard-view .dashboard-kpi:hover {
+    background: #1b2940;
+    border-color: #3b82f6;
+    transform: none;
+}
+
+.dashboard-view .dashboard-kpi > span {
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.dashboard-view .dashboard-kpi > strong {
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 700;
+    line-height: 1.1;
+    color: #f8fafc;
+}
+
+.dashboard-view .dashboard-kpi > small {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* Diferenciación discreta por indicador */
+
+.dashboard-view .dashboard-tone-blue {
+    border-top: 3px solid #3b82f6;
+}
+
+.dashboard-view .dashboard-tone-yellow {
+    border-top: 3px solid #f59e0b;
+}
+
+.dashboard-view .dashboard-tone-red {
+    border-top: 3px solid #ef4444;
+}
+
+/* Secciones principales */
+
+.dashboard-view .dashboard-section {
+    background: #151e30;
+    border: 1px solid #2a364b;
+    border-radius: 14px;
+    box-shadow: none;
+    margin-bottom: 24px;
+}
+
+.dashboard-view .dashboard-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.dashboard-view .dashboard-section-heading h2 {
+    color: #f1f5f9;
+    font-size: 18px;
+    font-weight: 650;
+    margin-bottom: 6px;
+}
+
+.dashboard-view .dashboard-section-heading p {
+    color: #94a3b8;
+    font-size: 13px;
+    margin: 0;
+}
+
+/* Servicios que requieren atención */
+
+.dashboard-view .dashboard-attention a {
+    background: #1b2940;
+    border: 1px solid #2a364b;
+    border-radius: 10px;
+    color: #e2e8f0;
+    text-decoration: none;
+    transition: background .2s ease;
+}
+
+.dashboard-view .dashboard-attention a:hover {
+    background: #253650;
+    border-color: #3b82f6;
+}
+
+.dashboard-view .dashboard-attention a strong {
+    color: #f8fafc;
+}
+
+.dashboard-view .dashboard-attention a small {
+    color: #94a3b8;
+}
+
+/* Agenda de servicios */
+
+.dashboard-view .dashboard-agenda-controls {
+    background: #101827;
+    border: 1px solid #2a364b;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.dashboard-view .dashboard-agenda-controls label {
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.dashboard-view .dashboard-agenda-day {
+    background: #101827;
+    border: 1px solid #2a364b;
+    border-radius: 10px;
+    min-width: 0;
+}
+
+.dashboard-view .dashboard-agenda-day.is-today {
+    border-color: #3b82f6;
+    background: #14243d;
+}
+
+.dashboard-view .dashboard-agenda-day h3,
+.dashboard-view .dashboard-agenda-day h3 a {
+    color: #f1f5f9;
+}
+
+.dashboard-view .dashboard-event {
+    background: #1d2d45;
+    border: 1px solid #33445e;
+    border-radius: 8px;
+    color: #e2e8f0;
+    text-decoration: none;
+}
+
+.dashboard-view .dashboard-event:hover {
+    background: #2a3b57;
+    color: #fff;
+}
+
+/* Técnicos e inventario */
+
+.dashboard-view .dashboard-resource-list a {
+    background: #101827;
+    border: 1px solid #2a364b;
+    border-radius: 10px;
+    color: #e2e8f0;
+    text-decoration: none;
+}
+
+.dashboard-view .dashboard-resource-list a:hover {
+    background: #1d2940;
+    border-color: #3b82f6;
+}
+
+.dashboard-view .dashboard-resource-list strong {
+    color: #f8fafc;
+}
+
+.dashboard-view .dashboard-empty {
+    color: #94a3b8;
+}
+
+/* Historial */
+
+.dashboard-view .dashboard-history {
+    color: #94a3b8;
+}
+
+.dashboard-view .dashboard-history a {
+    color: #93c5fd;
+    text-decoration: none;
+}
+
+.dashboard-view .dashboard-history a:hover {
+    color: #bfdbfe;
+}
+
+/* Responsive */
+
+@media (max-width: 1100px) {
+    .dashboard-view .dashboard-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-view .dashboard-kpis {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-view .dashboard-kpi {
+        padding: 18px;
+    }
+
+    .dashboard-view .dashboard-section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+
+/* =========================================
+   AJUSTES DEL PANEL OPERATIVO
+   ========================================= */
+
+/* Evitar que los estilos originales
+   vuelvan a aplicar fondos claros */
+
+.dashboard-view .dashboard-kpi {
+    color: var(--crm-text);
+    border-top-width: 3px !important;
+}
+
+.dashboard-view .dashboard-kpi.dashboard-tone-blue {
+    border-top-color: #3b82f6 !important;
+}
+
+.dashboard-view .dashboard-kpi.dashboard-tone-yellow {
+    border-top-color: #f59e0b !important;
+}
+
+.dashboard-view .dashboard-kpi.dashboard-tone-red {
+    border-top-color: #ef4444 !important;
+}
+
+/* Textos de los paneles de atención */
+
+.dashboard-view .dashboard-attention a {
+    color: #e2e8f0;
+}
+
+.dashboard-view .dashboard-attention small {
+    color: #94a3b8;
+}
+
+/* Leyendas de la agenda */
+
+.dashboard-view .dashboard-legend span:nth-child(1) {
+    color: #fbbf24;
+}
+
+.dashboard-view .dashboard-legend span:nth-child(2) {
+    color: #93c5fd;
+}
+
+.dashboard-view .dashboard-legend span:nth-child(3) {
+    color: #6ee7b7;
+}
+
+/* Estados de los tickets */
+
+.dashboard-view .dashboard-event.status-waiting {
+    background: #342a19;
+    border-left: 4px solid #f59e0b;
+    color: #fef3c7;
+}
+
+.dashboard-view .dashboard-event.status-in_progress {
+    background: #172e4d;
+    border-left: 4px solid #3b82f6;
+    color: #dbeafe;
+}
+
+.dashboard-view .dashboard-event.status-completed {
+    background: #15382f;
+    border-left: 4px solid #10b981;
+    color: #d1fae5;
+}
+
+/* Los textos internos mantienen contraste */
+
+.dashboard-view .dashboard-event strong,
+.dashboard-view .dashboard-event span,
+.dashboard-view .dashboard-event small {
+    color: inherit;
+}
+
+/* Tarjetas de técnicos e inventario */
+
+.dashboard-view .dashboard-resource-list a {
+    padding: 14px;
+    margin-bottom: 8px;
+    border: 1px solid var(--crm-border);
+}
+
+.dashboard-view .dashboard-resource-list meter {
+    accent-color: #3b82f6;
+}
+
+/* Mensajes sin resultados */
+
+.dashboard-view .dashboard-empty {
+    background: #101827;
+    color: #94a3b8;
+    border: 1px dashed #334155;
+}
+
+/* Ajustes para calendario mensual */
+
+.dashboard-view .dashboard-month {
+    gap: 8px;
+}
+
+.dashboard-view .dashboard-month .dashboard-agenda-day {
+    background: #101827;
+    border-color: #2a364b;
+}
+
+.dashboard-view .dashboard-month .dashboard-agenda-day.is-today {
+    background: #14243d;
+    border-color: #3b82f6;
+}
+
+/* Accesibilidad y navegación */
+
+.dashboard-view a:focus-visible,
+.dashboard-view button:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 3px;
+}
+
+
+/* =========================================
+   BARRA SUPERIOR GLOBAL DEL CRM
+   ========================================= */
+
+.main {
+    background-color: var(--crm-bg);
+    color: var(--crm-text);
+    min-width: 0;
+}
+
+.main > .navbar {
+    background-color: #101827 !important;
+    border-bottom: 1px solid var(--crm-border) !important;
+    color: var(--crm-text);
+    min-height: 64px;
+}
+
+.main > .navbar .text-secondary,
+.main > .navbar .text-muted,
+.main > .navbar .fw-bold {
+    color: var(--crm-text) !important;
+}
+
+.main > .navbar .toggler-btn {
+    color: #e2e8f0;
+    border: 1px solid var(--crm-border);
+    border-radius: 9px;
+}
+
+.main > .navbar .toggler-btn:hover {
+    background-color: var(--crm-surface-hover);
+    color: #fff;
+}

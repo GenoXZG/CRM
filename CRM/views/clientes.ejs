@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +11,8 @@
     
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/directory.css">
+    <link rel="stylesheet" href="/css/theme-dark.css">
 </head>
 <body>
     
@@ -27,7 +29,7 @@
                 <span class="ms-3 fw-bold text-secondary">Directorio de Clientes</span>
             </nav>
 
-            <main class="p-4">
+            <main class="p-4 directory-page">
                 <div class="container-fluid">
                     
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -87,7 +89,7 @@
                         <h5 class="mb-4">Directorio Registrado</h5>
                         
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle">
+                            <table class="table table-hover align-middle directory-table">
                                 <thead class="bg-light text-muted small text-uppercase">
                                     <tr>
                                         <th class="ps-3 border-0 rounded-start">ID</th>
@@ -101,8 +103,8 @@
                                     <% if(clientes && clientes.length > 0) { %>
                                         <% clientes.forEach(cliente => { %>
                                             <tr>
-                                                <td class="ps-3 fw-bold text-muted">#<%= cliente.ID_cliente %></td>
-                                                <td>
+                                                <td class="ps-3 fw-bold text-muted" data-label="ID">#<%= cliente.ID_cliente %></td>
+                                                <td data-label="Empresa">
                                                     <div class="d-flex align-items-center">
                                                         <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3 text-primary fw-bold" style="width: 40px; height: 40px;">
                                                             <%= cliente.Nombre_empresa.charAt(0).toUpperCase() %>
@@ -110,13 +112,13 @@
                                                         <span class="fw-medium"><%= cliente.Nombre_empresa %></span>
                                                     </div>
                                                 </td>
-                                                <td class="text-muted"><%= cliente.Encargado %></td>
-                                                <td>
+                                                <td class="text-muted" data-label="Encargado"><%= cliente.Encargado %></td>
+                                                <td data-label="Teléfono">
                                                     <span class="badge bg-light text-dark border fw-normal">
                                                         <i class="bi bi-telephone me-1"></i> <%= cliente.Numero %>
                                                     </span>
                                                 </td>
-                                                <td class="text-end pe-3">
+                                                <td class="text-end pe-3" data-label="Acciones">
                                                     <div class="d-flex justify-content-end gap-2">
                                                         <button class="btn btn-sm btn-outline-primary btn-icon rounded-pill px-3 btn-editar"
                                                                 data-id="<%= cliente.ID_cliente %>"
@@ -157,7 +159,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalEditar" data-field-map='{"modal-id":"id","modal-nombre_empresa":"nombre","modal-nombre_encargado":"encargado","modal-numero":"numero"}' tabindex="-1" aria-hidden="true">
+    <div class="modal fade directory-modal" id="modalEditar" data-field-map='{"modal-id":"id","modal-nombre_empresa":"nombre","modal-nombre_encargado":"encargado","modal-numero":"numero"}' tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 shadow-lg">
                 <div class="modal-header border-0 pb-0">
@@ -190,7 +192,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalEliminar" data-field-map='{"delete-id-cliente":"id","delete-nombre-cliente":"nombre"}' tabindex="-1" aria-hidden="true">
+    <div class="modal fade directory-modal" id="modalEliminar" data-field-map='{"delete-id-cliente":"id","delete-nombre-cliente":"nombre"}' tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 shadow-lg">
                 <div class="modal-body text-center p-5">

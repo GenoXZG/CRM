@@ -1,12 +1,81 @@
-<button type="button" class="toggler-btn btn assignment-menu-close align-self-end m-2" aria-label="Cerrar menú">Cerrar menú ×</button>
-<div class="sidebar-logo"><a href="/"><span class="ms-2">CRM TSV</span></a></div>
+
+<button type="button"
+        class="toggler-btn btn assignment-menu-close align-self-end m-2"
+        aria-label="Cerrar menú">
+  <i class="bi bi-x-lg"></i>
+</button>
+
+<div class="sidebar-logo">
+  <a href="/" class="d-flex align-items-center gap-3">
+    <span class="crm-logo-icon">
+      <i class="bi bi-grid-1x2-fill"></i>
+    </span>
+    <span>CRM <span class="crm-brand-accent">TSV</span></span>
+  </a>
+</div>
+
+<div class="sidebar-section-title">MENÚ PRINCIPAL</div>
+
 <ul class="sidebar-nav">
-  <% const navLinks = [['/', 'Dashboard'], ['/tickets', 'Tickets'], ...(canManage ? [['/directorio', 'Directorio'], ['/asignaciones', 'Asignaciones'], ['/inventario', 'Inventario'], ['/catalogos', 'Catálogos']] : []), ...(isAdmin ? [['/usuarios', 'Administrar usuarios']] : [])]; %>
-  <% navLinks.forEach(([href, label]) => { const active = currentPath === href || (href === '/tickets' && ['/estado_tickets', '/tickets/nuevo'].includes(currentPath)) || (href === '/directorio' && ['/clientes','/tecnicos'].includes(currentPath)) || (href === '/catalogos' && ['/equipos','/unidades','/accesorios'].includes(currentPath)) || (href === '/inventario' && currentPath === '/registro_equipos'); %>
-  <li class="sidebar-item"><a href="<%= href %>" class="sidebar-link <%= active ? 'active' : '' %>" <%- active ? 'aria-current="page"' : '' %>><span><%= label %></span></a></li>
+  <%
+    const navLinks = [
+      ['/', 'Dashboard', 'bi-speedometer2'],
+      ['/tickets', 'Tickets', 'bi-ticket-perforated'],
+      ...(canManage ? [
+        ['/directorio', 'Directorio', 'bi-people'],
+        ['/asignaciones', 'Asignaciones', 'bi-clipboard-check'],
+        ['/inventario', 'Inventario', 'bi-box-seam'],
+        ['/catalogos', 'Catálogos', 'bi-collection']
+      ] : []),
+      ...(isAdmin ? [
+        ['/usuarios', 'Administrar usuarios', 'bi-person-gear']
+      ] : [])
+    ];
+  %>
+
+  <% navLinks.forEach(([href, label, icon]) => {
+    const active = currentPath === href ||
+      (href === '/tickets' &&
+        ['/estado_tickets', '/tickets/nuevo'].includes(currentPath)) ||
+      (href === '/directorio' &&
+        ['/clientes', '/tecnicos'].includes(currentPath)) ||
+      (href === '/catalogos' &&
+        ['/equipos', '/unidades', '/accesorios'].includes(currentPath)) ||
+      (href === '/inventario' &&
+        currentPath === '/registro_equipos');
+  %>
+    <li class="sidebar-item">
+      <a href="<%= href %>"
+         class="sidebar-link <%= active ? 'active' : '' %>"
+         <%- active ? 'aria-current="page"' : '' %>>
+        <i class="bi <%= icon %>" aria-hidden="true"></i>
+        <span><%= label %></span>
+      </a>
+    </li>
   <% }) %>
 </ul>
+
 <div class="sidebar-footer">
-  <p class="small text-muted mb-2" style="overflow-wrap:anywhere"><%= currentUser.correo %><br><strong><%= ({admin:'Administrador',coordinador:'Coordinador',tecnico:'Técnico'})[currentUser.rol] %></strong></p>
-  <form action="/logout" method="POST" class="m-0"><button class="btn btn-outline-danger w-100" type="submit" style="min-height:44px">Cerrar sesión</button></form>
+  <div class="crm-user-info">
+    <div class="crm-user-avatar">
+      <i class="bi bi-person-fill"></i>
+    </div>
+    <div class="crm-user-details">
+      <span class="crm-user-email"><%= currentUser.correo %></span>
+      <small>
+        <%= ({
+          admin: 'Administrador',
+          coordinador: 'Coordinador',
+          tecnico: 'Técnico'
+        })[currentUser.rol] %>
+      </small>
+    </div>
+  </div>
+
+  <form action="/logout" method="POST" class="mt-3">
+    <button type="submit" class="btn crm-logout-btn w-100">
+      <i class="bi bi-box-arrow-right me-2"></i>
+      Cerrar sesión
+    </button>
+  </form>
 </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/assignments.css">
     <link rel="stylesheet" href="/css/dashboard-operations.css">
+    <link rel="stylesheet" href="/css/theme-dark.css">
 </head>
 <body class="assignments-view dashboard-view">
     
@@ -26,9 +27,30 @@
         <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
 
         <div class="main assignment-main d-flex flex-column min-vh-100 w-100">
-            <nav class="navbar navbar-expand border-bottom px-3 bg-white">
-                <button class="toggler-btn btn" type="button" aria-label="Abrir o cerrar menú">☰</button>
-            </nav>
+<nav class="navbar crm-topbar px-3 px-lg-4">
+    <div class="container-fluid px-0">
+        <div class="d-flex align-items-center gap-3">
+            <button class="toggler-btn btn crm-menu-toggle"
+                    type="button"
+                    aria-label="Abrir o cerrar menú">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+
+            <div class="d-flex flex-column">
+                <span class="crm-topbar-title">CRM TSV</span>
+                <small class="crm-topbar-subtitle">
+                    Panel de administración
+                </small>
+            </div>
+        </div>
+
+        <span class="crm-topbar-badge d-none d-sm-inline-flex">
+            <i class="bi bi-circle-fill"></i>
+            Sistema CRM
+        </span>
+    </div>
+</nav>
+
 
             <main class="assignment-page dashboard-page p-3 p-lg-4">
                <div class="container-fluid">
