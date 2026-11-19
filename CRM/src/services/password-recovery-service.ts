@@ -4,7 +4,7 @@ import { database } from '../infrastructure/database/connection';
 import { credentialHash, tokenHash } from '../auth-challenge';
 import { passwordHash } from '../auth';
 import { configuration } from '../config';
-import { sendResendEmail } from './resend-email-service';
+import { sendEmail } from './email-service';
 
 type User = { id: number; correo: string; password_hash: string; rol: string; id_tecnico: number | null };
 type Recovery = { id_usuario: number; code_hash: string; credential_hash: string; intentos: number; enviado: number; vigente: number };
@@ -27,7 +27,7 @@ export async function requestPasswordRecovery(email: string, previousToken?: str
   if (typeof user === 'string') return user;
   if (user) {
     try {
-      await sendResendEmail(configuration.auth.twoFactorTo || user.correo, 'Recuperar contraseña · CRM TSV', `Se solicitó recuperar la contraseña en CRM TSV con la cuenta ${user.correo}.\n\nTu código es: ${code}\n\nCaduca en 10 minutos y solo puede usarse una vez para cambiar la contraseña. Este código no es un código de acceso. Si no lo solicitaste, ignora el correo; tu contraseña no cambiará.`);
+      await sendEmail(configuration.auth.twoFactorTo || user.correo, 'Recuperar contraseña · CRM TSV', `Se solicitó recuperar la contraseña en CRM TSV con la cuenta ${user.correo}.\n\nTu código es: ${code}\n\nCaduca en 10 minutos y solo puede usarse una vez para cambiar la contraseña. Este código no es un código de acceso. Si no lo solicitaste, ignora el correo; tu contraseña no cambiará.`);
       await database.query('UPDATE recuperaciones_password SET enviado=1 WHERE token_hash=?', { replacements: [tokenHash(token)] });
     } catch (error) {
       await database.query('DELETE FROM recuperaciones_password WHERE token_hash=?', { replacements: [tokenHash(token)] });

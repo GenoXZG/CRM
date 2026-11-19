@@ -8,14 +8,15 @@ inglés; la documentación se redacta en español.
 
 ## Requisitos de configuración y correo
 
-**Se requiere una API key válida de Resend (`RESEND_API_KEY`) para utilizar el
-login con 2FA, la recuperación de contraseñas y el envío de correos del CRM.**
-Sin ella, el servidor puede arrancar, pero no se podrá completar un nuevo login
-porque no podrá entregar el código de acceso. Configura también `RESEND_FROM`.
-Para enviar a los correos de los usuarios se necesita un dominio verificado en
-Resend; durante pruebas puede utilizarse `AUTH_2FA_TO` con un destinatario
-permitido por la cuenta de Resend. El login y la recuperación utilizan Resend,
-independientemente del proveedor elegido para el endpoint de correo de prueba.
+**El CRM envía todos sus correos mediante Nodemailer y SMTP de Gmail.** Configura
+`GMAIL_USER` y `GMAIL_APP_PASSWORD` con una contraseña de aplicación de la cuenta
+remitente. No utilices la contraseña normal de Google.
+
+Esta configuración es necesaria para completar el login con 2FA, recuperar
+contraseñas y enviar el correo de prueba. Sin SMTP operativo, el servidor puede
+arrancar, pero no se podrá completar un nuevo login porque no podrá entregar el
+código. `AUTH_2FA_TO` vacío envía los códigos al correo de cada usuario; un valor
+explícito conserva un destinatario compartido para pruebas.
 
 Copia `.env.example` a `.env` y completa sus valores antes de iniciar. El archivo
 `.env` es privado y está excluido tanto de Git como de la imagen Docker. La
@@ -25,7 +26,7 @@ API keys. Nunca subas configuraciones reales, llaves privadas ni volcados de DB.
 ## Ejecución con Docker
 
 Define `DOCKER_DB_PASSWORD`, `DOCKER_DB_ROOT_PASSWORD`, `CRM_ADMIN_EMAIL`,
-`CRM_ADMIN_PASSWORD`, `RESEND_API_KEY` y `RESEND_FROM` en `.env`. Para una base
+`CRM_ADMIN_PASSWORD` y las credenciales SMTP de Gmail en `.env`. Para una base
 existente, utiliza las credenciales actuales: cambiar estas variables no modifica
 las contraseñas almacenadas en un volumen MySQL ya inicializado.
 
@@ -519,29 +520,25 @@ docker compose exec -T app node < tests/node/dashboard.cjs
 CRM_SESSION=TOKEN_DE_SESION_VERIFICADA k6 run tests/k6/smoke.js
 ```
 
-### Correo de prueba: Gmail o Resend
+### Correo de prueba con Nodemailer
 
 Único endpoint: `POST /api/email/test`. Requiere sesión de administrador o
-coordinador. No requiere interfaz ni modifica datos del CRM.
-Configurar `RESEND_API_KEY`, `RESEND_FROM` y opcionalmente `RESEND_TEST_TO` en
-`.env`. Docker Compose transmite estas variables al contenedor. Si usas
-`onboarding@resend.dev`, el destinatario debe ser el correo de tu cuenta Resend;
-para otros destinatarios utiliza un remitente de un dominio verificado.
+coordinador. No requiere interfaz ni modifica datos del CRM. Usa la misma cuenta
+Gmail configurada para el login y la recuperación: `GMAIL_USER` y
+`GMAIL_APP_PASSWORD`. Compose transmite estas variables al contenedor.
 
 ```bash
-docker compose up --build -d --wait
 curl -X POST http://localhost:3030/api/email/test \
   -H 'Content-Type: application/json' \
-  -d '{"to":"correo-personal@example.com"}'
+  -H 'Cookie: crm_session=TOKEN_DE_SESION_VERIFICADA' \
+  -d '{"to":"destinatario@example.com"}'
 ```
 
-Puede enviarse `{}` si ya existe `RESEND_TEST_TO`. Asunto y texto son fijos.
-La respuesta exitosa es HTTP 200 con `{success:true, message, data:{id,to,provider}}`;
-significa aceptación por el proveedor, no confirmación de entrega en la bandeja.
-Implementación mínima: no valida destinatario ni configuración, y no agrega
-timeout ni reintentos. Un rechazo HTTP de Resend devuelve 502; otros fallos
-utilizan el manejador general de errores (500).
-
+Puede enviarse `{}` si se configuró `MAIL_TEST_TO`. Asunto y texto son fijos.
+La respuesta exitosa es HTTP 200 con `{success:true, message, data:{id,to,provider}}`
+y `provider: "gmail"`. Significa aceptación por SMTP, no confirmación de entrega
+en la bandeja. Se devuelve 503 si falta configuración y 502 si Gmail rechaza el
+envío. La prueba no agrega validaciones de destinatario ni reintentos automáticos.
 
 ## Login y administración de usuarios
 
@@ -568,7 +565,7 @@ existentes. Si ya hay usuarios y ninguno es administrador, detiene el arranque
 con una explicación para resolver esa condición de forma controlada.
 
 Para Postman, configurar `authEmail` y `authPassword`, ejecutar **Login** primero y
-usar la cookie guardada por la colección. El endpoint de Resend también requiere
+usar la cookie guardada por la colección. El endpoint de correo también requiere
 sesión de administrador o coordinador. k6 recibe `CRM_SESSION`, obtenida después de verificar el código por correo,
 y cierra esa sesión al terminar.
 
@@ -580,7 +577,7 @@ de permisos se documentan en [docs/login-audit.md](docs/login-audit.md).
 
 ### Cuenta Gmail dedicada para el CRM
 
-El mismo POST admite Gmail mediante SMTP con Nodemailer. No se crea una cuenta
+Todos los flujos usan Gmail mediante SMTP con Nodemailer. No se crea una cuenta
 Google automáticamente. Crear o elegir una cuenta exclusiva del CRM, activar su
 verificación en dos pasos y generar una contraseña de aplicación para el CRM:
 https://myaccount.google.com/apppasswords. La disponibilidad depende de la cuenta
@@ -589,7 +586,6 @@ Google. No usar la contraseña habitual de inicio de sesión.
 Configurar directamente en `.env`:
 
 ```dotenv
-EMAIL_PROVIDER=gmail
 GMAIL_USER=tu-cuenta-del-crm@gmail.com
 GMAIL_APP_PASSWORD=CONTRASENA_DE_APLICACION
 MAIL_TEST_TO=destinatario@example.com
@@ -607,28 +603,20 @@ docker compose up --build -d --wait app
 
 Después de iniciar sesión, enviar `POST /api/email/test` con
 `{"to":"otro-destinatario@example.com"}`. Si se omite `to`, se usa `MAIL_TEST_TO`
-o, por compatibilidad, `RESEND_TEST_TO`. La respuesta incluye `provider: "gmail"`.
+y la respuesta incluye `provider: "gmail"`.
 Se devuelve 503 cuando falta la configuración y 502 si el envío SMTP falla. No
 se agregan reintentos ni validaciones de destinatario a la prueba mínima.
-
-Para volver a la integración anterior usar `EMAIL_PROVIDER=resend`; sus variables
-`RESEND_API_KEY` y `RESEND_FROM` se conservan. No hay cambio automático de proveedor
-si falla un envío, evitando duplicados o envíos desde una cuenta inesperada.
-
 
 ## Segundo factor por correo
 
 El login ahora exige contraseña **y** un código aleatorio de seis dígitos enviado
-por Resend. Gmail queda disponible como alternativa del endpoint de pruebas,
-pero la configuración activa es `EMAIL_PROVIDER=resend`; los códigos del login
-siempre usan Resend. Se reutilizan `RESEND_API_KEY` y `RESEND_FROM`.
+mediante Nodemailer y SMTP de Gmail. El login,
+la recuperación y el correo de prueba comparten `src/services/email-service.ts`.
 
-Durante esta etapa `AUTH_2FA_TO=correo-personal@example.com` dirige **todos** los códigos
-a la cuenta personal configurada, independientemente del correo del usuario. Es
-una modalidad temporal de pruebas: no verifica la posesión del correo individual.
-Al dejar `AUTH_2FA_TO` vacío, se envían al correo de cada cuenta. Antes de hacerlo
-con `onboarding@resend.dev`, verificar un dominio propio en Resend para permitir
-otros destinatarios.
+Si se configura `AUTH_2FA_TO=correo-personal@example.com`, todos los códigos
+llegan al destinatario compartido. Esta modalidad de pruebas no verifica la
+posesión del correo individual; en uso normal deja la variable vacía.
+Al dejar `AUTH_2FA_TO` vacío, se envían al correo de cada cuenta.
 
 Flujo:
 
@@ -768,8 +756,8 @@ docker compose up -d --wait app
 
 Prueba aislada: `node tests/node/technician-access-audit.cjs` con el proyecto de
 auditoría migrado y activo. Crea y limpia sus propias cuentas, servicios y archivos.
-El destino temporal compartido de 2FA (`AUTH_2FA_TO`) y el proveedor Resend se
-mantienen como estaban; no hace falta un dominio nuevo para probar esta mejora.
+La vinculación de técnicos no modifica la cuenta Gmail ni `AUTH_2FA_TO`;
+utiliza la misma configuración SMTP del login.
 
 
 ## Historial de tickets y fecha de cierre
@@ -871,13 +859,13 @@ La siguiente pantalla permite capturar el código de seis dígitos y la nueva
 contraseña con confirmación (12 a 1024 caracteres). Se requiere el mismo navegador
 que hizo la solicitud; no se envían contraseñas ni tokens por URL. La respuesta
 es genérica para cuentas existentes/desconocidas y fallos del proveedor de correo.
-Si el envío falla, no queda un código utilizable; revisar la configuración de
-Resend y solicitar nuevamente cuando corresponda.
+Si el envío falla, no queda un código utilizable; revisar la configuración
+del proveedor de correo y solicitar nuevamente cuando corresponda.
 
-Se usa Resend y el mismo destino temporal `AUTH_2FA_TO` del login. Mientras esté
+Se usa Nodemailer con Gmail y el destino `AUTH_2FA_TO` del login. Mientras esté
 configurado, los códigos de todas las cuentas llegan a ese correo personal; la
-recuperación depende del acceso a ese buzón. Con dominio verificado, dejar vacío
-`AUTH_2FA_TO` hará que login y recuperación envíen al correo de cada cuenta.
+recuperación depende del acceso a ese buzón. Dejar vacío `AUTH_2FA_TO` envía al
+correo de cada cuenta mediante Gmail.
 Los códigos de acceso y de recuperación son independientes y sus correos explican
 para qué sirve cada uno. No se envían correos reales durante las auditorías.
 
@@ -960,3 +948,19 @@ temporal dentro de `crm-auth-audit`, sin tocar cuentas reales ni enviar correos.
 Valida creación, edición, promoción/degradación, permisos, revocación de sesiones,
 protección del último administrador y solicitudes simultáneas o ya revocadas.
 La auditoría general `node tests/node/auth-audit.cjs` incluye las nuevas reglas.
+
+
+### Proveedor de correo compartido
+
+Nodemailer usa SMTP de Gmail para códigos de acceso, recuperación y pruebas. El remitente es la cuenta `GMAIL_USER`; `GMAIL_APP_PASSWORD` se configura
+solo en el `.env` privado y se normaliza quitando espacios. No se incorpora a Git,
+a la imagen Docker ni al JavaScript del navegador. Compose la inyecta al proceso
+del servidor. No se publica ningún puerto SMTP entrante.
+
+Para entregar códigos a cada usuario, deja `AUTH_2FA_TO` vacío y comprueba que el
+correo de la cuenta sea real y esté bajo su control. Un destinatario compartido
+sigue disponible únicamente si se configura explícitamente para pruebas.
+
+Validación sin envíos reales: `node tests/node/email-provider-audit.cjs`, después
+de compilar y con la configuración de base de datos disponible. Las auditorías
+de login y recuperación utilizan un proveedor simulado.

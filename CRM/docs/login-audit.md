@@ -8,7 +8,7 @@ actual de `feature/v2`, incluidas sus mejoras locales sin commit.
 Se incorporaron manualmente autenticación, administración de usuarios y sus
 vistas. No se ejecutó un merge entre historiales independientes ni se reemplazaron
 las pantallas operativas de v2. La navegación usa un parcial compartido y mantiene
-Directorio, Inventario, Catálogos, asignaciones, mapas, dashboard y Resend.
+Directorio, Inventario, Catálogos, asignaciones, mapas, dashboard y Nodemailer/Gmail.
 
 Archivos principales: `src/auth.ts`, `src/user-admin.ts`, `src/app.ts`,
 `src/server.ts`, `src/config.ts`, `views/login.ejs`, `views/usuarios.ejs`,
@@ -51,7 +51,7 @@ Archivos principales: `src/auth.ts`, `src/user-admin.ts`, `src/app.ts`,
 | Consultar evidencias y mapas | Sí | Sí | Sí |
 | Subir fotografías | Sí | Sí | No |
 | Administrar cuentas, incluidos administradores | Sí | No | No |
-| Endpoint de correo Resend | Sí | Sí | No |
+| Endpoint de correo Nodemailer/Gmail | Sí | Sí | No |
 
 Las cuentas técnicas ahora se vinculan a un técnico activo del catálogo y solo
 acceden a sus tickets asignados, incluidos indicadores, agenda y fotografías. No
@@ -116,7 +116,7 @@ si se exporta la colección. No incluir credenciales reales en archivos versiona
 - Navegador Chromium: 23 escenarios aprobados entre administrador, coordinador
   y técnico, con revisión móvil, formularios, filtros de usuarios, pantallas
   existentes y cierre de sesión; sin errores JavaScript.
-- No se enviaron correos reales durante la auditoría. La integración con Resend
+- No se enviaron correos reales durante la auditoría. La integración con Nodemailer/Gmail
   conserva su implementación y queda protegida por sesión y rol.
 
 Estos resultados corresponden al entorno aislado descrito. No equivalen a una
@@ -126,7 +126,7 @@ prueba de penetración completa ni a una validación de TLS o balanceo multiinst
 ## Actualización: segundo factor por correo (2026-11-03)
 
 El login de contraseña descrito arriba ahora es el primer paso. Se requiere además
-el código de seis dígitos de Resend antes de abrir sesión. La matriz de permisos
+el código de seis dígitos de Nodemailer/Gmail antes de abrir sesión. La matriz de permisos
 se conserva. La instancia habitual usa el destino temporal común `AUTH_2FA_TO`;
 la aislada usa exclusivamente un servicio de correo simulado, montado desde
 `tests/node/mock-auth-mail.cjs`. No se agregó un bypass de segundo factor.
@@ -141,7 +141,7 @@ Resultado de la actualización 2FA:
 - 165 verificaciones HTTP autenticadas aprobadas.
 - 17 comprobaciones de navegador entre los tres roles, formulario móvil, código
   incorrecto/correcto y logout, sin errores JavaScript.
-- En la instancia habitual se comprobó una solicitud real de envío con Resend,
+- En la instancia habitual se comprobó una solicitud real de envío con Nodemailer/Gmail,
   aceptada por el proveedor, y el bloqueo de acceso antes de verificar. El desafío
   de esa prueba se canceló sin mostrar su código. No se verificó la recepción ni
   se consumió ese código real; los recorridos completos se validaron con correo
@@ -201,8 +201,9 @@ filtros de regreso, XSS y móvil) aprobados. Sin correos reales durante las prue
 
 El login enlaza a `/login/recuperar`. El código es independiente del segundo
 factor de acceso y caduca a los 10 minutos, con cinco intentos. El navegador
-conserva el token en una cookie HttpOnly limitada a recuperación. Se mantienen
-el proveedor Resend y el destinatario temporal compartido configurado.
+conserva el token en una cookie HttpOnly limitada a recuperación. Se usa Nodemailer con SMTP de Gmail. Con `AUTH_2FA_TO` vacío, el
+destinatario es el correo de cada usuario; puede configurarse uno compartido
+para pruebas.
 
 El cambio se aplica con bloqueo del usuario y su recuperación: actualiza el hash
 scrypt y elimina sesiones, desafíos de login y recuperaciones en una transacción.

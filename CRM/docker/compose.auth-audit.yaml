@@ -9,9 +9,7 @@ services:
       CRM_ADMIN_EMAIL: admin@audit.example
       CRM_ADMIN_PASSWORD: Audit-Only-Password-2026
       COOKIE_SECURE: "false"
-      EMAIL_PROVIDER: "resend"
       GMAIL_USER: ""
       GMAIL_APP_PASSWORD: ""
       AUTH_2FA_TO: "shared@audit.example"
-      RESEND_API_KEY: "audit-key-not-real"
-      RESEND_TEST_TO: ""
+      MAIL_TEST_TO: ""

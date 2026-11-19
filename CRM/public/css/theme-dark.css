@@ -10,6 +10,9 @@
   --crm-text: #f1f5f9;
   --crm-muted: #94a3b8;
   --crm-primary: #3b82f6;
+  --bg-body: var(--crm-bg);
+  --text-dark: var(--crm-text);
+  --text-muted: var(--crm-muted);
 }
 
 body {
@@ -19,12 +22,27 @@ body {
 }
 
 /* Tarjetas */
-.card {
+.card,
+.soft-card {
   background-color: var(--crm-surface);
   color: var(--crm-text);
   border: 1px solid var(--crm-border);
   border-radius: 14px;
   box-shadow: none;
+}
+
+/* Compatibilidad con tarjetas y formularios de las pantallas existentes. */
+[data-bs-theme="dark"] .bg-white,
+[data-bs-theme="dark"] .bg-light,
+[data-bs-theme="dark"] .users-table thead th,
+[data-bs-theme="dark"] .edit-panel {
+  background-color: var(--crm-surface) !important;
+  border-color: var(--crm-border);
+}
+
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] .user-form .form-label {
+  color: var(--crm-text) !important;
 }
 
 .card-header,

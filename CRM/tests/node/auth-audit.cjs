@@ -21,7 +21,7 @@ function lastMail() {
   return JSON.parse(execFileSync('docker', [...compose, 'exec', '-T', 'app', 'node', '-e', "process.stdout.write(require('fs').readFileSync('/tmp/crm-auth-test-mail.json','utf8'))"], {cwd:process.cwd(),encoding:'utf8'}));
 }
 async function login(email, password, cookie) {
-  // Lift only the resend cooldown for repeat logins inside the isolated test fixture.
+  // Lift only the code request cooldown for repeat logins inside the isolated test fixture.
   db(`await m.database.query('UPDATE desafios_login d JOIN usuarios u ON u.id=d.id_usuario SET d.creado_en=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 61 SECOND) WHERE u.correo=?',{replacements:[${JSON.stringify(email)}]});`);
   const r=await request('/login',{method:'POST',body:{correo:email,password},cookie});
   eq(r.status,302,'password step');eq(r.headers.get('location'),'/login/verificar','second factor required');

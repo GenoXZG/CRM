@@ -24,15 +24,9 @@ export const configuration = {
     twoFactorTo: process.env.AUTH_2FA_TO || '',
   },
   email: {
-    provider: process.env.EMAIL_PROVIDER || 'resend',
     gmailUser: process.env.GMAIL_USER || '',
     gmailAppPassword: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s/g, ''),
-    testTo: process.env.MAIL_TEST_TO || process.env.RESEND_TEST_TO || '',
-  },
-  resend: {
-    apiKey: process.env.RESEND_API_KEY || '',
-    from: process.env.RESEND_FROM || 'CRM TSV <onboarding@resend.dev>',
-    testTo: process.env.RESEND_TEST_TO || '',
+    testTo: process.env.MAIL_TEST_TO || '',
   },
   maps: {
     tileUrl: process.env.MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

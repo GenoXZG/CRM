@@ -10,8 +10,9 @@ cp .env.example .env
 # Completar la configuración privada antes de ejecutar Docker Compose.
 ```
 
-Se requiere una API key válida de Resend (`RESEND_API_KEY`) para completar el
-login con 2FA, recuperar contraseñas y enviar correos. Las credenciales se
+El correo del CRM (login con 2FA, recuperación y pruebas) se envía mediante
+Nodemailer y SMTP de Gmail. Configura `GMAIL_USER` y `GMAIL_APP_PASSWORD` con la
+contraseña de aplicación de la cuenta remitente. Las credenciales se
 configuran únicamente en `.env`, que no se versiona. No se incluyen contraseñas
 ni API keys reales en los archivos de configuración del repositorio.
 

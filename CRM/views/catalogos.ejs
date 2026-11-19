@@ -11,15 +11,17 @@
 
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/assignments.css">
     <link rel="stylesheet" href="/css/catalogs.css">
 </head>
-<body>
+<body class="assignments-view">
 
     <div class="d-flex">
 
         <aside id="sidebar">
             <%- include('partials/session-navigation') %>
         </aside>
+        <button type="button" class="assignment-menu-backdrop toggler-btn" aria-label="Cerrar menú" tabindex="-1"></button>
 
         <div class="main catalog-main d-flex flex-column min-vh-100 w-100">
 

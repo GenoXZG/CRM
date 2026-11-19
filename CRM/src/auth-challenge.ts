@@ -4,7 +4,7 @@ import { QueryTypes } from 'sequelize';
 import { database } from './infrastructure/database/connection';
 import { configuration } from './config';
 import { BusinessError } from './domain/business-error';
-import { sendResendEmail } from './services/resend-email-service';
+import { sendEmail } from './services/email-service';
 
 export const CHALLENGE_SECONDS = 300;
 export const tokenHash = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -31,7 +31,7 @@ export async function createChallenge(userId: number, fingerprint: string, previ
     return { to: configuration.auth.twoFactorTo || user.correo, account: user.correo };
   });
   try {
-    await sendResendEmail(recipient.to, 'Código de acceso · CRM TSV', `Se solicitó iniciar sesión en CRM TSV con la cuenta ${recipient.account}.\n\nTu código es: ${code}\n\nCaduca en 5 minutos y solo puede usarse una vez. Si no solicitaste este acceso, ignora el correo.`);
+    await sendEmail(recipient.to, 'Código de acceso · CRM TSV', `Se solicitó iniciar sesión en CRM TSV con la cuenta ${recipient.account}.\n\nTu código es: ${code}\n\nCaduca en 5 minutos y solo puede usarse una vez. Si no solicitaste este acceso, ignora el correo.`);
     await database.query('UPDATE desafios_login SET enviado=1 WHERE token_hash=?', { replacements: [tokenHash(token)] });
   } catch (error) {
     await database.query('DELETE FROM desafios_login WHERE token_hash=?', { replacements: [tokenHash(token)] });

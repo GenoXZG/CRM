@@ -1,7 +1,7 @@
 // Isolated audit container only. Never used by the normal application command.
 const fs = require('node:fs');
-const mail = require('/app/dist/services/resend-email-service');
-mail.sendResendEmail = async (to, subject, text) => {
+const mail = require('/app/dist/services/email-service');
+mail.sendEmail = async (to, subject, text) => {
   if (fs.existsSync('/tmp/crm-auth-mail-fail')) throw new Error('Simulated provider failure');
   const code = text.match(/Tu código es: (\d{6})/)?.[1];
   const account = text.match(/con la cuenta ([^\s]+)\./)?.[1];

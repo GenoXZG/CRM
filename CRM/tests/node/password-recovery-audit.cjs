@@ -4,7 +4,7 @@ const source = String.raw`
 const assert = require('node:assert/strict'), fs = require('node:fs');
 const { randomBytes } = require('node:crypto');
 const m = require('./dist/infrastructure/database/models');
-require('./dist/services/resend-email-service').sendResendEmail = async (to, subject, text) => {
+require('./dist/services/email-service').sendEmail = async (to, subject, text) => {
   if (fs.existsSync('/tmp/crm-auth-mail-fail')) throw new Error('Simulated provider failure');
   fs.writeFileSync('/tmp/crm-auth-test-mail.json', JSON.stringify({ to, subject, text, code: text.match(/Tu código es: (\d{6})/)?.[1], account: text.match(/con la cuenta ([^\s]+)\./)?.[1] }), { mode: 0o600 });
   return 'mock-id';
