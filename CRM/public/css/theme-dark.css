@@ -686,3 +686,477 @@ body {
     background-color: var(--crm-surface-hover);
     color: #fff;
 }
+
+
+/* =========================================
+   TICKETS - TEMA MINIMALISTA OSCURO
+   ========================================= */
+
+/* Contenedores principales */
+
+.ticket-create-page,
+.ticket-list-page {
+    background: var(--crm-bg);
+    color: var(--crm-text);
+}
+
+.ticket-create-page h1,
+.ticket-create-page h2,
+.ticket-create-page h3,
+.ticket-list-page h1,
+.ticket-list-page h2,
+.ticket-list-page h3 {
+    color: var(--crm-text);
+}
+
+/* Tarjetas de tickets */
+
+.ticket-create-page .soft-card,
+.ticket-list-page .soft-card {
+    background: var(--crm-surface);
+    border: 1px solid var(--crm-border);
+    border-radius: 14px;
+    color: var(--crm-text);
+    box-shadow: none;
+}
+
+/* Formularios y filtros */
+
+.ticket-create-page .form-control,
+.ticket-create-page .form-select,
+.ticket-list-page .form-control,
+.ticket-list-page .form-select {
+    background-color: var(--crm-bg);
+    border: 1px solid var(--crm-border);
+    color: var(--crm-text);
+    border-radius: 8px;
+    min-height: 42px;
+}
+
+.ticket-create-page .form-control:focus,
+.ticket-create-page .form-select:focus,
+.ticket-list-page .form-control:focus,
+.ticket-list-page .form-select:focus {
+    border-color: var(--crm-primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+.ticket-create-page .form-label,
+.ticket-list-page .form-label {
+    color: #cbd5e1;
+}
+
+/* Separadores */
+
+.ticket-create-page .ticket-form-actions {
+    border-top: 1px solid var(--crm-border);
+}
+
+/* Tabla de tickets */
+
+.ticket-list-page .ticket-list-table {
+    --bs-table-bg: var(--crm-surface);
+    --bs-table-color: var(--crm-text);
+    --bs-table-border-color: var(--crm-border);
+    --bs-table-hover-bg: var(--crm-surface-hover);
+    --bs-table-hover-color: #fff;
+}
+
+.ticket-list-page .ticket-list-table th {
+    color: var(--crm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ticket-list-page .ticket-list-table td {
+    color: var(--crm-text);
+    vertical-align: middle;
+}
+
+/* Botones */
+
+.ticket-create-page .btn-primary,
+.ticket-list-page .btn-primary {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.ticket-create-page .btn-primary:hover,
+.ticket-list-page .btn-primary:hover {
+    background-color: #1d4ed8;
+}
+
+/* Mapa de ubicación */
+
+.ticket-create-page .location-map {
+    border: 1px solid var(--crm-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Adaptación móvil */
+
+@media (max-width: 575.98px) {
+    .ticket-list-page .ticket-list-table tr {
+        border-color: var(--crm-border);
+        background: var(--crm-surface);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 12px;
+    }
+
+    .ticket-list-page .ticket-list-table td[data-label]::before {
+        color: var(--crm-muted);
+        font-weight: 600;
+    }
+}
+
+
+/* =========================================
+   TÉCNICOS - DISEÑO MINIMALISTA OSCURO
+   ========================================= */
+
+.technicians-page {
+    background-color: var(--crm-bg);
+    color: var(--crm-text);
+}
+
+/* Encabezados */
+
+.technicians-page h1,
+.technicians-page h2,
+.technicians-page h5 {
+    color: var(--crm-text);
+}
+
+/* Tarjetas */
+
+.technicians-page .soft-card {
+    background-color: var(--crm-surface);
+    border: 1px solid var(--crm-border);
+    border-radius: 14px;
+    color: var(--crm-text);
+    box-shadow: none;
+}
+
+/* Campos */
+
+.technicians-page .form-control,
+.technicians-page .form-select,
+.technicians-page .input-group-text {
+    background-color: var(--crm-bg) !important;
+    border: 1px solid var(--crm-border) !important;
+    color: var(--crm-text);
+}
+
+.technicians-page .form-control:focus,
+.technicians-page .form-select:focus {
+    border-color: var(--crm-primary) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+/* Tabla */
+
+.technicians-page .table {
+    --bs-table-bg: var(--crm-surface);
+    --bs-table-color: var(--crm-text);
+    --bs-table-border-color: var(--crm-border);
+    --bs-table-hover-bg: #1e293b;
+    --bs-table-hover-color: #fff;
+}
+
+.technicians-page .table thead th {
+    color: var(--crm-muted);
+    font-size: .75rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.technicians-page .table td {
+    vertical-align: middle;
+}
+
+/* Acciones */
+
+.technicians-page .btn-outline-primary,
+.technicians-page .btn-outline-danger {
+    border-radius: 8px !important;
+}
+
+/* Ventanas de edición y eliminación */
+
+[data-bs-theme="dark"] #modalEditar .modal-content,
+[data-bs-theme="dark"] #modalEliminar .modal-content {
+    background-color: var(--crm-surface);
+    color: var(--crm-text);
+    border: 1px solid var(--crm-border) !important;
+}
+
+[data-bs-theme="dark"] #modalEditar .form-control,
+[data-bs-theme="dark"] #modalEditar .form-select {
+    background-color: var(--crm-bg) !important;
+    border: 1px solid var(--crm-border) !important;
+    color: var(--crm-text);
+}
+
+[data-bs-theme="dark"] #modalEditar .btn-light,
+[data-bs-theme="dark"] #modalEliminar .btn-light {
+    background-color: var(--crm-bg);
+    border-color: var(--crm-border);
+    color: var(--crm-text);
+}
+
+/* Tabla de Técnicos en celulares */
+@media (max-width: 767.98px) {
+    .technicians-page .technicians-table thead {
+        display: none;
+    }
+
+    .technicians-page .technicians-table tbody {
+        display: block;
+    }
+
+    .technicians-page .technicians-table tbody tr {
+        display: block;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: var(--crm-surface);
+        border: 1px solid var(--crm-border);
+        border-radius: 12px;
+    }
+
+    .technicians-page .technicians-table td {
+        display: block;
+        padding: .5rem 0 !important;
+        border: 0;
+        text-align: left !important;
+    }
+
+    .technicians-page .technicians-table td[data-label]::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: .3rem;
+        font-size: .75rem;
+        font-weight: 600;
+        color: var(--crm-muted);
+    }
+
+    .technicians-page .technicians-table td .justify-content-end {
+        justify-content: flex-start !important;
+    }
+}
+
+
+/* =========================================
+   INVENTARIO Y CATÁLOGOS - TEMA OSCURO
+   ========================================= */
+
+.inventory-page,
+.catalog-page {
+    background-color: var(--crm-bg);
+    color: var(--crm-text);
+}
+
+/* Tarjetas y contenedores */
+
+.inventory-page .soft-card,
+.catalog-page .soft-card {
+    background-color: var(--crm-surface);
+    border: 1px solid var(--crm-border);
+    border-radius: 14px;
+    color: var(--crm-text);
+    box-shadow: none;
+}
+
+/* Encabezados */
+
+.inventory-page h1,
+.inventory-page h2,
+.catalog-page h1,
+.catalog-page h2 {
+    color: var(--crm-text);
+}
+
+/* Formularios y filtros */
+
+.inventory-page .form-control,
+.inventory-page .form-select,
+.catalog-page .form-control,
+.catalog-page .form-select {
+    background-color: var(--crm-bg);
+    border: 1px solid var(--crm-border);
+    color: var(--crm-text);
+}
+
+.inventory-page .form-control:focus,
+.inventory-page .form-select:focus,
+.catalog-page .form-control:focus,
+.catalog-page .form-select:focus {
+    border-color: var(--crm-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
+
+/* Tablas */
+
+.inventory-page .table,
+.catalog-page .table {
+    --bs-table-bg: var(--crm-surface);
+    --bs-table-color: var(--crm-text);
+    --bs-table-border-color: var(--crm-border);
+    --bs-table-hover-bg: #1e293b;
+    --bs-table-hover-color: #fff;
+}
+
+.inventory-page .table thead th,
+.catalog-page .table thead th {
+    color: var(--crm-muted);
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+/* Indicadores de inventario */
+
+.inventory-page .inventory-metric {
+    transition: border-color .2s ease, background-color .2s ease;
+    text-decoration: none;
+}
+
+.inventory-page .inventory-metric:hover {
+    background-color: #1e293b;
+    border-color: var(--crm-primary);
+}
+
+/* Tablas en celulares */
+
+@media (max-width: 575.98px) {
+    .inventory-page .inventory-table tr {
+        border-color: var(--crm-border);
+    }
+
+    .inventory-page .inventory-table td[data-label]::before {
+        color: var(--crm-muted);
+        font-weight: 600;
+    }
+}
+
+
+/* =========================================
+   DETALLES DEL SERVICIO - TEMA OSCURO
+   ========================================= */
+
+@media screen {
+    /* Tarjetas de información */
+
+    .ticket-detail-page .card-detail {
+        background-color: var(--crm-surface);
+        border: 1px solid var(--crm-border);
+        color: var(--crm-text);
+        box-shadow: none;
+    }
+
+    /* Etiquetas y valores */
+
+    .ticket-detail-page .label-text {
+        color: var(--crm-muted);
+    }
+
+    .ticket-detail-page .value-text {
+        color: var(--crm-text);
+    }
+
+    /* Textos heredados del diseño anterior */
+
+    .ticket-detail-page .text-dark {
+        color: var(--crm-text) !important;
+    }
+
+    /* Contenedores y formularios claros */
+
+    .ticket-detail-page .bg-white,
+    .ticket-detail-page .bg-light {
+        background-color: var(--crm-surface) !important;
+    }
+
+    .ticket-detail-page .form-control,
+    .ticket-detail-page .form-select,
+    .ticket-detail-page .input-group-text {
+        background-color: var(--crm-bg);
+        border-color: var(--crm-border);
+        color: var(--crm-text);
+    }
+
+    /* Tablas */
+
+    .ticket-detail-page .table {
+        --bs-table-bg: var(--crm-surface);
+        --bs-table-color: var(--crm-text);
+        --bs-table-border-color: var(--crm-border);
+        --bs-table-hover-bg: #1e293b;
+        --bs-table-hover-color: #fff;
+    }
+
+    /* Paneles y ventanas emergentes */
+
+    [data-bs-theme="dark"] .ticket-detail-page .modal-content {
+        background-color: var(--crm-surface);
+        border: 1px solid var(--crm-border);
+        color: var(--crm-text);
+    }
+}
+
+
+/* =========================================
+   MODALES - INVENTARIO Y CATÁLOGOS
+   ========================================= */
+
+[data-bs-theme="dark"] #modalNuevoEquipo .modal-content,
+[data-bs-theme="dark"] #modalEditarEquipo .modal-content,
+[data-bs-theme="dark"] .modal .modal-content {
+    background-color: var(--crm-surface);
+    color: var(--crm-text);
+    border: 1px solid var(--crm-border);
+    border-radius: 14px;
+}
+
+/* Encabezados y pies */
+
+[data-bs-theme="dark"] .modal-header,
+[data-bs-theme="dark"] .modal-footer {
+    border-color: var(--crm-border);
+}
+
+/* Campos dentro de ventanas */
+
+[data-bs-theme="dark"] .modal .form-control,
+[data-bs-theme="dark"] .modal .form-select,
+[data-bs-theme="dark"] .modal .input-group-text {
+    background-color: var(--crm-bg);
+    border: 1px solid var(--crm-border);
+    color: var(--crm-text);
+}
+
+/* Botones secundarios */
+
+[data-bs-theme="dark"] .modal .btn-light {
+    background-color: var(--crm-bg);
+    border-color: var(--crm-border);
+    color: var(--crm-text);
+}
+
+[data-bs-theme="dark"] .modal .btn-light:hover {
+    background-color: var(--crm-surface-hover);
+    color: #fff;
+}
+
+/* Foco de formularios */
+
+[data-bs-theme="dark"] .modal .form-control:focus,
+[data-bs-theme="dark"] .modal .form-select:focus {
+    border-color: var(--crm-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+}
