@@ -15,8 +15,9 @@ remitente. No utilices la contraseña normal de Google.
 Esta configuración es necesaria para completar el login con 2FA, recuperar
 contraseñas y enviar el correo de prueba. Sin SMTP operativo, el servidor puede
 arrancar, pero no se podrá completar un nuevo login porque no podrá entregar el
-código. `AUTH_2FA_TO` vacío envía los códigos al correo de cada usuario; un valor
-explícito conserva un destinatario compartido para pruebas.
+código. Con `AUTH_2FA_TO` vacío, los códigos se envían al correo de cada cuenta.
+Para usar un destinatario compartido en una instancia aislada, configura
+`CRM_DEPLOYMENT=test`.
 
 Copia `.env.example` a `.env` y completa sus valores antes de iniciar. El archivo
 `.env` es privado y está excluido tanto de Git como de la imagen Docker. La
@@ -70,7 +71,7 @@ docker compose up --build -d --wait
 ## Ejecución local
 
 Preparar una base MySQL y su usuario. Aplicar `docker/mysql/init/001-schema.sql`
-y, opcionalmente, `002-demo.sql`. Copiar `.env.example` a `.env` si todavía no
+y, solo para desarrollo, opcionalmente `docker/mysql/demo/002-demo.sql`. Copiar `.env.example` a `.env` si todavía no
 existe configuración local.
 
 ```bash
@@ -100,7 +101,7 @@ obsoletas; no elimina fotografías ni datos.
 | `src/infrastructure/database/` | Conexión, modelos tipados, relaciones y consultas |
 | `src/browser/` | Lógica de las páginas y módulos compartidos del navegador |
 | `views/`, `public/css/`, `public/js/` | Las plantillas EJS, los estilos activos y el script del asistente de inicio |
-| `public/uploads/` | Fotografías persistidas; no se eliminan durante la limpieza |
+| `evidence/` | Evidencias privadas persistidas en el volumen `uploads` |
 | `dist/`, `public/assets/` | JavaScript generado necesario para ejecutar la aplicación |
 | `scripts/build.js` | Compilación reproducible de ambos destinos |
 | `tsconfig.json`, `tsconfig.browser.json` | Configuraciones del servidor y navegador |
@@ -354,38 +355,21 @@ docker compose start
 docker compose down
 ```
 
-`down` conserva los volúmenes. Para eliminar explícitamente los datos y fotografías
-de una demo desechable y recrearla:
+El Compose base aplica solo el esquema al inicializar un volumen vacío. Para
+una demo nueva usa un proyecto de prueba distinto con
+`docker/compose.demo.yaml`. La configuración de auditoría activa los datos
+ficticios en su propio proyecto. El contenido de volúmenes existentes se
+conserva.
 
 ```bash
-docker compose down --volumes
-docker compose up --build -d --wait
+docker compose -p crm-demo-local -f compose.yaml -f docker/compose.demo.yaml up --build -d --wait
 ```
 
-### Reinsertar la demo
-
-`002-demo.sql` solo se ejecuta automáticamente con un volumen vacío. Para volver a
-cargarla en una base ya creada, con las tablas vacías:
-
-```bash
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE" < /docker-entrypoint-initdb.d/002-demo.sql'
-```
-
-El script usa identificadores fijos: si quedan registros previos, MySQL responderá
-`Duplicate entry`. Para vaciar las tablas antes de reinsertar, respetando las
-llaves foráneas (esto elimina también los tickets, porque se borran en cascada con
-sus clientes):
-
-```bash
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "DELETE FROM Cliente; DELETE FROM Tecnicos; DELETE FROM Equipos_catalogo; DELETE FROM Unidades_catalogo; DELETE FROM Accesorios_catalogo;"'
-```
-
-Antes de borrar datos que quieras conservar, haz un respaldo:
-
-```bash
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump -u "$MYSQL_USER" "$MYSQL_DATABASE" > /tmp/respaldo.sql'
-docker cp <contenedor-db>:/tmp/respaldo.sql ./respaldo.sql
-```
+La preparación de una base limpia, las variables, el respaldo, la restauración,
+el rollback y la lista de verificación se mantienen en
+[Preparación de producción](docs/production-readiness.md). La
+[matriz de autorización](docs/security-authorization-matrix.md) incluye los
+resultados de la auditoría final.
 
 ## Asistente de inicio
 
@@ -527,10 +511,15 @@ coordinador. No requiere interfaz ni modifica datos del CRM. Usa la misma cuenta
 Gmail configurada para el login y la recuperación: `GMAIL_USER` y
 `GMAIL_APP_PASSWORD`. Compose transmite estas variables al contenedor.
 
+Con una jarra local que ya contiene la sesión verificada, usa el mismo host
+que utilizaste al iniciar sesión.
+
 ```bash
+csrf_token=$(curl -fsS -b crm.cookies -c crm.cookies http://localhost:3030/csrf-token | jq -er '.token')
 curl -X POST http://localhost:3030/api/email/test \
+  -b crm.cookies \
+  -H "X-CSRF-Token: $csrf_token" \
   -H 'Content-Type: application/json' \
-  -H 'Cookie: crm_session=TOKEN_DE_SESION_VERIFICADA' \
   -d '{"to":"destinatario@example.com"}'
 ```
 
@@ -538,7 +527,7 @@ Puede enviarse `{}` si se configuró `MAIL_TEST_TO`. Asunto y texto son fijos.
 La respuesta exitosa es HTTP 200 con `{success:true, message, data:{id,to,provider}}`
 y `provider: "gmail"`. Significa aceptación por SMTP, no confirmación de entrega
 en la bandeja. Se devuelve 503 si falta configuración y 502 si Gmail rechaza el
-envío. La prueba no agrega validaciones de destinatario ni reintentos automáticos.
+envío. La prueba acepta un destinatario por solicitud y aplica una cuota de tres intentos por cuenta y diez por instancia al minuto.
 
 ## Login y administración de usuarios
 
@@ -613,10 +602,9 @@ El login ahora exige contraseña **y** un código aleatorio de seis dígitos env
 mediante Nodemailer y SMTP de Gmail. El login,
 la recuperación y el correo de prueba comparten `src/services/email-service.ts`.
 
-Si se configura `AUTH_2FA_TO=correo-personal@example.com`, todos los códigos
-llegan al destinatario compartido. Esta modalidad de pruebas no verifica la
-posesión del correo individual; en uso normal deja la variable vacía.
-Al dejar `AUTH_2FA_TO` vacío, se envían al correo de cada cuenta.
+En una instancia aislada con `CRM_DEPLOYMENT=test`, puedes usar
+`AUTH_2FA_TO=destino@example.com` para recibir todos los códigos en un buzón de
+pruebas. Con la variable vacía, se envían al correo de cada cuenta.
 
 Flujo:
 
@@ -862,19 +850,20 @@ es genérica para cuentas existentes/desconocidas y fallos del proveedor de corr
 Si el envío falla, no queda un código utilizable; revisar la configuración
 del proveedor de correo y solicitar nuevamente cuando corresponda.
 
-Se usa Nodemailer con Gmail y el destino `AUTH_2FA_TO` del login. Mientras esté
-configurado, los códigos de todas las cuentas llegan a ese correo personal; la
-recuperación depende del acceso a ese buzón. Dejar vacío `AUTH_2FA_TO` envía al
-correo de cada cuenta mediante Gmail.
+Nodemailer envía los códigos de recuperación al correo de cada cuenta mediante
+Gmail. En el perfil `test`, un `AUTH_2FA_TO` configurado redirige tanto estos
+códigos como los de acceso al buzón de pruebas.
 Los códigos de acceso y de recuperación son independientes y sus correos explican
 para qué sirve cada uno. No se envían correos reales durante las auditorías.
 
 La migración `004-password-recovery` crea `recuperaciones_password`; también está
 en el schema base. Se ejecuta explícitamente con `npm run migrate` antes de
 iniciar la nueva versión, nunca desde un endpoint o al arrancar la aplicación.
-El token de navegador se guarda en cookie HttpOnly/SameSite=Lax limitada a
-`/login/recuperar`, con Secure cuando corresponde. En DB se guardan el hash del
-token, un HMAC del código y la huella de las credenciales, no el código en claro.
+El token de navegador viaja cifrado con AES-GCM en una cookie
+`HttpOnly; SameSite=Lax` limitada a `/login/recuperar`, con `Secure` según el
+perfil. Cada emisión usa un valor distinto, incluso cuando sigue vigente el
+mismo token. MySQL guarda el hash del token, un HMAC del código y la huella de
+las credenciales.
 
 El código dura 10 minutos, admite cinco intentos y se consume en una transacción
 con el cambio de contraseña y la revocación de todas las sesiones y desafíos de
@@ -883,19 +872,25 @@ cuenta desde administración también invalida su recuperación. Un cambio de ro
 correo, contraseña o vínculo técnico invalida la huella anterior. Recuperar una
 cuenta técnica no activa su técnico ni modifica sus permisos.
 
-Hay un minuto de espera por cuenta entre envíos; pedir otro código válido
-reemplaza el anterior. Durante esa espera, el mismo navegador conserva su token
-vigente. Se limitan solicitudes a cinco y canjes a veinte por IP cada 15 minutos;
-estos contadores están en memoria y se reinician al reiniciar la aplicación.
-Los intentos por código y la espera por cuenta están en MySQL. No se configura
-confianza automática en encabezados de proxy. Un despliegue con varias réplicas
-necesitará un limitador compartido y configurar explícitamente el proxy confiable.
+Hay un minuto de espera por cuenta. El siguiente código emitido reemplaza al
+anterior. Durante la espera, el navegador que conserva el token vigente puede
+seguir usándolo. La entrega de correo se procesa en segundo plano, con hasta
+cuatro envíos concurrentes y hasta 32 operaciones de entrega pendientes,
+incluidas las que se están preparando. Un desafío sin entrega confirmada
+permanece inutilizable. Los fallos del proveedor conservan la espera por cuenta.
+
+La solicitud y el canje fallido usan respuestas uniformes y un piso de 150 ms
+tras validar los campos. Las variaciones del tiempo de base de datos pueden
+seguir siendo observables bajo carga. El canje ejecuta scrypt después de validar
+el código bajo bloqueo de la cuenta y del desafío, dentro de la transacción que
+consume el código y revoca las sesiones. Véanse los límites HTTP en la sección
+de protección de solicitudes.
 
 Solicitar un código no cambia la contraseña ni revoca sesiones. Solo al completar
 el cambio se cierran las sesiones anteriores. No se crea una sesión automática:
 el usuario vuelve al login y completa el 2FA habitual con la nueva contraseña.
 
-Endpoints públicos, con comprobación de origen para POST:
+Endpoints públicos. Los POST requieren CSRF y comprueban el origen cuando se indica:
 
 - `GET /login/recuperar`: formulario de solicitud.
 - `POST /login/recuperar`: `correo`; respuesta 302 y cookie `crm_recovery`.
@@ -959,8 +954,197 @@ del servidor. No se publica ningún puerto SMTP entrante.
 
 Para entregar códigos a cada usuario, deja `AUTH_2FA_TO` vacío y comprueba que el
 correo de la cuenta sea real y esté bajo su control. Un destinatario compartido
-sigue disponible únicamente si se configura explícitamente para pruebas.
+requiere el perfil `CRM_DEPLOYMENT=test`. Los perfiles `local` y `public`
+rechazan un `AUTH_2FA_TO` no vacío al arrancar.
 
 Validación sin envíos reales: `node tests/node/email-provider-audit.cjs`, después
 de compilar y con la configuración de base de datos disponible. Las auditorías
 de login y recuperación utilizan un proveedor simulado.
+
+
+### Despliegue HTTPS detrás de Apache
+
+El perfil predeterminado `CRM_DEPLOYMENT=local` admite HTTP directo. Usa
+`CRM_DEPLOYMENT=test` para instancias aisladas. Los dos perfiles pueden forzar
+cookies seguras con `COOKIE_SECURE=true`. El perfil `public` siempre aplica
+`Secure` a las cookies de sesión, 2FA y recuperación, incluso al borrarlas.
+
+Antes de activar `public`, verifica el certificado y configura el VirtualHost
+dedicado al nombre público. Redirige el HTTP público a HTTPS en Apache. En el
+VirtualHost TLS, aplica estas directivas con los módulos `proxy`, `proxy_http`,
+`headers` y `ssl` disponibles.
+
+```apache
+ProxyRequests Off
+ProxyPreserveHost On
+ProxyAddHeaders On
+RequestHeader unset Forwarded
+RequestHeader unset X-Forwarded-For
+RequestHeader unset X-Forwarded-Host
+RequestHeader unset X-Forwarded-Server
+RequestHeader set X-Forwarded-Proto "https"
+ProxyPass / http://127.0.0.1:3030/
+ProxyPassReverse / http://127.0.0.1:3030/
+```
+
+Apache genera las cabeceras reenviadas a partir de la conexión y conserva
+`Host` para la validación de origen. El VirtualHost debe aceptar el host
+público esperado. Mantén el puerto del CRM enlazado a `127.0.0.1` en Docker
+y la base de datos sin puerto publicado.
+
+Comprueba `request.socket.remoteAddress` dentro del contenedor con una
+solicitud que entre por Apache. Puedes usar temporalmente un registro privado
+que muestre solo esa dirección. Contrástala con `docker network inspect` y
+vuelve a comprobarla tras recrear el contenedor. Asegúrate de que ningún otro
+acceso no confiable alcance el backend con esa misma identidad. Configura
+`TRUSTED_PROXY_IP` con la IP exacta observada y activa `CRM_DEPLOYMENT=public`
+con `AUTH_2FA_TO` vacío. Verifica que el healthcheck local funciona y que los
+formularios HTTPS del CRM y sus cookies funcionan a través de Apache.
+
+Después de compilar, ejecuta `node --test tests/node/production-hardening-audit.cjs`
+para verificar los perfiles, el origen, la IP del cliente y los atributos de
+las cookies con un servidor HTTP local y sin conexión a MySQL.
+
+
+### Protección de solicitudes y límites de autenticación
+
+Los formularios EJS incluyen un campo oculto `_csrf`. El cliente `fetch` envía
+`X-CSRF-Token` en solicitudes del mismo origen. El formulario multipart de
+evidencia incluye el campo antes de los archivos. El servidor verifica el campo
+antes de guardar el primer archivo y también admite el encabezado para clientes
+programáticos. Evita enviar el token en la URL.
+
+Para clientes HTTP con una jarra de cookies, obtén el token mediante
+`GET /csrf-token` para las operaciones de la sesión, `GET /login/csrf-token` para
+login y 2FA, o `GET /login/recuperar/csrf-token` para recuperación. Conserva las
+cookies que devuelve el servidor y usa el token del contexto actual. El token
+se firma con HMAC y queda ligado a un nonce de navegador en cookie HttpOnly y a
+las credenciales de sesión, desafío y recuperación presentes en la ruta. La
+cookie del nonce usa el prefijo `__Host-` cuando se requiere `Secure`.
+La autenticación, cancelación, cierre de sesión y recuperación rotan el nonce.
+Si un formulario abierto quedó desactualizado, vuelve a cargarlo.
+
+Los límites fijos de 15 minutos se definen por operación. Se usa `request.ip`
+con la configuración de proxy de la Fase 1. IPv4 mapeada se normaliza a IPv4
+e IPv6 se agrupa por prefijo /64.
+
+| Operación | Por IP o prefijo | Por cuenta e IP o prefijo |
+| --- | ---: | ---: |
+| Login | 10 | 5 |
+| Solicitud de recuperación | 5 | 3 |
+| Restablecimiento | 20 | Cinco intentos por desafío en MySQL |
+
+Los límites HTTP devuelven `429` con `Retry-After` en segundos. Las cuotas por
+cuenta e IP se aplican también a correos inexistentes. Una IP remota no puede
+agotar directamente la cuota de login de una cuenta desde otra red. Cada
+política tiene capacidad limitada y divide sus contadores en 32 grupos
+asignados mediante HMAC. La saturación de un grupo puede rechazar nuevas
+entradas de ese grupo hasta que expire una de ellas. Una IP compartida puede
+agotar su propia cuota.
+
+Contadores, claves de CSRF y cifrado de recuperación, y cola de correo viven en
+el proceso de Express. Un reinicio restablece las cuotas y exige volver a
+cargar los formularios. Una recuperación pendiente puede requerir solicitar
+otro código cuando termine la espera. La cola no garantiza entregas tras un
+reinicio. Varias réplicas necesitarían compartir estado y claves para mantener
+las mismas garantías. Esta fase usa la topología de Apache y Docker de la
+Fase 1 y no requiere variables nuevas ni migraciones.
+
+### Evidencias privadas y transición del volumen
+
+Las evidencias se consultan en `/uploads/tickets/:nombre` con sesión vigente.
+La aplicación busca la referencia en MySQL y comprueba el alcance del ticket.
+Administradores y coordinadores conservan acceso global. Los técnicos solo
+pueden consultar evidencias de tickets asignados. Una referencia sin ticket
+asociado deja de ser accesible. El CRM no ofrece un borrado individual de
+evidencias. Desasociar un ticket no borra automáticamente el archivo físico.
+
+Las cargas admiten hasta cinco JPEG, PNG o WebP. Se verifica la estructura
+con Sharp, la concordancia de la extensión y el MIME declarado, y los límites
+de 6000 píxeles por lado y 16 millones de píxeles por imagen. Se rechazan las
+secuencias animadas detectadas por el decodificador. Los archivos nuevos se
+recodifican, pierden metadatos y reciben un UUID con la extensión detectada.
+Los formatos históricos no renderizables con estos controles se conservan
+como descargas con tipo genérico y aislamiento del navegador.
+
+El volumen Compose sigue llamándose `uploads`. Su destino cambia de
+`/app/public/uploads` a `/app/evidence`. Conserva el mismo nombre de proyecto y
+verifica el volumen efectivo antes de recrear el contenedor. La carpeta
+`tickets` del volumen se lee como almacenamiento histórico y `validated`
+recibe las cargas nuevas. Las URLs existentes y las referencias de MySQL
+siguen funcionando sin migraciones. En ejecución directa, la raíz privada
+predeterminada es `evidence/`. Se admite lectura de la carpeta local histórica
+`public/uploads/tickets` por la ruta autorizada. Express sirve recursos
+estáticos solo desde carpetas explícitas y excluye los adjuntos.
+
+Durante la ventana de actualización:
+
+1. Respalda MySQL y el volumen `uploads` de forma coordinada. Verifica el
+   nombre del volumen y que el proceso Node pueda leer `tickets` y crear
+   `validated`. Con montajes personalizados, usa la misma estructura bajo una
+   raíz privada configurada en `EVIDENCE_ROOT`.
+2. Recrea solo el contenedor de aplicación con el mismo proyecto Compose y
+   volumen. Verifica una evidencia histórica con cada rol y realiza una carga
+   de prueba en un ticket de ensayo. Comprueba que una URL sin sesión rechaza
+   el acceso. Mantén `/uploads/` detrás del proxy, sin un alias de disco en
+   Apache.
+3. Si necesitas revertir después de aceptar cargas nuevas, conserva
+   `validated` y las referencias de MySQL. Una versión anterior busca esas
+   referencias en `tickets`. Prueba la reversión sobre copias antes de exponer
+   el servicio. Una interrupción abrupta entre disco y MySQL puede dejar
+   archivos privados sin referencia. Revisa esa diferencia a partir del
+   respaldo antes de decidir cualquier limpieza.
+
+### CSP, encabezados y límites de Apache
+
+El perfil público aplica CSP obligatoria por defecto. En una validación controlada, `CSP_MODE=report-only` permite revisar avisos en la consola del navegador.
+Valida las pantallas y flujos con el proxy y dominio definitivos y usa
+`CSP_MODE=enforce` antes de publicar. El código local y los recursos versionados
+de SweetAlert son compatibles con la política. Los scripts externos autorizados
+y los bloques de estilo de EJS usan un nonce por respuesta; los atributos de
+evento inline están bloqueados. Se permiten atributos CSS para posicionamiento,
+modales y Leaflet. Se permiten `blob:` y `data:` en imágenes para previsualizaciones
+y recursos gráficos. CSP autoriza el origen de mosaicos de `MAP_TILE_URL`;
+en el despliegue público debe ser HTTPS. Geolocalización se permite al origen
+del CRM sujeto al permiso del navegador.
+
+Express emite HSTS solo en perfil `public` al reconocer HTTPS detrás del proxy
+de confianza. La política dura un año y se restringe al host actual. Mantén la
+configuración en el VirtualHost del CRM.
+
+Los límites de Express son 256 KiB para JSON y 64 KiB, 256 parámetros y
+profundidad 8 para formularios URL-encoded. Multipart admite 26 MiB en total,
+5 MiB por archivo, siete partes, dos campos de texto y 4 KiB por campo. Se
+admiten hasta dos cargas simultáneas por proceso. Configura los límites de
+transporte en el VirtualHost del CRM para que incluyan el espacio de delimitadores
+y cabeceras de multipart. Consulta [LimitRequestBody de Apache](https://httpd.apache.org/docs/2.4/mod/core.html#limitrequestbody).
+
+```apache
+LimitRequestBody 262144
+<LocationMatch "^/tickets/[0-9]+/subir-fotos/?$">
+    LimitRequestBody 27262976
+</LocationMatch>
+```
+
+### Seguimiento de recuperación
+
+El evento `password_recovery_delivery` registra saturación y fallos de entrega
+con contadores acumulados y operaciones pendientes. Cada tipo de evento se
+emite al producirse y como máximo una vez por minuto. No contiene correos,
+contraseñas, tokens ni códigos. Las solicitudes mantienen su respuesta genérica.
+Las cookies de recuperación antiguas sin cifrar dejan de ser aceptadas.
+La clave AES-256-GCM vive en el proceso. Después de actualizar o reiniciar,
+cualquier recuperación abierta requiere solicitar otro código una vez cumplida
+la espera por cuenta.
+
+La auditoría `tests/node/browser-security-audit.cjs` usa Chromium con
+Playwright instalado fuera del proyecto. Usa un contenedor de auditoría
+aislado en el puerto local 3031 con correo simulado, `CSP_MODE=enforce`,
+`CRM_DEPLOYMENT=public`, `AUTH_2FA_TO` vacío y la IP observada del proxy
+configurada en `TRUSTED_PROXY_IP`. La base aislada debe contener el
+administrador del Compose de auditoría, el ticket de demostración 2 y una
+cuenta coordinadora de prueba `browser-recovery@audit.example`. Indica
+`CRM_AUDIT_PROJECT`, las rutas del módulo y ejecutable en
+`CRM_BROWSER_DRIVER` y `CRM_BROWSER_EXECUTABLE`, y un certificado temporal
+en `CRM_BROWSER_TLS_CERT` y `CRM_BROWSER_TLS_KEY`. La prueba sube una imagen
+y restablece solo la cuenta coordinadora de prueba.

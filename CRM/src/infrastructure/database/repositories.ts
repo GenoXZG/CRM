@@ -88,8 +88,10 @@ export const tickets = {
     const event = statusChanged ? patch.status === 'completed' ? 'servicio_finalizado' : before.Estatus_servicio === 'Finalizado' ? 'ticket_reabierto' : 'estado_actualizado' : 'ticket_actualizado';
     await recordTicketEvent(id, event, changes, transaction);
   },
-  async findDetails(id: number): Promise<TicketDetails | null> {
-    const row = await ticketModel.findByPk(id, {
+  async findDetails(id: number, transaction: Transaction, technician?: number): Promise<TicketDetails | null> {
+    const row = await ticketModel.findOne({
+      where: { ID_ticket: id, ...(technician === undefined ? {} : { ID_tecnico: technician }) },
+      transaction,
       include: [
         ...summaryIncludes,
         { model: photoModel },

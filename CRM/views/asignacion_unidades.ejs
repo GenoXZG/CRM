@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/assignments.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
-</head>
+<meta name="csrf-token" content="<%= csrfToken %>"></head>
 <body class="assignments-view">
     
     <div class="d-flex">
@@ -72,6 +72,7 @@
 </main></div></div>
 <%- include('partials/assignment-equipment-modals') %>
 <script src="/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.3/dist/sweetalert2.min.css">
+    <script nonce="<%= cspNonce %>" src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.3/dist/sweetalert2.min.js"></script>
 <script type="module" src="/assets/pages/assignments.js"></script>
 </body></html>

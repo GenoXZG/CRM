@@ -1,21 +1,11 @@
 import { Router } from 'express';
-import multer from 'multer';
-import path from 'node:path';
+import { receiveEvidence } from './evidence-upload';
 import * as tickets from '../controllers/ticket-controller';
 import { renderAssignments } from '../controllers/assignment-controller';
 import { resolveLocationLink } from '../controllers/maps-link-controller';
 const router = Router();
 router.get('/asignaciones', renderAssignments);
-const storage = multer.diskStorage({
-  destination(_request, _file, callback) {
-    callback(null, 'public/uploads/tickets');
-  },
-  filename(request, file, callback) {
-    const suffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    callback(null, `ticket_${request.params.id}_${suffix}${path.extname(file.originalname)}`);
-  },
-});
-const upload = multer({ storage });
+router.get('/uploads/tickets/:name', tickets.serveEvidence);
 router.get('/tickets', tickets.renderTicketEntry);
 router.get('/tickets/exportar', tickets.downloadTickets);
 router.get('/tickets/nuevo', tickets.renderTicketForm);
@@ -28,12 +18,7 @@ router.post('/tickets/actualizar_maps', tickets.updateLocation);
 router.get('/estado_tickets', tickets.renderTicketDashboard);
 router.get('/asignacion_unidades', renderAssignments);
 router.get('/detalle_ticket/:id', tickets.renderTicketDetails);
-router.post(
-  '/tickets/:id/subir-fotos',
-  tickets.requireOpenTicket,
-  upload.array('fotos', 5),
-  tickets.uploadPhotos,
-);
+router.post('/tickets/:id/subir-fotos', tickets.requireOpenTicket, receiveEvidence);
 router.post('/add_ticket', tickets.createTicket);
 router.post('/updateAsignacionUnidades', tickets.confirmCompleteAssignment);
 export default router;

@@ -28,7 +28,7 @@ export async function createChallenge(userId: number, fingerprint: string, previ
     await database.query('INSERT INTO desafios_login (token_hash,id_usuario,code_hash,credential_hash,creado_en,expira_en) VALUES (?,?,?,?,UTC_TIMESTAMP(),DATE_ADD(UTC_TIMESTAMP(),INTERVAL 5 MINUTE))', { replacements: [tokenHash(token), userId, codeHash(token, code), fingerprint], transaction });
     // A new login must not retain a previous fully authenticated browser session.
     if (previous) await database.query('DELETE FROM sesiones_usuario WHERE token_hash=?', { replacements: [tokenHash(previous)], transaction });
-    return { to: configuration.auth.twoFactorTo || user.correo, account: user.correo };
+    return { to: configuration.auth.testCodeRecipient || user.correo, account: user.correo };
   });
   try {
     await sendEmail(recipient.to, 'Código de acceso · CRM TSV', `Se solicitó iniciar sesión en CRM TSV con la cuenta ${recipient.account}.\n\nTu código es: ${code}\n\nCaduca en 5 minutos y solo puede usarse una vez. Si no solicitaste este acceso, ignora el correo.`);

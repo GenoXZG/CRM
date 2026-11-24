@@ -19,7 +19,7 @@ export async function describeHistory(groups: TicketChange[][], transaction?: Tr
   const wanted = new Map<string, Set<number>>();
   for (const changes of groups) for (const change of changes) {
     const type = referenceType(change.field);
-    if (!references[type]) continue;
+    if (!Object.hasOwn(references, type)) continue;
     const ids = [...(change.beforeLabel === undefined ? idsOf(change.before) : []), ...(change.afterLabel === undefined ? idsOf(change.after) : [])];
     const set = wanted.get(type) ?? new Set<number>();
     for (const id of ids) set.add(id);
@@ -32,7 +32,7 @@ export async function describeHistory(groups: TicketChange[][], transaction?: Tr
   }
   return groups.map(changes=>changes.map(change=>{
     const type=referenceType(change.field);
-    if (!references[type]) return change;
+    if (!Object.hasOwn(references, type)) return change;
     const describe=(value:unknown):string|undefined=>{
       const ids=idsOf(value);
       if (!ids.length) return undefined;

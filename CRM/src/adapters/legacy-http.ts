@@ -112,7 +112,8 @@ export const serializeUnitDetails = (unit: UnitDetails) => ({
 export const serializePhoto = (photo: TicketPhoto) => ({
   ID_foto: photo.id,
   ID_ticket: photo.ticketId,
-  Ruta_archivo: photo.fileUrl,
+  Ruta_archivo: photo.fileUrl.startsWith('/uploads/tickets/')
+    ? '/uploads/tickets/' + encodeURIComponent(photo.fileUrl.slice('/uploads/tickets/'.length)) : '',
   Nombre_original: photo.originalName,
   createdAt: photo.createdAt,
   updatedAt: photo.updatedAt,

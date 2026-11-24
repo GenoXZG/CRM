@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/directory.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
-</head>
+<meta name="csrf-token" content="<%= csrfToken %>"></head>
 <body>
     
     <div class="d-flex">
@@ -47,7 +47,7 @@
                             <h5 class="mb-0">Registrar Nuevo Cliente</h5>
                         </div>
 
-                        <form action="/add_cliente" method="POST">
+                        <form action="/add_cliente" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <% if (setupWizard === 'clients') { %>
                                 <input type="hidden" name="setupWizard" value="clients">
                             <% } %>
@@ -166,7 +166,7 @@
                     <h5 class="modal-title fw-bold ms-2">Editar Información</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="/editar_cliente" method="POST">
+                <form action="/editar_cliente" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="modal-body pt-4">
                         <input type="hidden" name="ID_cliente" id="modal-id">
                         
@@ -202,7 +202,7 @@
                     <h4 class="mb-2">¿Estás seguro?</h4>
                     <p class="text-muted mb-4">Vas a eliminar al cliente <span id="delete-nombre-cliente" class="fw-bold text-dark"></span>. Esta acción no se puede deshacer.</p>
                     
-                    <form action="/eliminar_cliente" method="POST" class="d-flex justify-content-center gap-3">
+                    <form action="/eliminar_cliente" method="POST" class="d-flex justify-content-center gap-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="ID_cliente" id="delete-id-cliente">
                         <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, Eliminar</button>

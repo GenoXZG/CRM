@@ -1,5 +1,5 @@
 <% const draftTicket = typeof data !== 'undefined' && data ? data : {}; %>
-<form action="/add_ticket" method="POST" id="ticket-create-form" data-embedded="<%= typeof embedded !== 'undefined' && embedded %>">
+<form action="/add_ticket" method="POST" id="ticket-create-form" data-embedded="<%= typeof embedded !== 'undefined' && embedded %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <input type="hidden" name="returnTo" value="<%= ticketListState %>">
   <div class="alert alert-danger d-none" id="ticket-create-error" role="alert" tabindex="-1"></div>
   <fieldset id="ticket-create-editable">

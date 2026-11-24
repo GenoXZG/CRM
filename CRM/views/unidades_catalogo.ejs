@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
-</head>
+<meta name="csrf-token" content="<%= csrfToken %>"></head>
 <body>
     
     <div class="d-flex">
@@ -46,7 +46,7 @@
                             <h5 class="mb-0">Registrar Nuevo Modelo</h5>
                         </div>
 
-                        <form action="/add_unidad_catalogo" method="POST">
+                        <form action="/add_unidad_catalogo" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <% if (setupWizard === 'units') { %>
                                 <input type="hidden" name="setupWizard" value="units">
                             <% } %>
@@ -145,7 +145,7 @@
                     <h5 class="modal-title fw-bold ms-2">Editar Unidad</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="/editar_unidad_stock" method="POST">
+                <form action="/editar_unidad_stock" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="modal-body pt-4">
                         <input type="hidden" name="ID_Unidad_modelo" id="modal-id">
                         
@@ -180,7 +180,7 @@
                         (<span id="modal_eliminar-marca-display"></span>).
                     </p>
                     
-                    <form action="/eliminar_unidad_stock" method="POST" class="d-flex justify-content-center gap-3">
+                    <form action="/eliminar_unidad_stock" method="POST" class="d-flex justify-content-center gap-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="ID_Unidad_modelo" id="modal_eliminar-id">
                         <input type="hidden" name="Marca_unidad" id="modal_eliminar-marca">
                         <input type="hidden" name="Modelo_Unidad" id="modal_eliminar-modelo">

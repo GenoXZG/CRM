@@ -39,7 +39,7 @@
 <div class="modal fade directory-modal" id="<%= modal %>" tabindex="-1" aria-labelledby="<%= modal %>-title" aria-hidden="true" <% if (action !== 'create') { %>data-field-map='<%= JSON.stringify(mapping) %>'<% } %>>
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content">
     <div class="modal-header"><h2 class="modal-title fs-5" id="<%= modal %>-title"><%= action === 'create' ? 'Registrar' : action === 'edit' ? 'Editar' : 'Eliminar' %> <%= directory.singular %></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
-    <form action="<%= directory[action === 'create' ? 'create' : action === 'edit' ? 'update' : 'remove'] %>" method="POST" data-directory-form data-directory-action="<%= action %>">
+    <form action="<%= directory[action === 'create' ? 'create' : action === 'edit' ? 'update' : 'remove'] %>" method="POST" data-directory-form data-directory-action="<%= action %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="modal-body">
         <input type="hidden" name="directoryState" value="<%= destination %>">
         <% if (action === 'create' && setupWizard === directory.key) { %><input type="hidden" name="setupWizard" value="<%= setupWizard %>"><% } %>

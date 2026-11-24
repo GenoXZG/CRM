@@ -16,6 +16,7 @@ public/assets/
 
 # Uploaded evidence
 public/uploads/
+evidence/
 
 # Generated test results
 reports/

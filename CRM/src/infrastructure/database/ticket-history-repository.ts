@@ -20,17 +20,17 @@ export function changesBetween(before: Record<string, unknown>, after: Record<st
     return JSON.stringify(previous) === JSON.stringify(next) ? [] : [{ field, before: previous, after: next }];
   });
 }
-export async function ticketHistory(ticketId: number, input: Record<string, unknown>) {
+export async function ticketHistory(ticketId: number, input: Record<string, unknown>, transaction?: Transaction) {
   const sizeValue = Number(input.history_size), pageValue = Number(input.history_page);
   const size = [5,10,25,50].includes(sizeValue) ? sizeValue : 10;
-  const [total] = await database.query<{ total: string | number }>('SELECT COUNT(*) AS total FROM ticket_historial WHERE id_ticket=?', { replacements: [ticketId], type: QueryTypes.SELECT });
+  const [total] = await database.query<{ total: string | number }>('SELECT COUNT(*) AS total FROM ticket_historial WHERE id_ticket=?', { replacements: [ticketId], type: QueryTypes.SELECT, transaction });
   const count = Number(total!.total), pages = Math.max(1, Math.ceil(count / size));
   const page = Math.min(Number.isSafeInteger(pageValue) && pageValue > 0 ? pageValue : 1, pages);
   const rows = await database.query<{ id: string | number; evento: string; cambios: string | TicketChange[]; usuario_correo: string | null; usuario_rol: string | null; ocurrido_en: Date }>(
     'SELECT id,evento,cambios,usuario_correo,usuario_rol,ocurrido_en FROM ticket_historial WHERE id_ticket=? ORDER BY id DESC LIMIT ? OFFSET ?',
-    { replacements: [ticketId, size, (page-1)*size], type: QueryTypes.SELECT },
+    { replacements: [ticketId, size, (page-1)*size], type: QueryTypes.SELECT, transaction },
   );
   const changes = rows.map(row => typeof row.cambios === 'string' ? JSON.parse(row.cambios) as TicketChange[] : row.cambios);
-  const described = await describeHistory(changes);
+  const described = await describeHistory(changes, transaction);
   return { count, pages, page, size, rows: rows.map((row,index) => ({ ...row, cambios: described[index]! })) };
 }

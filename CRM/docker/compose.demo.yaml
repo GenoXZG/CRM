@@ -1,0 +1,7 @@
+services:
+  db:
+    environment:
+      CRM_DEPLOYMENT: "${CRM_DEPLOYMENT:-local}"
+    volumes:
+      - ./docker/mysql/demo:/opt/crm-demo:ro,z
+      - ./docker/mysql/demo/load-demo.sh:/docker-entrypoint-initdb.d/002-demo.sh:ro,z

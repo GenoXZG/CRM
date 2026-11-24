@@ -1,13 +1,13 @@
 import { initializeAuthentication } from './auth';
 import fs from 'node:fs/promises';
-import path from 'node:path';
+import { validatedEvidence } from './services/ticket-evidence';
 import type { Server } from 'node:http';
 import { createApplication } from './app';
-import { configuration, rootDirectory } from './config';
+import { configuration } from './config';
 import { database } from './infrastructure/database/connection';
 
 export async function startServer() {
-  await fs.mkdir(path.join(rootDirectory, 'public/uploads/tickets'), { recursive: true });
+  await fs.mkdir(validatedEvidence, { recursive: true, mode: 0o700 });
   await database.authenticate();
   await initializeAuthentication();
   const app = createApplication();
