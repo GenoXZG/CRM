@@ -6,7 +6,8 @@ const name = 'crm_admin_audit_' + Date.now();
 function rootSql(sql) {
   return execFileSync('docker', [...args, 'exec', '-T', 'db', 'sh', '-c', 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root'], { input: sql, encoding: 'utf8' });
 }
-const source = String.raw`
+const { csrfFetch } = require('./csrf-client.cjs');
+const source = csrfFetch.toString() + String.raw`
 const assert = require('node:assert/strict');
 const { randomBytes } = require('node:crypto');
 const m = require('./dist/infrastructure/database/models');
@@ -29,7 +30,7 @@ async function seed(email, role, tech = null) {
   return id;
 }
 async function request(path, cookie, body, origin) {
-  return fetch(base + path, { redirect: 'manual', method: body ? 'POST' : 'GET', headers: { Accept: 'text/html', ...(cookie ? { Cookie: cookie } : {}), ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}), ...(origin ? { Origin: origin } : {}) }, body: body ? new URLSearchParams(body) : undefined });
+  return csrfFetch(base + path, { redirect: 'manual', method: body ? 'POST' : 'GET', headers: { Accept: 'text/html', ...(cookie ? { Cookie: cookie } : {}), ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}), ...(origin ? { Origin: origin } : {}) }, body: body ? new URLSearchParams(body) : undefined });
 }
 const edit = (id, cookie, email, role = 'admin', extra = {}) => request('/usuarios/' + id + '/editar', cookie, { correo: email, rol: role, password: '', confirmPassword: '', ...extra });
 const remove = (id, cookie) => request('/usuarios/' + id + '/eliminar', cookie, {});

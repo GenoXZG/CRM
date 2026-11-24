@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/css/assignments.css">
     <link rel="stylesheet" href="/css/catalogs.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
-</head>
+<meta name="csrf-token" content="<%= csrfToken %>"></head>
 <body class="assignments-view">
 
     <div class="d-flex">
@@ -96,7 +96,7 @@
     <div class="modal fade" id="<%= modal %>" tabindex="-1" aria-labelledby="<%= modal %>-title" aria-hidden="true" <% if (action !== 'create') { %>data-field-map='<%= JSON.stringify(mapping) %>'<% } %>>
       <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
         <div class="modal-header"><h2 class="modal-title fs-5" id="<%= modal %>-title"><%= action === 'create' ? 'Agregar' : action === 'edit' ? 'Editar' : 'Eliminar' %> · <%= catalog.title %></h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
-        <form action="<%= catalog[action === 'edit' ? 'update' : action === 'delete' ? 'remove' : 'create'] %>" method="POST">
+        <form action="<%= catalog[action === 'edit' ? 'update' : action === 'delete' ? 'remove' : 'create'] %>" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
           <div class="modal-body">
             <input type="hidden" name="catalogState" value="<%= destination %>">
             <% if (action === 'create' && setupWizard === catalog.key) { %><input type="hidden" name="setupWizard" value="<%= setupWizard %>"><% } %>

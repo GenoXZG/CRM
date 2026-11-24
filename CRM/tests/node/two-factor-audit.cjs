@@ -1,10 +1,11 @@
+const { csrfFetch } = require('./csrf-client.cjs');
 const assert=require('node:assert/strict');const {execFileSync}=require('node:child_process');const {createHash}=require('node:crypto');
 const args=['compose','-p','crm-auth-audit','-f','compose.yaml','-f','docker/compose.auth-audit.yaml'];const base='http://127.0.0.1:3031';let checks=0;
 function eq(a,b,label){assert.equal(a,b,label);checks++}function ok(value,label){assert(value,label);checks++}
 function node(code){return execFileSync('docker',[...args,'exec','-T','app','node','-e',code],{encoding:'utf8',cwd:process.cwd()}).trim()}
 function db(code){return execFileSync('docker',[...args,'exec','-T','app','node'],{encoding:'utf8',cwd:process.cwd(),input:`const m=require('./dist/infrastructure/database/models');(async()=>{try{${code}}finally{await m.database.close()}})().catch(e=>{console.error(e.message);process.exitCode=1});`}).trim()}
 function mail(){return JSON.parse(node("process.stdout.write(require('fs').readFileSync('/tmp/crm-auth-test-mail.json','utf8'))"))}
-async function req(path,body,cookie,headers={}){return fetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{}),...headers},body:body?new URLSearchParams(body):undefined})}
+async function req(path,body,cookie,headers={}){return csrfFetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{}),...headers},body:body?new URLSearchParams(body):undefined})}
 const email='otp_'+Date.now()+'@example.com',password='Two-factor-audit-1234';let user, technician;
 (async()=>{try{
 user=Number(db(`const {passwordHash}=require('./dist/auth');const tech=await m.technicianModel.create({Nombre_tecnico:${JSON.stringify(email)},Numero_tecnico:'5512345678',Estatus_tecnico:'Activo'});await m.database.query("INSERT INTO usuarios (correo,password_hash,rol,id_tecnico) VALUES (?,?,'tecnico',?)",{replacements:[${JSON.stringify(email)},await passwordHash(${JSON.stringify(password)}),tech.ID_Tecnico]});const [r]=await m.database.query('SELECT id FROM usuarios WHERE correo=?',{replacements:[${JSON.stringify(email)}]});console.log(r[0].id);`));

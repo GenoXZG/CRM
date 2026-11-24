@@ -528,10 +528,15 @@ coordinador. No requiere interfaz ni modifica datos del CRM. Usa la misma cuenta
 Gmail configurada para el login y la recuperación: `GMAIL_USER` y
 `GMAIL_APP_PASSWORD`. Compose transmite estas variables al contenedor.
 
+Con una jarra local que ya contiene la sesión verificada, usa el mismo host
+que utilizaste al iniciar sesión.
+
 ```bash
+csrf_token=$(curl -fsS -b crm.cookies -c crm.cookies http://localhost:3030/csrf-token | jq -er '.token')
 curl -X POST http://localhost:3030/api/email/test \
+  -b crm.cookies \
+  -H "X-CSRF-Token: $csrf_token" \
   -H 'Content-Type: application/json' \
-  -H 'Cookie: crm_session=TOKEN_DE_SESION_VERIFICADA' \
   -d '{"to":"destinatario@example.com"}'
 ```
 
@@ -871,9 +876,11 @@ para qué sirve cada uno. No se envían correos reales durante las auditorías.
 La migración `004-password-recovery` crea `recuperaciones_password`; también está
 en el schema base. Se ejecuta explícitamente con `npm run migrate` antes de
 iniciar la nueva versión, nunca desde un endpoint o al arrancar la aplicación.
-El token de navegador se guarda en cookie HttpOnly/SameSite=Lax limitada a
-`/login/recuperar`, con Secure cuando corresponde. En DB se guardan el hash del
-token, un HMAC del código y la huella de las credenciales, no el código en claro.
+El token de navegador viaja cifrado con AES-GCM en una cookie
+`HttpOnly; SameSite=Lax` limitada a `/login/recuperar`, con `Secure` según el
+perfil. Cada emisión usa un valor distinto, incluso cuando sigue vigente el
+mismo token. MySQL guarda el hash del token, un HMAC del código y la huella de
+las credenciales.
 
 El código dura 10 minutos, admite cinco intentos y se consume en una transacción
 con el cambio de contraseña y la revocación de todas las sesiones y desafíos de
@@ -882,19 +889,25 @@ cuenta desde administración también invalida su recuperación. Un cambio de ro
 correo, contraseña o vínculo técnico invalida la huella anterior. Recuperar una
 cuenta técnica no activa su técnico ni modifica sus permisos.
 
-Hay un minuto de espera por cuenta entre envíos; pedir otro código válido
-reemplaza el anterior. Durante esa espera, el mismo navegador conserva su token
-vigente. Se limitan solicitudes a cinco y canjes a veinte por IP cada 15 minutos;
-estos contadores están en memoria y se reinician al reiniciar la aplicación.
-Los intentos por código y la espera por cuenta están en MySQL. No se configura
-confianza automática en encabezados de proxy. Un despliegue con varias réplicas
-necesitará un limitador compartido y configurar explícitamente el proxy confiable.
+Hay un minuto de espera por cuenta. El siguiente código emitido reemplaza al
+anterior. Durante la espera, el navegador que conserva el token vigente puede
+seguir usándolo. La entrega de correo se procesa en segundo plano, con hasta
+cuatro envíos concurrentes y hasta 32 operaciones de entrega pendientes,
+incluidas las que se están preparando. Un desafío sin entrega confirmada
+permanece inutilizable. Los fallos del proveedor conservan la espera por cuenta.
+
+La solicitud y el canje fallido usan respuestas uniformes y un piso de 150 ms
+tras validar los campos. Las variaciones del tiempo de base de datos pueden
+seguir siendo observables bajo carga. El canje ejecuta scrypt después de validar
+el código bajo bloqueo de la cuenta y del desafío, dentro de la transacción que
+consume el código y revoca las sesiones. Véanse los límites HTTP en la sección
+de protección de solicitudes.
 
 Solicitar un código no cambia la contraseña ni revoca sesiones. Solo al completar
 el cambio se cierran las sesiones anteriores. No se crea una sesión automática:
 el usuario vuelve al login y completa el 2FA habitual con la nueva contraseña.
 
-Endpoints públicos, con comprobación de origen para POST:
+Endpoints públicos. Los POST requieren CSRF y comprueban el origen cuando se indica:
 
 - `GET /login/recuperar`: formulario de solicitud.
 - `POST /login/recuperar`: `correo`; respuesta 302 y cookie `crm_recovery`.
@@ -1008,3 +1021,48 @@ formularios HTTPS del CRM y sus cookies funcionan a través de Apache.
 Después de compilar, ejecuta `node --test tests/node/production-hardening-audit.cjs`
 para verificar los perfiles, el origen, la IP del cliente y los atributos de
 las cookies con un servidor HTTP local y sin conexión a MySQL.
+
+
+### Protección de solicitudes y límites de autenticación
+
+Los formularios EJS incluyen un campo oculto `_csrf`. El cliente `fetch` envía
+`X-CSRF-Token` en solicitudes del mismo origen. El formulario multipart de
+evidencia incluye el campo antes de los archivos. El servidor verifica el campo
+antes de guardar el primer archivo y también admite el encabezado para clientes
+programáticos. Evita enviar el token en la URL.
+
+Para clientes HTTP con una jarra de cookies, obtén el token mediante
+`GET /csrf-token` para las operaciones de la sesión, `GET /login/csrf-token` para
+login y 2FA, o `GET /login/recuperar/csrf-token` para recuperación. Conserva las
+cookies que devuelve el servidor y usa el token del contexto actual. El token
+se firma con HMAC y queda ligado a un nonce de navegador en cookie HttpOnly y a
+las credenciales de sesión, desafío y recuperación presentes en la ruta. La
+cookie del nonce usa el prefijo `__Host-` cuando se requiere `Secure`.
+La autenticación, cancelación, cierre de sesión y recuperación rotan el nonce.
+Si un formulario abierto quedó desactualizado, vuelve a cargarlo.
+
+Los límites fijos de 15 minutos se definen por operación. Se usa `request.ip`
+con la configuración de proxy de la Fase 1. IPv4 mapeada se normaliza a IPv4
+e IPv6 se agrupa por prefijo /64.
+
+| Operación | Por IP o prefijo | Por cuenta e IP o prefijo |
+| --- | ---: | ---: |
+| Login | 10 | 5 |
+| Solicitud de recuperación | 5 | 3 |
+| Restablecimiento | 20 | Cinco intentos por desafío en MySQL |
+
+Los límites HTTP devuelven `429` con `Retry-After` en segundos. Las cuotas por
+cuenta e IP se aplican también a correos inexistentes. Una IP remota no puede
+agotar directamente la cuota de login de una cuenta desde otra red. Cada
+política tiene capacidad limitada y divide sus contadores en 32 grupos
+asignados mediante HMAC. La saturación de un grupo puede rechazar nuevas
+entradas de ese grupo hasta que expire una de ellas. Una IP compartida puede
+agotar su propia cuota.
+
+Contadores, claves de CSRF y cifrado de recuperación, y cola de correo viven en
+el proceso de Express. Un reinicio restablece las cuotas y exige volver a
+cargar los formularios. Una recuperación pendiente puede requerir solicitar
+otro código cuando termine la espera. La cola no garantiza entregas tras un
+reinicio. Varias réplicas necesitarían compartir estado y claves para mantener
+las mismas garantías. Esta fase usa la topología de Apache y Docker de la
+Fase 1 y no requiere variables nuevas ni migraciones.

@@ -1,10 +1,11 @@
+const { csrfFetch } = require('./csrf-client.cjs');
 // Full ticket lifecycle audit in isolated crm-auth-audit; no real mail.
 const assert=require('node:assert/strict');const {execFileSync}=require('node:child_process');
 const args=['compose','-p','crm-auth-audit','-f','compose.yaml','-f','docker/compose.auth-audit.yaml'],base='http://127.0.0.1:3031',marker='history_'+Date.now(),password='History-audit-pass-2026';let f,ticket,checks=0;
 const eq=(a,b,label)=>{assert.equal(a,b,label);checks++},ok=(v,label)=>{assert(v,label);checks++};
 function db(code){return execFileSync('docker',[...args,'exec','-T','app','node'],{encoding:'utf8',cwd:process.cwd(),input:`const m=require('./dist/infrastructure/database/models');(async()=>{try{${code}}finally{await m.database.close()}})().catch(e=>{console.error(e.message);process.exitCode=1});`}).trim()}
 function rootSql(sql){return execFileSync('docker',[...args,'exec','-T','db','sh','-c','MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -u root "$MYSQL_DATABASE"'],{encoding:'utf8',cwd:process.cwd(),input:sql});}
-async function req(path,cookie,body){return fetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{Accept:'application/json',...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined})}
+async function req(path,cookie,body){return csrfFetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{Accept:'application/json',...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined})}
 async function login(email,pass){const r=await req('/login',null,{correo:email,password:pass});eq(r.status,302,'password');const pending=r.headers.getSetCookie().find(c=>c.startsWith('crm_pending=')).split(';')[0];const code=JSON.parse(db("console.log(require('fs').readFileSync('/tmp/crm-auth-test-mail.json','utf8'))")).code;const verified=await req('/login/verificar',pending,{code});eq(verified.status,302,'OTP');return verified.headers.getSetCookie().find(c=>c.startsWith('crm_session=')).split(';')[0]}
 const history=()=>JSON.parse(db(`const [r]=await m.database.query('SELECT * FROM ticket_historial WHERE id_ticket=${ticket} ORDER BY id');console.log(JSON.stringify(r));`));
 const state=()=>JSON.parse(db(`const t=await m.ticketModel.findByPk(${ticket});console.log(JSON.stringify(t));`));
@@ -23,7 +24,30 @@ const assignment={idTicket:ticket,datosAsignacion:{equipos:{[ids[0]]:f.equipment
 eq((await req('/tickets/actualizar_comentarios',coord,{ID_ticket:ticket,Comentarios:'coordinator change'})).status,302,'comment edit');events=history();let event=events.at(-1);eq(event.usuario_correo,marker+'coordinador@example.com','coordinator attribution');ok(JSON.stringify(event.cambios).includes('original')&&JSON.stringify(event.cambios).includes('coordinator change'),'before/after comments');count=events.length;await req('/tickets/actualizar_comentarios',coord,{ID_ticket:ticket,Comentarios:'coordinator change'});eq(history().length,count,'no event for unchanged data');
 eq((await req('/tickets/actualizar_maps',admin,{ID_ticket:ticket,Link_maps:'https://www.google.com/maps?q=19.4,-99.1'})).status,302,'location edit');eq((await req('/tickets/asignar_tecnico',admin,{ID_ticket:ticket,ID_tecnico:f.tech})).status,302,'idempotent technician');
 eq((await req('/desvincular_accesorio',admin,{idUnidad:ids[0],idAccesorio:f.acc})).status,200,'remove accessory');ok(history().some(e=>e.evento==='accesorio_retirado'),'accessory removal event');eq((await req('/desvincular_equipo',admin,{idTicket:ticket,idUnidad:ids[1],idEquipo:f.equipment[1]})).status,200,'release device');ok(history().some(e=>e.evento==='equipo_retirado'),'release event');eq((await req(`/tickets/${ticket}/unidades/${ids[1]}/quitar`,admin,{})).status,200,'remove unit');ok(history().some(e=>e.evento==='unidad_retirada'),'unit removal event');
-const form=new FormData();form.append('fotos',new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZ1kAAAAASUVORK5CYII=','base64')],{type:'image/png'}),'audit.png');eq((await fetch(base+`/tickets/${ticket}/subir-fotos`,{method:'POST',headers:{Cookie:admin},body:form,redirect:'manual'})).status,302,'upload evidence');ok(history().some(e=>e.evento==='evidencia_agregada'),'evidence event');
+const details = await req('/detalle_ticket/' + ticket, admin);
+const csrfCookie = details.headers.getSetCookie().find(cookie => cookie.startsWith('crm_csrf=')).split(';')[0];
+const html = await details.text();
+const uploadToken = html.match(/id="formSubida"><input type="hidden" name="_csrf" value="([a-f0-9]{64})"/)?.[1];
+ok(uploadToken, 'native multipart token rendered before file input');
+const photo = new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZ1kAAAAASUVORK5CYII=', 'base64')], { type: 'image/png' });
+const upload = form => fetch(base + '/tickets/' + ticket + '/subir-fotos', {
+  method: 'POST', headers: { Cookie: admin + '; ' + csrfCookie }, body: form, redirect: 'manual',
+});
+const misplaced = new FormData();
+misplaced.append('fotos', photo, 'audit.png');
+eq((await upload(misplaced)).status, 403, 'reject multipart without token');
+misplaced.append('_csrf', uploadToken);
+eq((await upload(misplaced)).status, 403, 'reject token supplied after file');
+const invalid = new FormData();
+invalid.append('_csrf', '0'.repeat(64));
+invalid.append('fotos', photo, 'audit.png');
+eq((await upload(invalid)).status, 403, 'reject multipart with invalid token');
+eq(Number(db(`console.log(require('node:fs').readdirSync('public/uploads/tickets').filter(name => name.startsWith('ticket_${ticket}_')).length);`)), 0, 'rejected requests write no file');
+const form = new FormData();
+form.append('_csrf', uploadToken);
+form.append('fotos', photo, 'audit.png');
+eq((await upload(form)).status, 302, 'native multipart uploads evidence');
+ok(history().some(e=>e.evento==='evidencia_agregada'),'evidence event');
 const beforeTime=Date.now();eq((await req('/tickets/finalizar/'+ticket,tech,{})).status,302,'technical closure');const closed=state().Fecha_cierre;ok(closed&&Math.abs(Date.parse(closed)-beforeTime)<15000,'actual UTC closure timestamp');events=history();event=events.find(e=>e.evento==='servicio_finalizado');eq(event.usuario_correo,marker+'tecnico@example.com','technical closure attribution');ok(JSON.stringify(event.cambios).includes('Fecha de cierre'),'closure date audited');count=events.length;eq((await req('/tickets/finalizar/'+ticket,tech,{})).status,409,'duplicate close');eq(history().length,count,'duplicate close not recorded');
 eq((await req('/tickets/reabrir/'+ticket,admin,{})).status,302,'reopen');eq(state().Fecha_cierre,null,'reopen clears current closure');ok(JSON.stringify(history().find(e=>e.evento==='servicio_finalizado').cambios).includes(closed),'old closure retained in history');ok(history().some(e=>e.evento==='ticket_reabierto'),'reopen event');
 // Database audit failure must abort the business change, not silently omit the record.

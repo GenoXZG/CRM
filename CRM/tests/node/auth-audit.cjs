@@ -1,3 +1,4 @@
+const { csrfFetch } = require('./csrf-client.cjs');
 // Integration audit for the isolated crm-auth-audit Compose project on port 3031.
 // Never points its SQL helpers at the working application's database.
 const assert = require('node:assert/strict');
@@ -15,7 +16,7 @@ function db(code) {
 async function request(url, {cookie, method='GET', body, headers={}}={}) {
   const h = {...headers}; if(cookie) h.Cookie=cookie;
   if(body) h['Content-Type']='application/x-www-form-urlencoded';
-  return fetch(base+url,{method,headers:h,body:body?new URLSearchParams(body):undefined,redirect:'manual'});
+  return csrfFetch(base+url,{method,headers:h,body:body?new URLSearchParams(body):undefined,redirect:'manual'});
 }
 function lastMail() {
   return JSON.parse(execFileSync('docker', [...compose, 'exec', '-T', 'app', 'node', '-e', "process.stdout.write(require('fs').readFileSync('/tmp/crm-auth-test-mail.json','utf8'))"], {cwd:process.cwd(),encoding:'utf8'}));
@@ -62,7 +63,7 @@ async function login(email, password, cookie) {
   let html=await (await request('/tickets',{cookie:tech})).text();ok(!html.includes('id="new-ticket"')&&!html.includes('id="ticket-create-panel"'),'no creation controls for technician');
   html=await (await request('/',{cookie:tech})).text();ok(!html.includes('href="/inventario"')&&!html.includes('id="crmSetupAssistant"'),'technician dashboard/menu aligned');
   eq((await request('/tickets?setup=ticket',{cookie:tech})).status,403,'legacy wizard form blocked');
-  const location=await fetch(base+'/tickets/resolver_ubicacion',{method:'POST',headers:{Cookie:tech,'Content-Type':'application/json'},body:JSON.stringify({url:'https://www.google.com/maps?q=19.4,-99.1'})});eq(location.status,200,'technician read-only map conversion');
+  const location=await csrfFetch(base+'/tickets/resolver_ubicacion',{method:'POST',headers:{Cookie:tech,'Content-Type':'application/json'},body:JSON.stringify({url:'https://www.google.com/maps?q=19.4,-99.1'})});eq(location.status,200,'technician read-only map conversion');
   const invalid={correo:marker+'invalid@example.com',rol:'superadmin',password,confirmPassword:password};
   eq((await request('/usuarios/crear',{cookie:admin,method:'POST',body:invalid})).status,400,'invalid role rejected');
   eq((await request('/usuarios/crear',{cookie:admin,method:'POST',body:{...invalid,rol:'tecnico',password:'short',confirmPassword:'short'}})).status,400,'password minimum');
@@ -90,8 +91,7 @@ async function login(email, password, cookie) {
   eq((await request('/logout',{cookie:coord,method:'POST',body:{}})).status,302,'logout');eq((await request('/tickets',{cookie:coord,headers:{Accept:'application/json'}})).status,401,'logged out token rejected');
   // Initialization is idempotent and preserves administrator roles regardless of their email.
   db(`const a=require('./dist/auth');await a.initializeAuthentication();await a.initializeAuthentication();const [r]=await m.database.query(\"SELECT COUNT(*) AS n FROM usuarios WHERE correo='admin@audit.example' AND rol='admin'\");if(Number(r[0].n)!==1)throw new Error('admin changed');`);checks++;
-  for(let i=0;i<10;i++) eq((await request('/login',{method:'POST',body:{correo:'missing@example.com',password}})).status,401,'invalid login count');
-  const limited=await request('/login',{method:'POST',body:{correo:'missing@example.com',password}});eq(limited.status,429,'login throttle');ok(limited.headers.get('retry-after'),'retry after');
+  const limited=await request('/login',{method:'POST',body:{correo:'missing@example.com',password}});eq(limited.status,429,'IP quota includes successful logins');ok(limited.headers.get('retry-after'),'retry after');
   console.log(`PASS ${checks} authentication, session, role, CRUD and lifecycle checks`);
  } finally {
   db(`await m.database.query('DELETE FROM usuarios WHERE correo LIKE ?',{replacements:[${JSON.stringify(marker+'%')}]});${fixture?`await m.unitModel.destroy({where:{ID_ticket:${fixture.ticket}}});await m.ticketModel.destroy({where:{ID_cliente:${fixture.client}}});await m.equipmentModel.destroy({where:{ID_equipo:${fixture.equipment}}});await m.equipmentCatalogModel.destroy({where:{ID_equipo_modelo:${fixture.equipmentModel}}});await m.unitCatalogModel.destroy({where:{ID_Unidad_modelo:${fixture.unitModel}}});await m.clientModel.destroy({where:{ID_cliente:${fixture.client}}});`:''}`);

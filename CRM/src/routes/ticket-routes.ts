@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import { assertCsrf } from '../csrf';
 import path from 'node:path';
 import * as tickets from '../controllers/ticket-controller';
 import { renderAssignments } from '../controllers/assignment-controller';
@@ -15,7 +16,19 @@ const storage = multer.diskStorage({
     callback(null, `ticket_${request.params.id}_${suffix}${path.extname(file.originalname)}`);
   },
 });
-const upload = multer({ storage });
+const verifiedUploads = new WeakSet<object>();
+const upload = multer({
+  storage,
+  fileFilter(request, _file, callback) {
+    try {
+      if (!verifiedUploads.has(request)) {
+        assertCsrf(request, request.res!);
+        verifiedUploads.add(request);
+      }
+      callback(null, true);
+    } catch (error) { callback(error as Error); }
+  },
+});
 router.get('/tickets', tickets.renderTicketEntry);
 router.get('/tickets/exportar', tickets.downloadTickets);
 router.get('/tickets/nuevo', tickets.renderTicketForm);
@@ -32,6 +45,10 @@ router.post(
   '/tickets/:id/subir-fotos',
   tickets.requireOpenTicket,
   upload.array('fotos', 5),
+  (request, response, next) => {
+    if (!verifiedUploads.has(request) && request.is('multipart/form-data')) assertCsrf(request, response);
+    next();
+  },
   tickets.uploadPhotos,
 );
 router.post('/add_ticket', tickets.createTicket);

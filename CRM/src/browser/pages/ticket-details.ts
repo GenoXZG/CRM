@@ -1,7 +1,7 @@
 import './common.js';
 import { delegate, element } from '../shared/dom.js';
 import { showDialog, showError } from '../shared/dialogs.js';
-import { postJson } from '../shared/http.js';
+import { pageCsrfToken, postJson } from '../shared/http.js';
 import { confirmUnitRemoval } from '../shared/unit-removal.js';
 import { initializeLocationMaps } from '../shared/location-map.js';
 
@@ -112,7 +112,11 @@ async function performAction(button: HTMLElement) {
       returnTo.type = 'hidden';
       returnTo.name = 'returnTo';
       returnTo.value = document.body.dataset.ticketListReturn ?? '/tickets';
-      form.append(returnTo);
+      const csrf = document.createElement('input');
+      csrf.type = 'hidden';
+      csrf.name = '_csrf';
+      csrf.value = pageCsrfToken();
+      form.append(returnTo, csrf);
       document.body.append(form);
       form.submit();
       return;

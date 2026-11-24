@@ -83,8 +83,13 @@ async function checkApplication() {
       ];
       assert.deepEqual(cookies, expected.map(cookie => cookie + (forcedSecure || trustedHeaders ? '; Secure' : '')));
     }
+    const state = await fetch(base + '/login/csrf-token', { headers: forwarded });
+    const csrfCookie = state.headers.getSetCookie()[0];
+    assert.match(csrfCookie, forcedSecure || proxyTrusted
+      ? /^__Host-crm_csrf=.*; Secure$/ : /^crm_csrf=/);
+    const { token } = await state.json();
     const login = (origin, headers = forwarded) => fetch(base + '/login', {
-      method: 'POST', headers: { ...headers, Origin: origin },
+      method: 'POST', headers: { ...headers, Origin: origin, Cookie: csrfCookie.split(';')[0], 'X-CSRF-Token': token },
     });
     const httpsOrigin = base.replace('http:', 'https:');
     assert.equal((await login(httpsOrigin)).status, proxyTrusted ? 400 : 403);

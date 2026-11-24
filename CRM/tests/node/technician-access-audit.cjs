@@ -1,9 +1,10 @@
+const { csrfFetch } = require('./csrf-client.cjs');
 // Uses only the isolated crm-auth-audit project; mails are mocked.
 const assert=require('node:assert/strict');const {execFileSync}=require('node:child_process');
 const args=['compose','-p','crm-auth-audit','-f','compose.yaml','-f','docker/compose.auth-audit.yaml'],base='http://127.0.0.1:3031',marker='scope_'+Date.now(),password='Scope-audit-password-2026';let f,checks=0;
 const eq=(a,b,label)=>{assert.equal(a,b,label);checks++},ok=(v,label)=>{assert(v,label);checks++};
 function db(code){return execFileSync('docker',[...args,'exec','-T','app','node'],{cwd:process.cwd(),encoding:'utf8',input:`const m=require('./dist/infrastructure/database/models');(async()=>{try{${code}}finally{await m.database.close()}})().catch(e=>{console.error(e.message);process.exitCode=1});`}).trim()}
-async function req(path,cookie,body,method){return fetch(base+path,{method:method||(body?'POST':'GET'),redirect:'manual',headers:{Accept:'application/json',...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{})},body:body?new URLSearchParams(body):undefined})}
+async function req(path,cookie,body,method){return csrfFetch(base+path,{method:method||(body?'POST':'GET'),redirect:'manual',headers:{Accept:'application/json',...(cookie?{Cookie:cookie}:{}),...(body?{'Content-Type':'application/x-www-form-urlencoded'}:{})},body:body?new URLSearchParams(body):undefined})}
 async function begin(email){db(`await m.database.query('UPDATE desafios_login d JOIN usuarios u ON u.id=d.id_usuario SET d.creado_en=DATE_SUB(UTC_TIMESTAMP(),INTERVAL 61 SECOND) WHERE u.correo=?',{replacements:[${JSON.stringify(email)}]});`);const r=await req('/login',null,{correo:email,password:email==='admin@audit.example'?'Audit-Only-Password-2026':password});eq(r.status,302,'password accepted');const pending=r.headers.getSetCookie().find(c=>c.startsWith('crm_pending=')).split(';')[0];const code=JSON.parse(db("console.log(require('fs').readFileSync('/tmp/crm-auth-test-mail.json','utf8'))")).code;return {pending,code}}
 async function login(email){const {pending,code}=await begin(email);const r=await req('/login/verificar',pending,{code});eq(r.status,302,'OTP accepted');return r.headers.getSetCookie().find(c=>c.startsWith('crm_session=')).split(';')[0]}
 (async()=>{let admin;try{

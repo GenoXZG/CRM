@@ -635,6 +635,10 @@
       "script": {
         "type": "text/javascript",
         "exec": [
+          "const nonce = pm.response.headers.all().filter(h => h.key.toLowerCase() === \"set-cookie\").map(h => h.value).find(v => /^(?:__Host-)?crm_csrf=/.test(v));",
+          "if (nonce) pm.collectionVariables.set(\"csrfNonce\", nonce.split(\";\")[0]);",
+          "const path = pm.variables.replaceIn(pm.request.url.toString());",
+          "if (/\\/login(?:\\/verificar)?$/.test(path)) return;",
           "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
           "const name = pm.info.requestName;",
           "const contentType = pm.response.headers.get(\"Content-Type\") || \"\";",
@@ -664,9 +668,26 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "const verify = pm.request.url.toString().includes(\"/login/verificar\");",
+          "const path = pm.variables.replaceIn(pm.request.url.toString());",
+          "const verify = path.includes(\"/login/verificar\");",
           "const session = pm.collectionVariables.get(verify ? \"pendingCookie\" : \"sessionCookie\");",
-          "if (session) pm.request.headers.upsert({key:\"Cookie\", value:session});"
+          "if (session) pm.request.headers.upsert({ key: \"Cookie\", value: session });",
+          "if (![\"GET\", \"HEAD\", \"OPTIONS\"].includes(pm.request.method)) {",
+          "  const base = pm.variables.replaceIn(\"{{baseUrl}}\").replace(/\\/$/, \"\");",
+          "  const scope = path.includes(\"/login/recuperar\") ? \"/login/recuperar\" : path.includes(\"/login\") ? \"/login\" : \"\";",
+          "  const storedNonce = pm.collectionVariables.get(\"csrfNonce\");",
+          "  const previousCookies = [session, storedNonce].filter(Boolean).join(\"; \");",
+          "  pm.sendRequest({ url: base + scope + \"/csrf-token\", header: previousCookies ? { Cookie: previousCookies } : {} }, (error, response) => {",
+          "    if (error || response.code !== 200) throw new Error(\"No se obtuvo el token CSRF\");",
+          "    const cookie = response.headers.all().filter(h => h.key.toLowerCase() === \"set-cookie\").map(h => h.value).find(v => /^(?:__Host-)?crm_csrf=/.test(v));",
+          "    const nonce = cookie ? cookie.split(\";\")[0] : storedNonce;",
+          "    if (nonce) {",
+          "      pm.collectionVariables.set(\"csrfNonce\", nonce);",
+          "      pm.request.headers.upsert({ key: \"Cookie\", value: [session, nonce].filter(Boolean).join(\"; \") });",
+          "    }",
+          "    pm.request.headers.upsert({ key: \"X-CSRF-Token\", value: response.json().token });",
+          "  });",
+          "}"
         ]
       }
     }

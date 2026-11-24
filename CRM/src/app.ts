@@ -1,5 +1,6 @@
 import { showRecovery, showReset, sendRecovery, completeRecovery } from './controllers/password-recovery-controller';
 import express from 'express';
+import { csrfProtection, CsrfError } from './csrf';
 import { BlockList, isIP } from 'node:net';
 import path from 'node:path';
 import { configuration, rootDirectory } from './config';
@@ -23,6 +24,10 @@ export function createApplication() {
   app.set('views', path.join(rootDirectory, 'views'));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(csrfProtection);
+  // The three paths expose the same mechanism with the applicable cookie paths.
+  app.get(['/csrf-token', '/login/csrf-token', '/login/recuperar/csrf-token'], (_request, response) =>
+    response.set('Cache-Control', 'no-store').json({ token: response.locals.csrfToken }));
   app.use(authMiddleware);
   app.get('/login', (_request, response) => response.render('login', { error: null }));
   app.post('/login', login);
@@ -48,6 +53,7 @@ export function createApplication() {
   app.use('/usuarios', userAdminRoutes);
   app.use('/', routes);
   app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    if (error instanceof CsrfError) return response.set('Cache-Control', 'no-store').status(403).json({ error: error.message });
     console.error('Request failed:', error instanceof Error ? error.name : 'unknown');
     response.status(500).json({ success: false, error: 'Error interno del servidor' });
   });

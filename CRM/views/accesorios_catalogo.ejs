@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
-</head>
+<meta name="csrf-token" content="<%= csrfToken %>"></head>
 <body>
     
     <div class="d-flex">
@@ -46,7 +46,7 @@
                             <h5 class="mb-0">Registrar Nuevo Componente</h5>
                         </div>
 
-                        <form action="/add_accesorio_catalogo" method="POST">
+                        <form action="/add_accesorio_catalogo" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <% if (setupWizard === 'accessories') { %>
                                 <input type="hidden" name="setupWizard" value="accessories">
                             <% } %>
@@ -135,7 +135,7 @@
                     <h5 class="modal-title fw-bold ms-2">Editar Accesorio</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="/editar_accesorio_stock" method="POST">
+                <form action="/editar_accesorio_stock" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="modal-body pt-4">
                         <input type="hidden" name="ID_accesorio_modelo" id="modal-id">
                         
@@ -165,7 +165,7 @@
                         Vas a eliminar el componente <span id="modal_eliminar-nombre-display" class="fw-bold text-dark"></span>.
                     </p>
                     
-                    <form action="/eliminar_accesorio_stock" method="POST" class="d-flex justify-content-center gap-3">
+                    <form action="/eliminar_accesorio_stock" method="POST" class="d-flex justify-content-center gap-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="ID_accesorio_modelo" id="modal_eliminar-id">
                         <input type="hidden" name="Nombre_accesorio" id="modal_eliminar-nombre">
                         

@@ -1,4 +1,5 @@
-import { setAuthCookie } from './auth-cookies';
+import { rotateCsrf } from './csrf';
+import { authCookieValue, setAuthCookie } from './auth-cookies';
 import { runAsAuditActor } from './infrastructure/audit/context';
 import { requireActiveTechnician, technicianAccessProblem } from './domain/technician-access';
 import { createChallenge, credentialHash, cleanupExpiredChallenges, challengeExists, completeChallenge, cancelChallenge, CHALLENGE_SECONDS } from './auth-challenge';
@@ -9,6 +10,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { QueryTypes } from 'sequelize';
 import { database } from './infrastructure/database/connection';
 import { configuration } from './config';
+import { accountAtNetwork, authLimits, clientNetwork } from './rate-limit';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_SECONDS = 60 * 60 * 12;
@@ -61,26 +63,13 @@ export async function initializeAuthentication() {
   await database.query('DELETE FROM recuperaciones_password WHERE expira_en<=UTC_TIMESTAMP()');
   await database.query('DELETE FROM sesiones_usuario WHERE expira_en <= UTC_TIMESTAMP() OR segundo_factor=0');
 }
-function cookieToken(request: Request, name: string): string | null {
-  const cookie = (request.headers.cookie ?? '').split(';').map(item => item.trim()).find(item => item.startsWith(`${name}=`));
-  const value = cookie?.slice(name.length + 1);
-  return value && /^[a-f0-9]{64}$/.test(value) ? value : null;
-}
-export const sessionToken = (request: Request) => cookieToken(request, 'crm_session');
-const pendingToken = (request: Request) => cookieToken(request, 'crm_pending');
+export const sessionToken = (request: Request) => authCookieValue(request, 'crm_session');
+const pendingToken = (request: Request) => authCookieValue(request, 'crm_pending');
 function setPendingCookie(request: Request, response: Response, value: string, maxAge = CHALLENGE_SECONDS) {
   setAuthCookie(request, response, 'crm_pending', value, maxAge);
 }
 function setSessionCookie(request: Request, response: Response, value: string, maxAge = SESSION_SECONDS) {
   setAuthCookie(request, response, 'crm_session', value, maxAge);
-}
-function sameOrigin(request: Request): boolean {
-  const source = request.get('origin') ?? request.get('referer');
-  if (!source) return true; // API clients without browser origin headers still require a valid session.
-  try {
-    const url = new URL(source);
-    return url.host === request.get('host') && url.protocol === `${request.protocol}:`;
-  } catch { return false; }
 }
 const publicAsset = (path: string) => /^\/(css|js|assets|bootstrap|leaflet)\//.test(path) || path === '/favicon.ico';
 function technicianAllowed(path: string, method: string): boolean {
@@ -118,8 +107,6 @@ export async function authMiddleware(request: Request, response: Response, next:
         if (user.rol === 'tecnico') response.locals.technicianScope = user.id_tecnico;
       }
     }
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !sameOrigin(request))
-      return response.status(403).json({ error: 'Origen no permitido.' });
     if (['/login', '/login/verificar', '/login/cancelar', '/login/recuperar', '/login/recuperar/restablecer'].includes(path) && (method === 'GET' || method === 'POST')) {
       if (method === 'GET' && response.locals.currentUser && !path.startsWith('/login/recuperar')) return response.redirect('/');
       return next();
@@ -145,25 +132,21 @@ export async function authMiddleware(request: Request, response: Response, next:
   } catch (error) { next(error); }
 }
 
-const attempts = new Map<string, { count: number; until: number }>();
-function loginLimited(ip: string): boolean {
-  const now = Date.now();
-  for (const [key, entry] of attempts) if (entry.until <= now) attempts.delete(key);
-  const entry = attempts.get(ip);
-  if (entry) { entry.count++; return entry.count > 10; }
-  if (attempts.size >= 4096) return true;
-  attempts.set(ip, { count: 1, until: now + 15 * 60 * 1000 });
-  return false;
+function limitLogin(response: Response, retry: number) {
+  response.setHeader('Retry-After', String(retry));
+  return response.status(429).render('login', { error: 'Demasiados intentos. Espera antes de volver a intentarlo.' });
 }
+
 export async function login(request: Request, response: Response) {
-  if (loginLimited(request.ip ?? 'unknown')) {
-    response.setHeader('Retry-After', '900');
-    return response.status(429).render('login', { error: 'Demasiados intentos. Intenta nuevamente en 15 minutos.' });
-  }
+  const network = clientNetwork(request.ip);
+  const ipRetry = authLimits.loginIp.consume(network);
+  if (ipRetry) return limitLogin(response, ipRetry);
   const correo = typeof request.body?.correo === 'string' ? request.body.correo.trim().toLowerCase() : '';
   const password = typeof request.body?.password === 'string' ? request.body.password : '';
   if (!emailFormat.test(correo) || correo.length > 254 || !password || password.length > 1024)
     return response.status(400).render('login', { error: 'Ingresa un correo y una contraseña válidos.' });
+  const accountRetry = authLimits.loginAccountIp.consume(accountAtNetwork(network, correo));
+  if (accountRetry) return limitLogin(response, accountRetry);
   try {
     const verified = await database.transaction(async transaction => {
       const [user] = await database.query<{ id: number; correo: string; rol: string; password_hash: string; id_tecnico: number | null; tecnico_estado: string | null }>('SELECT u.id,u.correo,u.rol,u.password_hash,u.id_tecnico,(SELECT Estatus_tecnico FROM Tecnicos WHERE ID_Tecnico=u.id_tecnico) AS tecnico_estado FROM usuarios u WHERE u.correo=? LIMIT 1 FOR UPDATE', { replacements: [correo], type: QueryTypes.SELECT, transaction });
@@ -172,9 +155,11 @@ export async function login(request: Request, response: Response) {
       return user && matches ? { id: user.id, fingerprint: credentialHash(user) } : null;
     });
     if (!verified) return response.status(401).render('login', { error: 'Correo o contraseña incorrectos.' });
+    authLimits.loginAccountIp.reset(accountAtNetwork(network, correo));
     const pending = await createChallenge(verified.id, verified.fingerprint, sessionToken(request));
     setSessionCookie(request, response, '', 0);
     setPendingCookie(request, response, pending);
+    rotateCsrf(request, response);
     return response.redirect('/login/verificar');
   } catch (error) {
     console.error('Login failed:', error instanceof Error ? error.name : 'unknown');
@@ -186,7 +171,10 @@ export async function showVerification(request: Request, response: Response, nex
   try {
     const token = pendingToken(request);
     if (!token || !await challengeExists(token)) {
-      setPendingCookie(request, response, '', 0);
+      if (token) {
+        setPendingCookie(request, response, '', 0);
+        rotateCsrf(request, response, { pending: null });
+      }
       return response.redirect('/login');
     }
     return response.render('login-verification', { error: null });
@@ -201,11 +189,12 @@ export async function verifyLogin(request: Request, response: Response, next: Ne
     if (result === 'invalid') return response.status(401).render('login-verification', { error: 'Código incorrecto. Revisa el correo e intenta nuevamente.' });
     if (result === 'expired') {
       setPendingCookie(request, response, '', 0);
+      rotateCsrf(request, response, { pending: null });
       return response.status(401).render('login', { error: 'El código caducó, fue reemplazado o agotó sus intentos. Inicia sesión nuevamente.' });
     }
-    attempts.delete(request.ip ?? 'unknown');
     setPendingCookie(request, response, '', 0);
     setSessionCookie(request, response, session);
+    rotateCsrf(request, response);
     return response.redirect('/');
   } catch (error) { next(error); }
 }
@@ -222,6 +211,7 @@ export async function logout(request: Request, response: Response, next: NextFun
     const token = sessionToken(request);
     if (token) await database.query('DELETE FROM sesiones_usuario WHERE token_hash=?', { replacements: [sha(token)] });
     setSessionCookie(request, response, '', 0);
+    rotateCsrf(request, response, { session: null });
     response.redirect('/login');
   } catch (error) { next(error); }
 }

@@ -64,7 +64,8 @@ export default function (session) {
   get('/bootstrap/js/bootstrap.bundle.min.js', 'javascript');
   get('/leaflet/leaflet.js', 'javascript');
   // Resolving an explicit coordinate URL is read-only and needs no external request.
-  const location = http.post(`${baseUrl}/tickets/resolver_ubicacion`, JSON.stringify({ url: 'https://www.google.com/maps/search/19.406313,+-99.046890' }), { headers: { 'Content-Type': 'application/json' } });
+  const csrfToken = get('/csrf-token', 'application/json').json('token');
+  const location = http.post(`${baseUrl}/tickets/resolver_ubicacion`, JSON.stringify({ url: 'https://www.google.com/maps/search/19.406313,+-99.046890' }), { headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken } });
   check(location, {
     'Map link: HTTP 200': result => result.status === 200,
     'Map link: coordinates': result => result.json('data.lat') === 19.406313 && result.json('data.lng') === -99.04689,
@@ -73,5 +74,8 @@ export default function (session) {
 }
 
 export function teardown(session) {
-  if (session?.cookie) http.post(`${baseUrl}/logout`, {}, { headers: { Cookie: `crm_session=${session.cookie}` }, redirects: 0 });
+  if (!session?.cookie) return;
+  http.cookieJar().set(baseUrl, 'crm_session', session.cookie);
+  const csrfToken = http.get(`${baseUrl}/csrf-token`).json('token');
+  http.post(`${baseUrl}/logout`, {}, { headers: { 'X-CSRF-Token': csrfToken }, redirects: 0 });
 }

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/dashboard.css">
     <link rel="stylesheet" href="/css/theme-dark.css">
-</head>
+<meta name="csrf-token" content="<%= csrfToken %>"></head>
 <body>
     
     <div class="d-flex">
@@ -46,7 +46,7 @@
                             <h5 class="mb-0">Registrar Nuevo Técnico</h5>
                         </div>
 
-                        <form action="/add_tecnico" method="POST">
+                        <form action="/add_tecnico" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <% if (setupWizard === 'technicians') { %>
                                 <input type="hidden" name="setupWizard" value="technicians">
                             <% } %>
@@ -167,7 +167,7 @@
                     <h5 class="modal-title fw-bold ms-2">Editar Técnico</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="/editar_tecnico" method="POST">
+                <form action="/editar_tecnico" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <div class="modal-body pt-4">
                         <input type="hidden" name="ID_Tecnico" id="modal-id">
                         
@@ -206,7 +206,7 @@
                     <h4 class="mb-2">¿Confirmar Eliminación?</h4>
                     <p class="text-muted mb-4">Vas a eliminar al técnico <span id="modal_eliminar-nombre" class="fw-bold text-dark"></span>. Esta acción es irreversible.</p>
                     
-                    <form action="/eliminar_tecnico" method="POST" class="d-flex justify-content-center gap-3">
+                    <form action="/eliminar_tecnico" method="POST" class="d-flex justify-content-center gap-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <input type="hidden" name="ID_Tecnico" id="modal_eliminar-id">
                         <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-danger rounded-pill px-4">Sí, Eliminar</button>

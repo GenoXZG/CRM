@@ -12,7 +12,7 @@
                             <% if (!embedded) { %><button type="button" class="btn-close" data-action="close-assignment" aria-label="Cerrar asignación"></button><% } %>
                         </div>
 
-                        <form action="/add_unidades" method="POST" id="form_unidades">
+                        <form action="/add_unidades" method="POST" id="form_unidades"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
                             <div class="table-responsive mb-4">
                                 <table class="table align-middle">
                                     <thead class="bg-light small text-uppercase">

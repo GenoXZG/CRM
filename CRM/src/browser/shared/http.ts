@@ -1,6 +1,16 @@
+export function pageCsrfToken(): string {
+  return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+}
+
 export async function requestJson<T>(url: string, options: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
+    if (!['GET', 'HEAD', 'OPTIONS'].includes((options.method ?? 'GET').toUpperCase())) {
+      if (new URL(url, location.href).origin !== location.origin) throw new Error('Origen inválido.');
+      const headers = new Headers(options.headers);
+      headers.set('X-CSRF-Token', pageCsrfToken());
+      options = { ...options, headers, mode: 'same-origin' };
+    }
     response = await fetch(url, options);
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;
