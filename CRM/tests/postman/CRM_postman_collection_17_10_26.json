@@ -757,6 +757,8 @@
           "  pm.test(\"CSS content\", function () { pm.expect(contentType).to.include(\"text/css\"); });",
           "} else if (name === \"Resolve coordinate link\") {",
           "  pm.test(\"Resolved map coordinates\", function () { const result = pm.response.json(); pm.expect(result.success).to.eql(true); pm.expect(result.data.lat).to.eql(19.406313); pm.expect(result.data.lng).to.eql(-99.04689); pm.expect(result.data.normalizedUrl).to.eql(\"https://www.google.com/maps?q=19.406313,-99.046890\"); });",
+          "} else if (/\\/tickets\\/exportar(?:\\?|$)/.test(path)) {",
+          "  pm.test(\"CSV attachment\", function () { pm.expect(contentType).to.include(\"text/csv\"); pm.expect(pm.response.headers.get(\"Content-Disposition\")).to.match(/^attachment\\b/i); pm.expect(pm.response.text()).to.include('\"Ticket\",\"Cliente\"'); });",
           "} else {",
           "  pm.test(\"JSON array\", function () { pm.expect(contentType).to.include(\"application/json\"); pm.expect(pm.response.json()).to.be.an(\"array\"); });",
           "}",

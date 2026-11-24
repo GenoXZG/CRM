@@ -122,7 +122,7 @@ async function performAction(button: HTMLElement) {
       return;
     }
     if (action === 'remove-unit') {
-      await confirmUnitRemoval(button.dataset.ticketId ?? '', button.dataset.unitId ?? '', button.dataset.unitLabel ?? 'seleccionada');
+      await confirmUnitRemoval(button.dataset.ticketId ?? '', button.dataset.unitId ?? '', button.dataset.unitLabel ?? 'seleccionada', assignment?.assignmentDirty(), button.dataset.lastUnit === 'true');
       return;
     }
     if (action === 'release-equipment' || action === 'remove-accessory') {

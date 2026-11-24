@@ -13,7 +13,7 @@ interface ModelResponse {
 const loadBrands = createRequestCache<BrandResponse[]>();
 const loadModels = createRequestCache<ModelResponse[]>();
 const panel = element('card-asignacion');
-const rows = element('cuerpo_tabla_unidades');
+const rows = element<HTMLTableSectionElement>('cuerpo_tabla_unidades');
 const form = element<HTMLFormElement>('form_unidades');
 const saveButton = element<HTMLButtonElement>('btn_registrar_unidad');
 let selectedTicket = '';
@@ -30,7 +30,13 @@ function addOptions(select: HTMLSelectElement, values: [string, string][], place
 }
 
 export const unitAssignmentBusy = () => saving;
-export const unitAssignmentDirty = () => (Boolean(selectedTicket) && rows.querySelectorAll('tr').length < originalCount) || Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')).some(field => Boolean(field.value));
+export function unitAssignmentDirty() {
+  const draftCount = rows.rows.length;
+  return Boolean(selectedTicket && draftCount) && (
+    draftCount < originalCount ||
+    Array.from(rows.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')).some(field => Boolean(field.value))
+  );
+}
 export function resetUnitAssignment() {
   selectionVersion++;
   selectedTicket = '';

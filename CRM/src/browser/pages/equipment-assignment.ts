@@ -126,7 +126,7 @@ function renderUnit(unit: UnitResponse) {
           <div class="small text-muted mb-1">IDENTIFICADORES</div>
           <div class="font-monospace bg-white p-2 rounded border mb-1 small">${escapeHtml(unit.Placa_unidad || 'S/P')}</div>
           <div class="font-monospace bg-white p-2 rounded border small">${escapeHtml(unit.Vin_unidad || 'S/V')}</div>
-          <button type="button" class="btn btn-outline-danger align-self-start mt-3" data-action="remove-saved-unit" ${unitCount <= 1 ? 'disabled title="El ticket debe conservar al menos una unidad"' : ''} data-unit-id="${id}" data-unit-label="${escapeHtml(unit.Placa_unidad || unit.Vin_unidad || '#' + id)}">Quitar unidad del ticket</button>
+          <button type="button" class="btn btn-outline-danger align-self-start mt-3" data-action="remove-saved-unit" data-unit-id="${id}" data-unit-label="${escapeHtml(unit.Placa_unidad || unit.Vin_unidad || '#' + id)}">Quitar unidad del ticket</button>
         </div>
         <div class="col-md-6 p-4 d-flex flex-column">
           <div class="mb-3">
@@ -358,6 +358,6 @@ delegate(container, 'click', '[data-action="remove-saved-unit"]', button => {
   if (actionBusy()) return;
   saving = true;
   saveButton.disabled = true;
-  void confirmUnitRemoval(selectedTicket, button.dataset.unitId ?? '', button.dataset.unitLabel ?? 'seleccionada', equipmentAssignmentDirty())
+  void confirmUnitRemoval(selectedTicket, button.dataset.unitId ?? '', button.dataset.unitLabel ?? 'seleccionada', equipmentAssignmentDirty(), container.querySelectorAll('[data-action="remove-saved-unit"]').length === 1)
     .catch(showError).finally(() => { saving = false; updateProgress(); });
 });

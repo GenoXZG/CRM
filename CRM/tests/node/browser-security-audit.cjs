@@ -160,12 +160,6 @@ function mail(expectedSubject) {
     });
     const upload = page.waitForResponse(response => response.url() === base + '/tickets/2/subir-fotos', { timeout: 10000 });
     await page.locator('#btnSubirReal').click();
-    const discard = page.getByRole('button', { name: 'Descartar asignaciones y continuar' });
-    const confirmation = await Promise.race([
-      upload.then(() => false),
-      discard.waitFor({ state: 'visible', timeout: 3000 }).then(() => true, () => false),
-    ]);
-    if (confirmation) await discard.click();
     const uploaded = await upload.catch(error => {
       throw new Error('Upload navigation did not complete: ' + JSON.stringify({ interruptions, violations }), { cause: error });
     });
@@ -174,6 +168,72 @@ function mail(expectedSubject) {
     await page.locator('img[src^="/uploads/tickets/"]').first().waitFor({ state: 'visible' });
     await page.waitForFunction(() => Array.from(document.querySelectorAll('img[src^="/uploads/tickets/"]')).some(image => image.complete && image.naturalWidth > 0));
     assert.deepEqual(violations, []);
+
+    await page.locator('#ticket-assignment-fields:not([disabled])').waitFor({ state: 'attached' });
+    await page.locator('[data-bs-target="#modalComentarios"]').click();
+    const comments = page.locator('#modalComentarios');
+    await comments.locator('textarea').fill('Comentario guardado sin cambios de asignación');
+    const saved = page.waitForResponse(response => response.url() === base + '/tickets/actualizar_comentarios');
+    await comments.getByRole('button', { name: 'Guardar Cambios' }).click();
+    assert.equal((await saved).status(), 302);
+    await page.getByText('Comentario guardado sin cambios de asignación', { exact: true }).first().waitFor();
+    await page.locator('#ticket-assignment-fields:not([disabled])').waitFor({ state: 'attached' });
+
+    await page.locator('[data-action="remove-saved-unit"][data-unit-id="2"]').click();
+    const removed = page.waitForResponse(response => response.url() === base + '/tickets/2/unidades/2/quitar');
+    await page.getByRole('button', { name: 'Sí, quitar unidad' }).click();
+    assert.equal((await removed).status(), 200);
+    await page.locator('[data-action="remove-saved-unit"][data-unit-id="2"]').waitFor({ state: 'detached' });
+    await page.locator('#ticket-assignment-fields:not([disabled])').waitFor({ state: 'attached' });
+
+    await page.locator('[data-ticket-action="complete"]').click();
+    await page.getByRole('button', { name: /^Sí, finalizar/ }).waitFor({ timeout: 5000 });
+    const [closed] = await Promise.all([
+      page.waitForResponse(response => new URL(response.url()).pathname === '/tickets/finalizar/2', { timeout: 10000 }),
+      page.getByRole('button', { name: /^Sí, finalizar/ }).click(),
+    ]).catch(error => {
+      throw new Error('Closing did not complete: ' + JSON.stringify({ interruptions, violations }), { cause: error });
+    });
+    assert.equal(closed.status(), 302);
+    await page.locator('[data-ticket-action="reopen"]').waitFor();
+
+    await page.goto(base + '/detalle_ticket/3', { waitUntil: 'domcontentloaded' });
+    const removeLast = page.locator('[data-action="remove-saved-unit"][data-unit-id="3"]');
+    await removeLast.click();
+    await page.getByText(/volverá a «En espera»/).waitFor();
+    await page.getByRole('button', { name: 'Conservar unidad' }).click();
+    await removeLast.waitFor();
+    await removeLast.click();
+    const [lastRemoved] = await Promise.all([
+      page.waitForResponse(response => new URL(response.url()).pathname === '/tickets/3/unidades/3/quitar'),
+      page.getByRole('button', { name: 'Sí, quitar unidad' }).click(),
+    ]);
+    assert.equal(lastRemoved.status(), 200);
+    assert.equal((await lastRemoved.json()).unitCount, 1);
+    await page.getByRole('heading', { name: 'Ticket en espera' }).waitFor();
+    await page.getByRole('button', { name: 'OK' }).click();
+    await page.locator('#ticket-assignment-context[data-stage="units"]').waitFor({ state: 'attached' });
+    await page.locator('#cuerpo_tabla_unidades [name="placa_unidad"]').waitFor();
+    assert.equal(await page.locator('#cuerpo_tabla_unidades tr').count(), 1);
+    const replacement = await page.evaluate(async () => {
+      const devices = await (await fetch('/equipos_espera')).json();
+      const { postJson } = await import('/assets/shared/http.js');
+      await postJson('/add_unidades', { unidades: [{ ticketId: 3, modelo: 1, placa: 'REEMPLAZO', vin: 'VIN-REEMPLAZO' }] });
+      return devices.some(device => device.ID_equipo === 2);
+    });
+    assert.equal(replacement, true, 'last unit releases its GPS to inventory');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.locator('#ticket-assignment-context[data-stage="equipment"]').waitFor({ state: 'attached' });
+
+    await page.goto(base + '/detalle_ticket/1', { waitUntil: 'domcontentloaded' });
+    const draftPlate = page.locator('#cuerpo_tabla_unidades [name="placa_unidad"]').first();
+    await draftPlate.waitFor();
+    const unitsDirty = () => page.evaluate(async () => (await import('/assets/pages/unit-assignment.js')).unitAssignmentDirty());
+    assert.equal(await unitsDirty(), false);
+    await draftPlate.fill('BORRADOR');
+    assert.equal(await unitsDirty(), true);
+    await draftPlate.clear();
+    assert.equal(await unitsDirty(), false);
 
     await context.clearCookies();
     await page.goto(base + '/login/recuperar');
@@ -196,7 +256,7 @@ function mail(expectedSubject) {
     await page.getByRole('heading', { name: 'Contraseña actualizada' }).waitFor();
     assert.equal((await context.cookies()).some(cookie => cookie.name === 'crm_recovery'), false);
     assert.deepEqual(violations, []);
-    console.log('PASS Chromium: real cookie scope and cross-site behavior, CSP, login/2FA/recovery, Bootstrap, maps, fetch and private evidence');
+    console.log('PASS Chromium: real cookie scope and cross-site behavior, CSP, login/2FA/recovery, Bootstrap, maps, private evidence, comments, unit removal, closure and draft detection');
   } finally {
     if (browser) await browser.close();
     insecure.close();

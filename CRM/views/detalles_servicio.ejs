@@ -415,7 +415,7 @@
                                                 <% } %>
                                             <% } %>
                                             <% if (canManage && ticket.Estatus_servicio === 'En seguimiento') { %>
-                                                <div class="mt-2"><button type="button" class="btn btn-outline-danger" style="min-height:44px" data-ticket-action="remove-unit" <%= ticket.Numero_unidades <= 1 ? 'disabled' : '' %> title="<%= ticket.Numero_unidades <= 1 ? 'El ticket debe conservar al menos una unidad' : 'Retirar esta unidad y ajustar la cantidad prevista' %>" data-unit-id="<%= unidad.ID_unidad %>" data-ticket-id="<%= ticket.ID_ticket %>" data-unit-label="<%= unidad.Placa_unidad || unidad.Vin_unidad || ('#' + unidad.ID_unidad) %>">Quitar unidad</button></div>
+                                                <div class="mt-2"><button type="button" class="btn btn-outline-danger" style="min-height:44px" data-ticket-action="remove-unit" data-last-unit="<%= ticket.Unidades.length === 1 %>" data-unit-id="<%= unidad.ID_unidad %>" data-ticket-id="<%= ticket.ID_ticket %>" data-unit-label="<%= unidad.Placa_unidad || unidad.Vin_unidad || ('#' + unidad.ID_unidad) %>">Quitar unidad</button></div>
                                             <% } %>
                                         </td>
                                     </tr>

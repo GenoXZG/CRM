@@ -1,5 +1,5 @@
 import { BusinessError, isRecord, positiveInteger } from '../domain/business-error';
-import type { Unit } from '../domain/entities';
+import { AssignmentStatus, type Unit } from '../domain/entities';
 import { catalogs, equipment, tickets, units, withTransaction } from '../infrastructure/database/repositories';
 import { getTicket, updateAssignmentStatus } from './ticket-lifecycle';
 
@@ -61,8 +61,6 @@ export async function removeUnit(ticketId: unknown, unitId: unknown) {
     if (unit.ticketId !== ticket.id)
       throw new BusinessError(400, 'La unidad no pertenece al ticket');
     const planned = positiveInteger(ticket.unitCount, 'Cantidad de unidades');
-    if (planned <= 1)
-      throw new BusinessError(409, 'No se puede quitar la última unidad: el ticket debe conservar al menos una unidad');
     if (unit.equipmentId !== null) {
       const device = await equipment.findById(unit.equipmentId, transaction);
       if (!device) throw new BusinessError(409, 'No se encontró el equipo de la unidad');
@@ -70,9 +68,20 @@ export async function removeUnit(ticketId: unknown, unitId: unknown) {
       await equipment.setStatus(device.id, 'pending_assignment', transaction);
     }
     await units.remove(unit.id, transaction);
-    const unitCount = planned - 1;
+    const remaining = await units.count(ticket.id, transaction);
+    if (!remaining) {
+      await tickets.update(ticket.id, { status: 'waiting', unitCount: 1, assignmentStatus: AssignmentStatus.Pending }, transaction);
+      return {
+        success: true,
+        message: 'El ticket volvió a En espera. Queda una unidad prevista por registrar.',
+        unitCount: 1,
+        assignmentStatus: AssignmentStatus.Pending,
+        registrationPending: true,
+      };
+    }
+    const unitCount = Math.max(remaining, planned - 1);
     await tickets.update(ticket.id, { unitCount }, transaction);
     const summary = await updateAssignmentStatus({ ...ticket, unitCount }, transaction);
-    return { success: true, message: 'Unidad retirada del ticket. La cantidad prevista y el avance se actualizaron.', unitCount, assignmentStatus: summary.status };
+    return { success: true, message: 'Unidad retirada del ticket. La cantidad prevista y el avance se actualizaron.', unitCount, assignmentStatus: summary.status, registrationPending: false };
   });
 }

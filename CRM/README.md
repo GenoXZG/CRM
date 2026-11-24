@@ -325,8 +325,9 @@ Las unidades registradas se pueden quitar desde Asignaciones o desde el detalle
 mientras el ticket esté en seguimiento. La operación confirma el retiro, reduce
 la cantidad prevista, libera el equipo al inventario, elimina los vínculos con
 accesorios y recalcula el avance dentro de una transacción. Los catálogos no se
-modifican. El ticket debe conservar al menos una unidad; los tickets finalizados
-rechazan el retiro. Si hay selecciones de equipos sin guardar, la confirmación
+modifican. Si se retira la última unidad registrada, el ticket vuelve a En espera
+con una unidad prevista por registrar. La pantalla avisa antes de confirmar
+y muestra el estado resultante. Los tickets finalizados rechazan el retiro. Si hay selecciones de equipos sin guardar, la confirmación
 advierte que se descartarán al retirar la unidad.
 
 Los equipos y accesorios ya guardados se modifican desde el detalle del servicio. Los tickets finalizados no se pueden asignar desde esta
