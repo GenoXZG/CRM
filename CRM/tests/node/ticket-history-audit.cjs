@@ -29,7 +29,9 @@ const csrfCookie = details.headers.getSetCookie().find(cookie => cookie.startsWi
 const html = await details.text();
 const uploadToken = html.match(/id="formSubida"><input type="hidden" name="_csrf" value="([a-f0-9]{64})"/)?.[1];
 ok(uploadToken, 'native multipart token rendered before file input');
-const photo = new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jZ1kAAAAASUVORK5CYII=', 'base64')], { type: 'image/png' });
+const evidenceCount = () => Number(db("console.log(require('node:fs').readdirSync('/app/evidence/validated').length);"));
+const startingEvidence = evidenceCount();
+const photo = new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAIAAADZSiLoAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEElEQVQImWMQMgmDIAYsLABP/gV93GAXdgAAAABJRU5ErkJggg==', 'base64')], { type: 'image/png' });
 const upload = form => fetch(base + '/tickets/' + ticket + '/subir-fotos', {
   method: 'POST', headers: { Cookie: admin + '; ' + csrfCookie }, body: form, redirect: 'manual',
 });
@@ -42,12 +44,68 @@ const invalid = new FormData();
 invalid.append('_csrf', '0'.repeat(64));
 invalid.append('fotos', photo, 'audit.png');
 eq((await upload(invalid)).status, 403, 'reject multipart with invalid token');
-eq(Number(db(`console.log(require('node:fs').readdirSync('public/uploads/tickets').filter(name => name.startsWith('ticket_${ticket}_')).length);`)), 0, 'rejected requests write no file');
+eq(evidenceCount(), startingEvidence, 'rejected requests write no file');
+function withFiles(...files) {
+  const form = new FormData();
+  form.append('_csrf', uploadToken);
+  for (const [blob, name] of files) form.append('fotos', blob, name);
+  return form;
+}
+eq((await upload(withFiles([photo, 'forged.jpg']))).status, 415, 'extension mismatch');
+eq((await upload(withFiles([new Blob([photo], { type: 'image/jpeg' }), 'forged.png']))).status, 415, 'declared MIME mismatch');
+const svg = new Blob(['<svg xmlns="http://www.w3.org/2000/svg"><text>not a permitted image</text></svg>'], { type: 'image/png' });
+eq((await upload(withFiles([photo, 'valid.png'], [svg, 'fake.png']))).status, 415, 'active content rejected after a valid image');
+eq((await upload(withFiles([new Blob([Buffer.alloc(5 * 1024 * 1024 + 1)], { type: 'image/png' }), 'oversize.png']))).status, 413, 'file larger than 5 MiB');
+eq((await upload(withFiles(...Array.from({ length: 6 }, () => [photo, 'extra.png'])))).status, 413, 'six files rejected');
+const oversized = new Blob([Buffer.alloc(26 * 1024 * 1024)], { type: 'image/png' });
+eq((await upload(withFiles([oversized, 'total.png']))).status, 413, 'aggregate multipart cap');
+const fragment = Buffer.alloc(1024 * 1024);
+async function* withoutDeclaredLength() {
+  for (let index = 0; index < 27; index++) yield fragment;
+}
+const streamed = await fetch(base + '/tickets/' + ticket + '/subir-fotos', {
+  method: 'POST', duplex: 'half', body: withoutDeclaredLength(),
+  headers: { Cookie: admin + '; ' + csrfCookie, 'X-CSRF-Token': uploadToken, 'Content-Type': 'multipart/form-data; boundary=fixture' },
+});
+eq(streamed.status, 413, 'aggregate cap applies without Content-Length');
+
+const extraFields = withFiles([photo, 'valid.png']);
+extraFields.append('returnTo', '/tickets');
+extraFields.append('other', 'surplus');
+eq((await upload(extraFields)).status, 413, 'too many fields');
+eq(evidenceCount(), startingEvidence, 'invalid batches leave no files');
+const abortBoundary = 'phase3-abort-fixture';
+await new Promise(resolve => {
+  const socket = require('node:http').request(base + '/tickets/' + ticket + '/subir-fotos', {
+    method: 'POST', headers: { Cookie: admin + '; ' + csrfCookie, 'Content-Type': 'multipart/form-data; boundary=' + abortBoundary },
+  });
+  socket.on('error', resolve);
+  socket.write('--' + abortBoundary + '\r\nContent-Disposition: form-data; name="_csrf"\r\n\r\n' + uploadToken + '\r\n');
+  setTimeout(() => socket.destroy(), 30);
+});
+eq(evidenceCount(), startingEvidence, 'aborted request creates no files');
+
+rootSql("CREATE TRIGGER history_audit_photo_fail BEFORE INSERT ON Ticket_fotos FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='audit fixture failure';");
+try {
+  eq((await upload(withFiles([photo, 'db-failure.png']))).status, 500, 'database failure surfaces without file paths');
+  eq(evidenceCount(), startingEvidence, 'database failure removes staged files');
+} finally {
+  rootSql('DROP TRIGGER history_audit_photo_fail;');
+}
 const form = new FormData();
 form.append('_csrf', uploadToken);
 form.append('fotos', photo, 'audit.png');
 eq((await upload(form)).status, 302, 'native multipart uploads evidence');
 ok(history().some(e=>e.evento==='evidencia_agregada'),'evidence event');
+const storedPhoto = db(`const row=await m.photoModel.findOne({where:{ID_ticket:${ticket}}});console.log(row.Ruta_archivo);`);
+ok(/^\/uploads\/tickets\/[0-9a-f-]{36}\.png$/.test(storedPhoto), 'UUID and detected extension');
+const evidence = await req(storedPhoto, admin);
+eq(evidence.status, 200, 'authorized evidence access');
+eq(evidence.headers.get('content-type'), 'image/png', 'explicit image type');
+eq(evidence.headers.get('x-content-type-options'), 'nosniff', 'no content sniffing');
+eq((await req(storedPhoto)).status, 401, 'evidence requires authentication');
+eq((await req('/assets/%2e%2e%2fuploads/tickets/' + storedPhoto.split('/').at(-1), admin)).status, 404, 'static route cannot bypass authorization');
+
 const beforeTime=Date.now();eq((await req('/tickets/finalizar/'+ticket,tech,{})).status,302,'technical closure');const closed=state().Fecha_cierre;ok(closed&&Math.abs(Date.parse(closed)-beforeTime)<15000,'actual UTC closure timestamp');events=history();event=events.find(e=>e.evento==='servicio_finalizado');eq(event.usuario_correo,marker+'tecnico@example.com','technical closure attribution');ok(JSON.stringify(event.cambios).includes('Fecha de cierre'),'closure date audited');count=events.length;eq((await req('/tickets/finalizar/'+ticket,tech,{})).status,409,'duplicate close');eq(history().length,count,'duplicate close not recorded');
 eq((await req('/tickets/reabrir/'+ticket,admin,{})).status,302,'reopen');eq(state().Fecha_cierre,null,'reopen clears current closure');ok(JSON.stringify(history().find(e=>e.evento==='servicio_finalizado').cambios).includes(closed),'old closure retained in history');ok(history().some(e=>e.evento==='ticket_reabierto'),'reopen event');
 // Database audit failure must abort the business change, not silently omit the record.
@@ -60,4 +118,4 @@ await req('/tickets/actualizar_comentarios',admin,{ID_ticket:ticket,Comentarios:
 const view=await req('/detalle_ticket/'+ticket+'?history_size=5&history_page=2',tech);eq(view.status,200,'technician reads own history');ok((await view.text()).includes('Historial del servicio'),'history section');eq((await req('/detalle_ticket/2?history_page=1',tech)).status,404,'history cannot bypass ticket scope');
 const paged=JSON.parse(db(`const h=await require('./dist/infrastructure/database/ticket-history-repository').ticketHistory(${ticket},{history_size:'5',history_page:'2'});console.log(JSON.stringify({n:h.rows.length,page:h.page,ids:h.rows.map(r=>Number(r.id)),count:h.count}));`));eq(paged.n,5,'history pagination size');eq(paged.page,2,'history page');ok(paged.ids.every((id,i,a)=>!i||a[i-1]>id),'stable newest-first ordering');
 console.log('PASS '+checks+' checks: authenticated actors, forged/concurrent attribution, transactional rollbacks, lifecycle/units/devices/accessories/photos, closure/reopen, legacy dates, snapshots and scoped pagination');
-}finally{rootSql('DROP TRIGGER IF EXISTS history_audit_fail;');if(f)db(`const fs=require('fs');const photos=await m.photoModel.findAll({where:{ID_ticket:${ticket||0}}});for(const p of photos)try{fs.unlinkSync('/app/public'+p.Ruta_archivo)}catch{}await m.database.query('DELETE FROM usuarios WHERE correo LIKE ?',{replacements:[${JSON.stringify(marker+'%')}]});await m.ticketModel.destroy({where:{ID_cliente:${f.client}}});await m.equipmentModel.destroy({where:{ID_equipo:${JSON.stringify(f.equipment)}}});await m.equipmentCatalogModel.destroy({where:{ID_equipo_modelo:${f.em}}});await m.unitCatalogModel.destroy({where:{ID_Unidad_modelo:${f.um}}});await m.accessoryModel.destroy({where:{ID_accesorio_modelo:${f.acc}}});await m.clientModel.destroy({where:{ID_cliente:${f.client}}});await m.technicianModel.destroy({where:{ID_Tecnico:${f.tech}}});`);if(admin)await req('/logout',admin,{})}})().catch(e=>{console.error(e);process.exitCode=1});
+}finally{rootSql('DROP TRIGGER IF EXISTS history_audit_fail;');if(f)db(`const fs=require('fs');const photos=await m.photoModel.findAll({where:{ID_ticket:${ticket||0}}});for(const p of photos)try{fs.unlinkSync('/app/evidence/validated/'+p.Ruta_archivo.split('/').at(-1))}catch{}await m.database.query('DELETE FROM usuarios WHERE correo LIKE ?',{replacements:[${JSON.stringify(marker+'%')}]});await m.ticketModel.destroy({where:{ID_cliente:${f.client}}});await m.equipmentModel.destroy({where:{ID_equipo:${JSON.stringify(f.equipment)}}});await m.equipmentCatalogModel.destroy({where:{ID_equipo_modelo:${f.em}}});await m.unitCatalogModel.destroy({where:{ID_Unidad_modelo:${f.um}}});await m.accessoryModel.destroy({where:{ID_accesorio_modelo:${f.acc}}});await m.clientModel.destroy({where:{ID_cliente:${f.client}}});await m.technicianModel.destroy({where:{ID_Tecnico:${f.tech}}});`);if(admin)await req('/logout',admin,{})}})().catch(e=>{console.error(e);process.exitCode=1});

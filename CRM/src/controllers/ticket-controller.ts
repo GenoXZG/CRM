@@ -1,3 +1,8 @@
+import { randomUUID } from 'node:crypto';
+import path from 'node:path';
+import { QueryTypes } from 'sequelize';
+import { database } from '../infrastructure/database/connection';
+import { evidenceRoute, maxFileBytes, normalizeEvidence, openEvidence, safeEvidenceName, validatedEvidence, validatedEvidenceType } from '../services/ticket-evidence';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { exportTickets } from '../infrastructure/database/ticket-search-repository';
@@ -137,15 +142,81 @@ export async function requireOpenTicket(
 }
 export async function uploadPhotos(request: HttpRequest, response: Response) {
   const files = Array.isArray(request.files) ? request.files : [];
+  const created: string[] = [];
+  const saved: Array<{ filename: string; originalname: string }> = [];
+  const ensureConnected = () => {
+    if (request.aborted || response.destroyed) throw new BusinessError(400, 'La carga se interrumpió.');
+  };
+  let committed = false;
+  let failure: unknown;
   try {
-    await ticketService.savePhotos(request.params.id, files);
-    response.redirect(ticketDetailsDestination(request.params.id!, request.body?.returnTo));
+    for (const file of files) {
+      if (!safeEvidenceName(file.originalname)) throw new BusinessError(400, 'Nombre de archivo inválido.');
+      const image = await normalizeEvidence(file.buffer, file);
+      ensureConnected();
+      const filename = `${randomUUID()}.${image.extension}`;
+      const target = path.join(validatedEvidence, filename);
+      const handle = await fs.open(target, 'wx', 0o600);
+      created.push(target);
+      try { await handle.writeFile(image.buffer); }
+      finally { await handle.close(); }
+      saved.push({ filename, originalname: file.originalname });
+    }
+    ensureConnected();
+    await ticketService.savePhotos(request.params.id, saved, ensureConnected);
+    committed = true;
+    if (!response.destroyed) response.redirect(ticketDetailsDestination(request.params.id!, request.body?.returnTo));
   } catch (error) {
-    // Clean files if the ticket closes while the upload is in progress.
-    await Promise.allSettled(files.map((file) => fs.unlink(file.path)));
-    respondError(response, error);
+    failure = error;
+  } finally {
+    if (!committed) {
+      const results = await Promise.allSettled(created.map(target => fs.unlink(target)));
+      if (results.some(result => result.status === 'rejected')) console.error('Evidence cleanup failed');
+    }
+  }
+  if (!committed && !response.destroyed) {
+    if (failure instanceof BusinessError) respondError(response, failure);
+    else {
+      console.error('Evidence persistence failed');
+      response.status(500).json({ error: 'No se pudo guardar la evidencia.' });
+    }
   }
 }
+
+export async function serveEvidence(request: Request<{ name: string }>, response: Response, next: NextFunction) {
+  const { name } = request.params;
+  if (!safeEvidenceName(name)) return response.status(404).send('Evidencia no encontrada');
+  const scope: number | undefined = response.locals.technicianScope;
+  const [photo] = await database.query<{ found: number }>(
+    `SELECT 1 AS found FROM Ticket_fotos f JOIN Tickets t ON t.ID_ticket=f.ID_ticket
+    WHERE BINARY f.Ruta_archivo=?${scope === undefined ? '' : ' AND t.ID_tecnico=?'} LIMIT 1`,
+    { type: QueryTypes.SELECT, replacements: scope === undefined ? [evidenceRoute + name] : [evidenceRoute + name, scope] },
+  );
+  if (!photo) return response.status(404).send('Evidencia no encontrada');
+  const file = await openEvidence(name);
+  if (!file) return response.status(404).send('Evidencia no encontrada');
+  try {
+    if (!file.validated && file.size <= maxFileBytes) {
+      const bytes = await file.handle.readFile();
+      const image = await normalizeEvidence(bytes).catch(() => null);
+      if (image) return response.type(image.mime).send(image.buffer);
+    }
+    if (file.validated) response.type(validatedEvidenceType(name));
+    else {
+      response.type('application/octet-stream');
+      response.set('Content-Disposition', 'attachment');
+      response.set('Content-Security-Policy', 'sandbox');
+    }
+    response.set('Content-Length', String(file.size));
+    if (request.method === 'HEAD') return response.end();
+    await pipeline(file.handle.createReadStream({ start: 0, autoClose: false }), response);
+  } catch (error) {
+    next(error);
+  } finally {
+    await file.handle.close();
+  }
+}
+
 export async function confirmCompleteAssignment(request: HttpRequest, response: Response) {
   try {
     await ticketService.confirmCompleteAssignment(request.body?.idTicket);

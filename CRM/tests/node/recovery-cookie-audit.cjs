@@ -10,7 +10,7 @@ test('recovery cookies conceal token reuse and reject altered ciphertext', () =>
   assert.equal(sealed.length, 120);
   const request = value => ({ headers: { cookie: 'crm_recovery=' + value } });
   assert.equal(openRecoveryToken(request(sealed)), token);
-  assert.equal(openRecoveryToken(request(token)), token, 'in-flight legacy cookie');
+  assert.equal(openRecoveryToken(request(token)), null, 'legacy cookie is rejected');
   const altered = (sealed[0] === '0' ? '1' : '0') + sealed.slice(1);
   assert.equal(openRecoveryToken(request(altered)), null);
 });

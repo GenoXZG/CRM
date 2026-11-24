@@ -1,6 +1,8 @@
 import { showRecovery, showReset, sendRecovery, completeRecovery } from './controllers/password-recovery-controller';
 import express from 'express';
-import { csrfProtection, CsrfError } from './csrf';
+import { csrfProtection, validateRequestOrigin } from './csrf';
+import { securityHeaders } from './http-security';
+import { BusinessError } from './domain/business-error';
 import { BlockList, isIP } from 'node:net';
 import path from 'node:path';
 import { configuration, rootDirectory } from './config';
@@ -18,12 +20,16 @@ export function createApplication() {
     app.set('trust proxy', (address: string, hop: number) =>
       hop === 0 && proxy.check(address, isIP(address) === 4 ? 'ipv4' : 'ipv6'));
   }
+  app.disable('x-powered-by');
   app.set('case sensitive routing', true);
   app.locals.mapTiles = configuration.maps;
   app.set('view engine', 'ejs');
   app.set('views', path.join(rootDirectory, 'views'));
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  app.use(securityHeaders);
+  app.use(validateRequestOrigin);
+  app.use(express.json({ limit: '256kb' }));
+  const formOptions = { extended: true, limit: '64kb', parameterLimit: 256, depth: 8 };
+  app.use(express.urlencoded(formOptions));
   app.use(csrfProtection);
   // The three paths expose the same mechanism with the applicable cookie paths.
   app.get(['/csrf-token', '/login/csrf-token', '/login/recuperar/csrf-token'], (_request, response) =>
@@ -39,7 +45,8 @@ export function createApplication() {
   app.post('/login/verificar', verifyLogin);
   app.post('/login/cancelar', cancelLogin);
   app.post('/logout', logout);
-  app.use(express.static(path.join(rootDirectory, 'public')));
+  for (const directory of ['assets', 'css', 'js'])
+    app.use('/' + directory, express.static(path.join(rootDirectory, 'public', directory), { index: false }));
   app.use('/bootstrap', express.static(path.join(rootDirectory, 'node_modules/bootstrap/dist')));
   app.use('/leaflet', express.static(path.join(rootDirectory, 'node_modules/leaflet/dist')));
   app.get('/health', async (_request, response) => {
@@ -53,7 +60,13 @@ export function createApplication() {
   app.use('/usuarios', userAdminRoutes);
   app.use('/', routes);
   app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
-    if (error instanceof CsrfError) return response.set('Cache-Control', 'no-store').status(403).json({ error: error.message });
+    if (response.headersSent) return _next(error);
+    if (response.destroyed) return;
+    if (error instanceof BusinessError)
+      return response.status(error.status).json({ error: error.message });
+    if (error && typeof error === 'object' && 'status' in error &&
+        (error.status === 400 || error.status === 413 || error.status === 415))
+      return response.status(error.status).json({ error: error.status === 413 ? 'La petición excede el tamaño permitido.' : 'Cuerpo de petición inválido.' });
     console.error('Request failed:', error instanceof Error ? error.name : 'unknown');
     response.status(500).json({ success: false, error: 'Error interno del servidor' });
   });

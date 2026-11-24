@@ -55,13 +55,14 @@ export function assertCsrf(request: Request, response: Response) {
     throw new CsrfError();
 }
 
+export function validateRequestOrigin(request: Request, response: Response, next: NextFunction) {
+  if (!safeMethods.has(request.method) && !sameOrigin(request))
+    return response.status(403).json({ error: 'Origen no permitido.' });
+  next();
+}
+
 export function csrfProtection(request: Request, response: Response, next: NextFunction) {
   const safe = safeMethods.has(request.method);
-  if (!safe && !sameOrigin(request)) {
-    response.set('Cache-Control', 'no-store');
-    return response.status(403).json({ error: 'Origen no permitido.' });
-  }
-
   // Assets and health checks do not render forms or issue credentials.
   if (safe && (request.method !== 'GET' || /^\/(css|js|assets|bootstrap|leaflet)\//i.test(request.path) ||
       request.path === '/favicon.ico' || request.path === '/health')) return next();

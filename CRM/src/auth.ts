@@ -73,16 +73,11 @@ function setSessionCookie(request: Request, response: Response, value: string, m
 }
 const publicAsset = (path: string) => /^\/(css|js|assets|bootstrap|leaflet)\//.test(path) || path === '/favicon.ico';
 function technicianAllowed(path: string, method: string): boolean {
-  if (method === 'GET' || method === 'HEAD') return path === '/' || path === '/tickets' || path === '/estado_tickets' || path === '/tickets/exportar' || /^\/detalle_ticket\/\d+$/.test(path) || path.startsWith('/uploads/');
+  if (method === 'GET' || method === 'HEAD') return path === '/' || path === '/tickets' || path === '/estado_tickets' || path === '/tickets/exportar' || /^\/detalle_ticket\/\d+$/.test(path) || path.startsWith('/uploads/tickets/');
   return method === 'POST' && (path === '/logout' || path === '/tickets/resolver_ubicacion' || /^\/tickets\/finalizar\/\d+$/.test(path));
 }
 export async function authMiddleware(request: Request, response: Response, next: NextFunction) {
   try {
-    response.setHeader('Cache-Control', 'no-store');
-    response.setHeader('X-Content-Type-Options', 'nosniff');
-    response.setHeader('X-Frame-Options', 'DENY');
-    // OpenStreetMap requires a Referer; share only the origin across sites.
-    response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     response.locals.currentPath = request.path;
     response.locals.currentUser = null;
     response.locals.canManage = false;
@@ -112,17 +107,13 @@ export async function authMiddleware(request: Request, response: Response, next:
       return next();
     }
     if (!response.locals.currentUser) {
-      if (method === 'GET' && !path.startsWith('/api/') && request.accepts('html')) return response.redirect('/login');
+      if (method === 'GET' && !path.startsWith('/api/') && !path.startsWith('/uploads/') && request.accepts('html')) return response.redirect('/login');
       return response.status(401).json({ error: 'Debes iniciar sesión.' });
     }
     const problem = technicianAccessProblem(response.locals.currentUser as SessionUser);
     if (problem && path !== '/logout') {
       if (method === 'GET' && request.accepts('html')) return response.status(403).render('account-unavailable', { problem });
       return response.status(403).json({ error: problem });
-    }
-    if (!response.locals.canManage && path.startsWith('/uploads/')) {
-      const [photo] = await database.query<{ found: number }>('SELECT 1 AS found FROM Ticket_fotos f JOIN Tickets t ON t.ID_ticket=f.ID_ticket WHERE f.Ruta_archivo=? AND t.ID_tecnico=? LIMIT 1', { replacements: [decodeURIComponent(request.path), response.locals.technicianScope], type: QueryTypes.SELECT });
-      if (!photo) return response.status(404).send('Evidencia no encontrada');
     }
     if (path.startsWith('/usuarios') && !response.locals.isAdmin)
       return response.status(403).json({ error: 'Acceso exclusivo para administradores.' });

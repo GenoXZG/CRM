@@ -84,6 +84,26 @@ async function checkApplication() {
       assert.deepEqual(cookies, expected.map(cookie => cookie + (forcedSecure || trustedHeaders ? '; Secure' : '')));
     }
     const state = await fetch(base + '/login/csrf-token', { headers: forwarded });
+    assert.equal(state.headers.get('x-powered-by'), null);
+    assert.equal(state.headers.get('strict-transport-security'), publicProfile && proxyTrusted ? 'max-age=31536000' : null);
+    assert.equal(state.headers.get('x-frame-options'), 'DENY');
+    assert.equal(state.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(state.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
+    assert.match(state.headers.get('permissions-policy'), /geolocation=\(self\)/);
+    const policyHeader = process.env.CSP_MODE === 'enforce'
+      ? 'content-security-policy' : 'content-security-policy-report-only';
+    const policy = state.headers.get(policyHeader);
+    assert.match(policy, /script-src 'self' 'nonce-/);
+    assert.match(policy, /style-src-attr 'unsafe-inline'/);
+    assert.doesNotMatch(policy.match(/script-src [^;]+/)[0], /unsafe-inline|unsafe-eval/);
+    const largeJson = JSON.stringify({ value: 'x'.repeat(260 * 1024) });
+    const ingress = (body, type, headers = {}) => fetch(base + '/login', {
+      method: 'POST', body, headers: { 'Content-Type': type, ...headers },
+    });
+    assert.equal((await ingress(largeJson, 'application/json', { Origin: 'https://unrelated.example' })).status, 403);
+    assert.equal((await ingress(largeJson, 'application/json')).status, 413);
+    assert.equal((await ingress('value=' + 'x'.repeat(65 * 1024), 'application/x-www-form-urlencoded')).status, 413);
+    assert.equal((await ingress('{', 'application/json')).status, 400);
     const csrfCookie = state.headers.getSetCookie()[0];
     assert.match(csrfCookie, forcedSecure || proxyTrusted
       ? /^__Host-crm_csrf=.*; Secure$/ : /^crm_csrf=/);
@@ -108,7 +128,7 @@ test('client IP, origin and cookie attributes follow the immediate proxy and dep
   for (const settings of [
     {},
     { TRUSTED_PROXY_IP: '192.0.2.10' },
-    { CRM_DEPLOYMENT: 'public', TRUSTED_PROXY_IP: '127.0.0.1' },
+    { CRM_DEPLOYMENT: 'public', TRUSTED_PROXY_IP: '127.0.0.1', CSP_MODE: 'enforce' },
     { CRM_DEPLOYMENT: 'test', TRUSTED_PROXY_IP: '::ffff:127.0.0.1' },
     { COOKIE_SECURE: 'true' },
   ]) {

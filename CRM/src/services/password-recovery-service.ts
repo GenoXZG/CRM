@@ -1,4 +1,5 @@
 import { createHmac, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { QueryTypes } from 'sequelize';
 import { database } from '../infrastructure/database/connection';
 import { credentialHash, tokenHash } from '../auth-challenge';
@@ -16,14 +17,28 @@ let outstandingDeliveries = 0;
 let activeDeliveries = 0;
 const deliveryQueue: Array<() => Promise<void>> = [];
 
+const deliveryEvents = {
+  saturated: { count: 0, lastLog: -Infinity },
+  failed: { count: 0, lastLog: -Infinity },
+};
+
+function recordDeliveryEvent(event: keyof typeof deliveryEvents) {
+  const metric = deliveryEvents[event];
+  metric.count++;
+  const now = performance.now();
+  if (now - metric.lastLog < 60_000) return;
+  metric.lastLog = now;
+  console.warn('password_recovery_delivery', { event, total: metric.count, outstanding: outstandingDeliveries });
+}
+
 function deliverNext() {
   if (activeDeliveries >= maxConcurrentDeliveries) return;
   const deliver = deliveryQueue.shift();
   if (!deliver) return;
   activeDeliveries++;
-  void deliver().catch(error => {
+  void deliver().catch(() => {
     // Keep an undelivered challenge disabled while the per-account cooldown runs.
-    console.error('Recovery delivery failed:', error instanceof Error ? error.name : 'unknown');
+    recordDeliveryEvent('failed');
   }).finally(() => {
     activeDeliveries--;
     outstandingDeliveries--;
@@ -43,7 +58,10 @@ async function deliverRecovery(email: string, hashedToken: string, code: string)
 
 export async function requestPasswordRecovery(email: string, previousToken?: string | null): Promise<string> {
   const token = randomBytes(32).toString('hex');
-  if (outstandingDeliveries >= maxOutstandingDeliveries) return previousToken || token;
+  if (outstandingDeliveries >= maxOutstandingDeliveries) {
+    recordDeliveryEvent('saturated');
+    return previousToken || token;
+  }
   outstandingDeliveries++;
   let scheduled = false;
   try {

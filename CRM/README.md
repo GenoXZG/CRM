@@ -101,7 +101,7 @@ obsoletas; no elimina fotografías ni datos.
 | `src/infrastructure/database/` | Conexión, modelos tipados, relaciones y consultas |
 | `src/browser/` | Lógica de las páginas y módulos compartidos del navegador |
 | `views/`, `public/css/`, `public/js/` | Las plantillas EJS, los estilos activos y el script del asistente de inicio |
-| `public/uploads/` | Fotografías persistidas; no se eliminan durante la limpieza |
+| `evidence/` | Evidencias privadas persistidas en el volumen `uploads` |
 | `dist/`, `public/assets/` | JavaScript generado necesario para ejecutar la aplicación |
 | `scripts/build.js` | Compilación reproducible de ambos destinos |
 | `tsconfig.json`, `tsconfig.browser.json` | Configuraciones del servidor y navegador |
@@ -1066,3 +1066,102 @@ otro código cuando termine la espera. La cola no garantiza entregas tras un
 reinicio. Varias réplicas necesitarían compartir estado y claves para mantener
 las mismas garantías. Esta fase usa la topología de Apache y Docker de la
 Fase 1 y no requiere variables nuevas ni migraciones.
+
+### Evidencias privadas y transición del volumen
+
+Las evidencias se consultan en `/uploads/tickets/:nombre` con sesión vigente.
+La aplicación busca la referencia en MySQL y comprueba el alcance del ticket.
+Administradores y coordinadores conservan acceso global. Los técnicos solo
+pueden consultar evidencias de tickets asignados. Una referencia sin ticket
+asociado deja de ser accesible. El CRM no ofrece un borrado individual de
+evidencias. Desasociar un ticket no borra automáticamente el archivo físico.
+
+Las cargas admiten hasta cinco JPEG, PNG o WebP. Se verifica la estructura
+con Sharp, la concordancia de la extensión y el MIME declarado, y los límites
+de 6000 píxeles por lado y 16 millones de píxeles por imagen. Se rechazan las
+secuencias animadas detectadas por el decodificador. Los archivos nuevos se
+recodifican, pierden metadatos y reciben un UUID con la extensión detectada.
+Los formatos históricos no renderizables con estos controles se conservan
+como descargas con tipo genérico y aislamiento del navegador.
+
+El volumen Compose sigue llamándose `uploads`. Su destino cambia de
+`/app/public/uploads` a `/app/evidence`. Conserva el mismo nombre de proyecto y
+verifica el volumen efectivo antes de recrear el contenedor. La carpeta
+`tickets` del volumen se lee como almacenamiento histórico y `validated`
+recibe las cargas nuevas. Las URLs existentes y las referencias de MySQL
+siguen funcionando sin migraciones. En ejecución directa, la raíz privada
+predeterminada es `evidence/`. Se admite lectura de la carpeta local histórica
+`public/uploads/tickets` por la ruta autorizada. Express sirve recursos
+estáticos solo desde carpetas explícitas y excluye los adjuntos.
+
+Durante la ventana de actualización:
+
+1. Respalda MySQL y el volumen `uploads` de forma coordinada. Verifica el
+   nombre del volumen y que el proceso Node pueda leer `tickets` y crear
+   `validated`. Con montajes personalizados, usa la misma estructura bajo una
+   raíz privada configurada en `EVIDENCE_ROOT`.
+2. Recrea solo el contenedor de aplicación con el mismo proyecto Compose y
+   volumen. Verifica una evidencia histórica con cada rol y realiza una carga
+   de prueba en un ticket de ensayo. Comprueba que una URL sin sesión rechaza
+   el acceso. Mantén `/uploads/` detrás del proxy, sin un alias de disco en
+   Apache.
+3. Si necesitas revertir después de aceptar cargas nuevas, conserva
+   `validated` y las referencias de MySQL. Una versión anterior busca esas
+   referencias en `tickets`. Prueba la reversión sobre copias antes de exponer
+   el servicio. Una interrupción abrupta entre disco y MySQL puede dejar
+   archivos privados sin referencia. Revisa esa diferencia a partir del
+   respaldo antes de decidir cualquier limpieza.
+
+### CSP, encabezados y límites de Apache
+
+`CSP_MODE=report-only` permite revisar avisos en la consola del navegador.
+Valida las pantallas y flujos con el proxy y dominio definitivos y usa
+`CSP_MODE=enforce` antes de publicar. El código local y los recursos versionados
+de SweetAlert son compatibles con la política. Los scripts externos autorizados
+y los bloques de estilo de EJS usan un nonce por respuesta; los atributos de
+evento inline están bloqueados. Se permiten atributos CSS para posicionamiento,
+modales y Leaflet. Se permiten `blob:` y `data:` en imágenes para previsualizaciones
+y recursos gráficos. CSP autoriza el origen de mosaicos de `MAP_TILE_URL`;
+en el despliegue público debe ser HTTPS. Geolocalización se permite al origen
+del CRM sujeto al permiso del navegador.
+
+Express emite HSTS solo en perfil `public` al reconocer HTTPS detrás del proxy
+de confianza. La política dura un año y se restringe al host actual. Mantén la
+configuración en el VirtualHost del CRM.
+
+Los límites de Express son 256 KiB para JSON y 64 KiB, 256 parámetros y
+profundidad 8 para formularios URL-encoded. Multipart admite 26 MiB en total,
+5 MiB por archivo, siete partes, dos campos de texto y 4 KiB por campo. Se
+admiten hasta dos cargas simultáneas por proceso. Configura los límites de
+transporte en el VirtualHost del CRM para que incluyan el espacio de delimitadores
+y cabeceras de multipart. Consulta [LimitRequestBody de Apache](https://httpd.apache.org/docs/2.4/mod/core.html#limitrequestbody).
+
+```apache
+LimitRequestBody 262144
+<LocationMatch "^/tickets/[0-9]+/subir-fotos/?$">
+    LimitRequestBody 27262976
+</LocationMatch>
+```
+
+### Seguimiento de recuperación
+
+El evento `password_recovery_delivery` registra saturación y fallos de entrega
+con contadores acumulados y operaciones pendientes. Cada tipo de evento se
+emite al producirse y como máximo una vez por minuto. No contiene correos,
+contraseñas, tokens ni códigos. Las solicitudes mantienen su respuesta genérica.
+Las cookies de recuperación antiguas sin cifrar dejan de ser aceptadas.
+La clave AES-256-GCM vive en el proceso. Después de actualizar o reiniciar,
+cualquier recuperación abierta requiere solicitar otro código una vez cumplida
+la espera por cuenta.
+
+La auditoría `tests/node/browser-security-audit.cjs` usa Chromium con
+Playwright instalado fuera del proyecto. Usa un contenedor de auditoría
+aislado en el puerto local 3031 con correo simulado, `CSP_MODE=enforce`,
+`CRM_DEPLOYMENT=public`, `AUTH_2FA_TO` vacío y la IP observada del proxy
+configurada en `TRUSTED_PROXY_IP`. La base aislada debe contener el
+administrador del Compose de auditoría, el ticket de demostración 2 y una
+cuenta coordinadora de prueba `browser-recovery@audit.example`. Indica
+`CRM_AUDIT_PROJECT`, las rutas del módulo y ejecutable en
+`CRM_BROWSER_DRIVER` y `CRM_BROWSER_EXECUTABLE`, y un certificado temporal
+en `CRM_BROWSER_TLS_CERT` y `CRM_BROWSER_TLS_KEY`. La prueba sube una imagen
+y restablece solo la cuenta coordinadora de prueba.

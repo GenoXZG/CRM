@@ -36,12 +36,14 @@ services:
       GMAIL_USER: "${GMAIL_USER:-}"
       GMAIL_APP_PASSWORD: "${GMAIL_APP_PASSWORD:-}"
       MAIL_TEST_TO: "${MAIL_TEST_TO:-}"
+      EVIDENCE_ROOT: /app/evidence
+      CSP_MODE: "${CSP_MODE:-report-only}"
       MAP_TILE_URL: "${MAP_TILE_URL:-}"
       MAP_TILE_ATTRIBUTION: "${MAP_TILE_ATTRIBUTION:-}"
     ports:
       - "127.0.0.1:${CRM_HTTP_PORT:-3030}:3030"
     volumes:
-      - uploads:/app/public/uploads
+      - uploads:/app/evidence
     depends_on:
       db:
         condition: service_healthy

@@ -18,7 +18,7 @@ COPY --chown=node:node docker/mysql/migrations ./docker/mysql/migrations
 COPY --chown=node:node views ./views
 COPY --chown=node:node public/css ./public/css
 COPY --chown=node:node public/js ./public/js
-RUN mkdir -p public/uploads/tickets && chown -R node:node public/uploads
+RUN mkdir -p evidence/validated evidence/tickets && chown -R node:node evidence
 USER node
 ENV NODE_ENV=production PORT=3030
 EXPOSE 3030

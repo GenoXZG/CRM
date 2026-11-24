@@ -31,8 +31,26 @@ const testCodeRecipient = process.env.AUTH_2FA_TO?.trim() || '';
 if (testCodeRecipient && deployment !== 'test')
   throw new Error('AUTH_2FA_TO requires CRM_DEPLOYMENT=test');
 
+const cspMode = process.env.CSP_MODE || 'report-only';
+if (cspMode !== 'report-only' && cspMode !== 'enforce') throw new Error('Invalid CSP_MODE');
+const tileUrl = process.env.MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const tileSource = new URL(tileUrl.replaceAll('{s}', 'tile'));
+if (!['http:', 'https:'].includes(tileSource.protocol) || tileSource.username || tileSource.password)
+  throw new Error('Invalid MAP_TILE_URL');
+const tileOrigin = tileUrl.includes('{s}') && new URL(tileUrl).hostname.startsWith('{s}.')
+  ? tileSource.origin.replace('://tile.', '://*.') : tileSource.origin;
+const evidenceSetting = process.env.EVIDENCE_ROOT?.trim();
+const evidenceRoot = path.resolve(rootDirectory, evidenceSetting || 'evidence');
+const fromPublic = path.relative(path.join(rootDirectory, 'public'), evidenceRoot);
+if (!fromPublic || (!path.isAbsolute(fromPublic) && !fromPublic.startsWith('..' + path.sep) && fromPublic !== '..'))
+  throw new Error('EVIDENCE_ROOT must be outside public');
+
 export const configuration = {
   trustedProxyIp,
+  deployment,
+  cspMode,
+  evidenceRoot,
+  usesMountedEvidence: Boolean(evidenceSetting),
   auth: {
     adminEmail: (process.env.CRM_ADMIN_EMAIL || '').trim().toLowerCase(),
     adminPassword: process.env.CRM_ADMIN_PASSWORD || '',
@@ -45,7 +63,8 @@ export const configuration = {
     testTo: process.env.MAIL_TEST_TO || '',
   },
   maps: {
-    tileUrl: process.env.MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    tileUrl,
+    tileOrigin,
     attribution: process.env.MAP_TILE_ATTRIBUTION || '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   },
   port: port('PORT', 3030),

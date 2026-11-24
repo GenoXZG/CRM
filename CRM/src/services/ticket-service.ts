@@ -159,7 +159,7 @@ async function updateTicketEquipmentStatus(
     await equipment.setStatus(device.id, status, transaction);
 }
 export const requireOpenTicket = (id: unknown) => getTicket(id, undefined, OPEN_STATES);
-export const savePhotos = (id: unknown, files: readonly UploadedPhoto[]) =>
+export const savePhotos = (id: unknown, files: readonly UploadedPhoto[], ensureConnected = () => {}) =>
   withTransaction(async (transaction) => {
     const ticket = await getTicket(id, transaction, OPEN_STATES);
     const saved: TicketPhoto[] = [];
@@ -172,5 +172,6 @@ export const savePhotos = (id: unknown, files: readonly UploadedPhoto[]) =>
           transaction,
         ),
       );
+    ensureConnected();
     return saved;
   });

@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-confirm-account-removal]').forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!window.confirm('¿Eliminar esta cuenta? También se cerrarán sus sesiones.')) event.preventDefault();
+    });
+  });
   document.querySelectorAll('.toggle-password').forEach(button => button.addEventListener('click', () => {
     const input = document.getElementById(button.dataset.target);
     if (!input) return;

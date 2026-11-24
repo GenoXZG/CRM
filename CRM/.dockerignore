@@ -8,6 +8,7 @@ node_modules
 dist
 public/assets
 public/uploads
+evidence
 tests
 reports
 *.log
