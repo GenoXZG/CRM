@@ -1,3 +1,4 @@
+import { setAuthCookie } from './auth-cookies';
 import { runAsAuditActor } from './infrastructure/audit/context';
 import { requireActiveTechnician, technicianAccessProblem } from './domain/technician-access';
 import { createChallenge, credentialHash, cleanupExpiredChallenges, challengeExists, completeChallenge, cancelChallenge, CHALLENGE_SECONDS } from './auth-challenge';
@@ -68,12 +69,10 @@ function cookieToken(request: Request, name: string): string | null {
 export const sessionToken = (request: Request) => cookieToken(request, 'crm_session');
 const pendingToken = (request: Request) => cookieToken(request, 'crm_pending');
 function setPendingCookie(request: Request, response: Response, value: string, maxAge = CHALLENGE_SECONDS) {
-  const secure = request.secure || configuration.auth.cookieSecure;
-  response.append('Set-Cookie', `crm_pending=${value}; HttpOnly; SameSite=Lax; Path=/login; Max-Age=${maxAge}${secure ? '; Secure' : ''}`);
+  setAuthCookie(request, response, 'crm_pending', value, maxAge);
 }
 function setSessionCookie(request: Request, response: Response, value: string, maxAge = SESSION_SECONDS) {
-  const secure = request.secure || configuration.auth.cookieSecure;
-  response.append('Set-Cookie', `crm_session=${value}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${secure ? '; Secure' : ''}`);
+  setAuthCookie(request, response, 'crm_session', value, maxAge);
 }
 function sameOrigin(request: Request): boolean {
   const source = request.get('origin') ?? request.get('referer');

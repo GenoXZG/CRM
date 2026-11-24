@@ -21,6 +21,8 @@ services:
     init: true
     environment:
       NODE_ENV: production
+      CRM_DEPLOYMENT: "${CRM_DEPLOYMENT:-local}"
+      TRUSTED_PROXY_IP: "${TRUSTED_PROXY_IP:-}"
       PORT: 3030
       DB_HOST: db
       DB_PORT: 3306

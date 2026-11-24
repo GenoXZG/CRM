@@ -1,5 +1,6 @@
 import { showRecovery, showReset, sendRecovery, completeRecovery } from './controllers/password-recovery-controller';
 import express from 'express';
+import { BlockList, isIP } from 'node:net';
 import path from 'node:path';
 import { configuration, rootDirectory } from './config';
 import { database } from './infrastructure/database/connection';
@@ -9,6 +10,13 @@ import userAdminRoutes from './user-admin';
 
 export function createApplication() {
   const app = express();
+  const { trustedProxyIp } = configuration;
+  if (trustedProxyIp) {
+    const proxy = new BlockList();
+    proxy.addAddress(trustedProxyIp, isIP(trustedProxyIp) === 4 ? 'ipv4' : 'ipv6');
+    app.set('trust proxy', (address: string, hop: number) =>
+      hop === 0 && proxy.check(address, isIP(address) === 4 ? 'ipv4' : 'ipv6'));
+  }
   app.set('case sensitive routing', true);
   app.locals.mapTiles = configuration.maps;
   app.set('view engine', 'ejs');

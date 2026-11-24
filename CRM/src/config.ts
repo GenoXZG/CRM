@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { isIP } from 'node:net';
 import dotenv from 'dotenv';
 
 export const rootDirectory = path.resolve(__dirname, '..');
@@ -16,12 +17,27 @@ function port(name: string, fallback: number): number {
     throw new Error(`Invalid port: ${name}`);
   return value;
 }
+const deployment = process.env.CRM_DEPLOYMENT ?? 'local';
+if (deployment !== 'local' && deployment !== 'test' && deployment !== 'public')
+  throw new Error('Invalid CRM_DEPLOYMENT: expected local, test or public');
+
+const trustedProxyIp = process.env.TRUSTED_PROXY_IP?.trim() || '';
+if (trustedProxyIp && (!isIP(trustedProxyIp) || trustedProxyIp.includes('%')))
+  throw new Error('Invalid TRUSTED_PROXY_IP: expected one literal IP address');
+if (deployment === 'public' && !trustedProxyIp)
+  throw new Error('TRUSTED_PROXY_IP is required for CRM_DEPLOYMENT=public');
+
+const testCodeRecipient = process.env.AUTH_2FA_TO?.trim() || '';
+if (testCodeRecipient && deployment !== 'test')
+  throw new Error('AUTH_2FA_TO requires CRM_DEPLOYMENT=test');
+
 export const configuration = {
+  trustedProxyIp,
   auth: {
     adminEmail: (process.env.CRM_ADMIN_EMAIL || '').trim().toLowerCase(),
     adminPassword: process.env.CRM_ADMIN_PASSWORD || '',
-    cookieSecure: process.env.COOKIE_SECURE === 'true',
-    twoFactorTo: process.env.AUTH_2FA_TO || '',
+    cookieSecure: deployment === 'public' || process.env.COOKIE_SECURE === 'true',
+    testCodeRecipient,
   },
   email: {
     gmailUser: process.env.GMAIL_USER || '',

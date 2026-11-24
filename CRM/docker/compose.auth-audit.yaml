@@ -6,6 +6,8 @@ services:
     ports: !override
       - "127.0.0.1:3031:3030"
     environment:
+      CRM_DEPLOYMENT: test
+      TRUSTED_PROXY_IP: ""
       CRM_ADMIN_EMAIL: admin@audit.example
       CRM_ADMIN_PASSWORD: Audit-Only-Password-2026
       COOKIE_SECURE: "false"

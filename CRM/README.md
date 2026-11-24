@@ -15,8 +15,9 @@ remitente. No utilices la contraseña normal de Google.
 Esta configuración es necesaria para completar el login con 2FA, recuperar
 contraseñas y enviar el correo de prueba. Sin SMTP operativo, el servidor puede
 arrancar, pero no se podrá completar un nuevo login porque no podrá entregar el
-código. `AUTH_2FA_TO` vacío envía los códigos al correo de cada usuario; un valor
-explícito conserva un destinatario compartido para pruebas.
+código. Con `AUTH_2FA_TO` vacío, los códigos se envían al correo de cada cuenta.
+Para usar un destinatario compartido en una instancia aislada, configura
+`CRM_DEPLOYMENT=test`.
 
 Copia `.env.example` a `.env` y completa sus valores antes de iniciar. El archivo
 `.env` es privado y está excluido tanto de Git como de la imagen Docker. La
@@ -613,10 +614,9 @@ El login ahora exige contraseña **y** un código aleatorio de seis dígitos env
 mediante Nodemailer y SMTP de Gmail. El login,
 la recuperación y el correo de prueba comparten `src/services/email-service.ts`.
 
-Si se configura `AUTH_2FA_TO=correo-personal@example.com`, todos los códigos
-llegan al destinatario compartido. Esta modalidad de pruebas no verifica la
-posesión del correo individual; en uso normal deja la variable vacía.
-Al dejar `AUTH_2FA_TO` vacío, se envían al correo de cada cuenta.
+En una instancia aislada con `CRM_DEPLOYMENT=test`, puedes usar
+`AUTH_2FA_TO=destino@example.com` para recibir todos los códigos en un buzón de
+pruebas. Con la variable vacía, se envían al correo de cada cuenta.
 
 Flujo:
 
@@ -862,10 +862,9 @@ es genérica para cuentas existentes/desconocidas y fallos del proveedor de corr
 Si el envío falla, no queda un código utilizable; revisar la configuración
 del proveedor de correo y solicitar nuevamente cuando corresponda.
 
-Se usa Nodemailer con Gmail y el destino `AUTH_2FA_TO` del login. Mientras esté
-configurado, los códigos de todas las cuentas llegan a ese correo personal; la
-recuperación depende del acceso a ese buzón. Dejar vacío `AUTH_2FA_TO` envía al
-correo de cada cuenta mediante Gmail.
+Nodemailer envía los códigos de recuperación al correo de cada cuenta mediante
+Gmail. En el perfil `test`, un `AUTH_2FA_TO` configurado redirige tanto estos
+códigos como los de acceso al buzón de pruebas.
 Los códigos de acceso y de recuperación son independientes y sus correos explican
 para qué sirve cada uno. No se envían correos reales durante las auditorías.
 
@@ -959,8 +958,53 @@ del servidor. No se publica ningún puerto SMTP entrante.
 
 Para entregar códigos a cada usuario, deja `AUTH_2FA_TO` vacío y comprueba que el
 correo de la cuenta sea real y esté bajo su control. Un destinatario compartido
-sigue disponible únicamente si se configura explícitamente para pruebas.
+requiere el perfil `CRM_DEPLOYMENT=test`. Los perfiles `local` y `public`
+rechazan un `AUTH_2FA_TO` no vacío al arrancar.
 
 Validación sin envíos reales: `node tests/node/email-provider-audit.cjs`, después
 de compilar y con la configuración de base de datos disponible. Las auditorías
 de login y recuperación utilizan un proveedor simulado.
+
+
+### Despliegue HTTPS detrás de Apache
+
+El perfil predeterminado `CRM_DEPLOYMENT=local` admite HTTP directo. Usa
+`CRM_DEPLOYMENT=test` para instancias aisladas. Los dos perfiles pueden forzar
+cookies seguras con `COOKIE_SECURE=true`. El perfil `public` siempre aplica
+`Secure` a las cookies de sesión, 2FA y recuperación, incluso al borrarlas.
+
+Antes de activar `public`, verifica el certificado y configura el VirtualHost
+dedicado al nombre público. Redirige el HTTP público a HTTPS en Apache. En el
+VirtualHost TLS, aplica estas directivas con los módulos `proxy`, `proxy_http`,
+`headers` y `ssl` disponibles.
+
+```apache
+ProxyRequests Off
+ProxyPreserveHost On
+ProxyAddHeaders On
+RequestHeader unset Forwarded
+RequestHeader unset X-Forwarded-For
+RequestHeader unset X-Forwarded-Host
+RequestHeader unset X-Forwarded-Server
+RequestHeader set X-Forwarded-Proto "https"
+ProxyPass / http://127.0.0.1:3030/
+ProxyPassReverse / http://127.0.0.1:3030/
+```
+
+Apache genera las cabeceras reenviadas a partir de la conexión y conserva
+`Host` para la validación de origen. El VirtualHost debe aceptar el host
+público esperado. Mantén el puerto del CRM enlazado a `127.0.0.1` en Docker
+y la base de datos sin puerto publicado.
+
+Comprueba `request.socket.remoteAddress` dentro del contenedor con una
+solicitud que entre por Apache. Puedes usar temporalmente un registro privado
+que muestre solo esa dirección. Contrástala con `docker network inspect` y
+vuelve a comprobarla tras recrear el contenedor. Asegúrate de que ningún otro
+acceso no confiable alcance el backend con esa misma identidad. Configura
+`TRUSTED_PROXY_IP` con la IP exacta observada y activa `CRM_DEPLOYMENT=public`
+con `AUTH_2FA_TO` vacío. Verifica que el healthcheck local funciona y que los
+formularios HTTPS del CRM y sus cookies funcionan a través de Apache.
+
+Después de compilar, ejecuta `node --test tests/node/production-hardening-audit.cjs`
+para verificar los perfiles, el origen, la IP del cliente y los atributos de
+las cookies con un servidor HTTP local y sin conexión a MySQL.

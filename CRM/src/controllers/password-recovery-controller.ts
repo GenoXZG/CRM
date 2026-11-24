@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { configuration } from '../config';
+import { setAuthCookie } from '../auth-cookies';
 import { emailFormat } from '../auth';
 import { requestPasswordRecovery, resetPassword } from '../services/password-recovery-service';
 
@@ -13,9 +13,6 @@ function limited(request: Request, action: string, max: number) {
   if (attempts.size >= 4096) return true;
   attempts.set(key, { count: 1, until: now + 15 * 60 * 1000 });
   return false;
-}
-function cookie(request: Request, response: Response, value: string, maxAge = 600) {
-  response.append('Set-Cookie', `crm_recovery=${value}; HttpOnly; SameSite=Lax; Path=/login/recuperar; Max-Age=${maxAge}${request.secure || configuration.auth.cookieSecure ? '; Secure' : ''}`);
 }
 function token(request: Request) {
   const value = (request.headers.cookie ?? '').split(';').map(part => part.trim()).find(part => part.startsWith('crm_recovery='))?.slice('crm_recovery='.length);
@@ -34,7 +31,7 @@ export async function sendRecovery(request: Request, response: Response, next: N
   const email = typeof request.body?.correo === 'string' ? request.body.correo.trim().toLowerCase() : '';
   if (!emailFormat.test(email) || email.length > 254) return render(response, 'request', 'Ingresa un correo válido.', 400);
   try {
-    cookie(request, response, await requestPasswordRecovery(email, token(request)));
+    setAuthCookie(request, response, 'crm_recovery', await requestPasswordRecovery(email, token(request)), 600);
     return response.redirect('/login/recuperar/restablecer');
   } catch (error) { next(error); }
 }
@@ -52,11 +49,11 @@ export async function completeRecovery(request: Request, response: Response, nex
     const pending = token(request);
     const result = pending ? await resetPassword(pending, code, password) : 'expired';
     if (result === 'invalid') return render(response, 'reset', 'Código incorrecto. Revisa el correo e intenta nuevamente.', 400);
-    cookie(request, response, '', 0);
+    setAuthCookie(request, response, 'crm_recovery', '', 0);
     if (result === 'expired') return render(response, 'request', 'El código caducó, fue reemplazado o agotó sus intentos. Solicita uno nuevo.', 400);
     // Recovery does not sign the browser in or bypass the usual second factor.
-    for (const [name, path] of [['crm_session', '/'], ['crm_pending', '/login']])
-      response.append('Set-Cookie', `${name}=; HttpOnly; SameSite=Lax; Path=${path}; Max-Age=0${request.secure || configuration.auth.cookieSecure ? '; Secure' : ''}`);
+    setAuthCookie(request, response, 'crm_session', '', 0);
+    setAuthCookie(request, response, 'crm_pending', '', 0);
     return render(response, 'success');
   } catch (error) { next(error); }
 }
