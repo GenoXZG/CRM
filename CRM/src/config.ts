@@ -31,7 +31,7 @@ const testCodeRecipient = process.env.AUTH_2FA_TO?.trim() || '';
 if (testCodeRecipient && deployment !== 'test')
   throw new Error('AUTH_2FA_TO requires CRM_DEPLOYMENT=test');
 
-const cspMode = process.env.CSP_MODE || 'report-only';
+const cspMode = process.env.CSP_MODE || (deployment === 'public' ? 'enforce' : 'report-only');
 if (cspMode !== 'report-only' && cspMode !== 'enforce') throw new Error('Invalid CSP_MODE');
 const tileUrl = process.env.MAP_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const tileSource = new URL(tileUrl.replaceAll('{s}', 'tile'));
@@ -45,11 +45,16 @@ const fromPublic = path.relative(path.join(rootDirectory, 'public'), evidenceRoo
 if (!fromPublic || (!path.isAbsolute(fromPublic) && !fromPublic.startsWith('..' + path.sep) && fromPublic !== '..'))
   throw new Error('EVIDENCE_ROOT must be outside public');
 
+const evidenceMinimumFreeMiB = Number(process.env.EVIDENCE_MIN_FREE_MIB || '128');
+if (!Number.isSafeInteger(evidenceMinimumFreeMiB) || evidenceMinimumFreeMiB < 0)
+  throw new Error('Invalid EVIDENCE_MIN_FREE_MIB');
+
 export const configuration = {
   trustedProxyIp,
   deployment,
   cspMode,
   evidenceRoot,
+  evidenceMinimumFreeMiB,
   usesMountedEvidence: Boolean(evidenceSetting),
   auth: {
     adminEmail: (process.env.CRM_ADMIN_EMAIL || '').trim().toLowerCase(),

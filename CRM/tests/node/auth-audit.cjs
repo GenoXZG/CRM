@@ -54,6 +54,11 @@ async function login(email, password, cookie) {
   for(const u of ids) ok(u.password_hash.startsWith('scrypt:')&&!u.password_hash.includes(password),'password hashing');
   const coordId=ids.find(u=>u.correo===coordMail).id,techId=ids.find(u=>u.correo===techMail).id;
   let coord=await login(coordMail,password),tech=await login(techMail,password);
+  eq((await request('/api/email/test',{cookie:coord,method:'POST',body:{to:'first@example.test,second@example.test'}})).status,400,'test mail rejects multiple recipients');
+  eq((await request('/api/email/test',{cookie:coord,method:'POST',body:{to:'single@example.test'}})).status,200,'coordinator can send one test message');
+  eq((await request('/api/email/test',{cookie:coord,method:'POST',body:{to:'single@example.test'}})).status,200,'test email within account quota');
+  const mailLimit=await request('/api/email/test',{cookie:coord,method:'POST',body:{to:'single@example.test'}});
+  eq(mailLimit.status,429,'test mail rate limit');ok(mailLimit.headers.get('retry-after'),'test mail retry after');
   const token=coord.split('=')[1],hash=createHash('sha256').update(token).digest('hex');
   const stored=JSON.parse(db(`const [r]=await m.database.query('SELECT token_hash,TIMESTAMPDIFF(SECOND,UTC_TIMESTAMP(),expira_en) AS lifetime FROM sesiones_usuario WHERE token_hash=?',{replacements:[${JSON.stringify(hash)}]});console.log(JSON.stringify(r[0]));`));eq(stored.token_hash,hash,'session stored hashed');ok(stored.lifetime>43000&&stored.lifetime<=43200,'12 hour lifetime');
   for(const route of ['/usuarios','/Usuarios','/USUARIOS/','/%75suarios','/usuarios/crear']) eq((await request(route,{cookie:coord})).status,403,'coordinator cannot administer any casing');

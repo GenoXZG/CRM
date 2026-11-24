@@ -256,7 +256,7 @@
                       <%- include('partials/location-picker', { inputId: 'inputLinkMaps', readonly: true }) %>
                       <div class="ticket-location-actions mt-3">
                         <% if (canAssign) { %><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditarMaps"><%= ticket.Link_maps ? 'Editar ubicación' : 'Agregar ubicación' %></button><% } %>
-                        <% if (ticket.Link_maps && /^https?:\/\//i.test(ticket.Link_maps)) { %><a id="inputLinkMaps-open" href="<%= ticket.Link_maps %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary">Abrir en Maps <span aria-hidden="true">↗</span></a><% } %>
+                        <% if (safeMapsHref) { %><a id="inputLinkMaps-open" href="<%= safeMapsHref %>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary">Abrir en Maps <span aria-hidden="true">↗</span></a><% } %>
                       </div>
                       <% if (ticket.Link_maps) { %>
                       <details class="ticket-location-source mt-3"><summary>Ver enlace de ubicación</summary><label class="visually-hidden" for="inputLinkMaps">Enlace guardado</label><div class="d-flex flex-wrap gap-2 mt-2"><input type="text" class="form-control bg-light" id="inputLinkMaps" value="<%= ticket.Link_maps %>" readonly><button class="btn btn-outline-secondary" type="button" data-ticket-action="copy-location">Copiar enlace</button></div></details>

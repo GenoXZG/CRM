@@ -80,9 +80,9 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
     );
   });
 }
-export async function getTicketDetails(id: unknown, technicianScope?: number) {
-  const ticket = await tickets.findDetails(positiveInteger(id, 'Ticket'));
-  if (!ticket || (technicianScope !== undefined && ticket.technicianId !== technicianScope)) throw new BusinessError(404, 'Ticket no encontrado');
+export async function getTicketDetails(id: unknown, transaction: Transaction, technicianScope?: number) {
+  const ticket = await tickets.findDetails(positiveInteger(id, 'Ticket'), transaction, technicianScope);
+  if (!ticket) throw new BusinessError(404, 'Ticket no encontrado');
   return ticket;
 }
 export async function getEquipmentAssignmentTickets() {
@@ -113,15 +113,25 @@ export const assignTechnician = (id: unknown, technicianId: unknown) =>
     const technician = await getActiveTechnician(technicianId, transaction);
     await tickets.update(ticket.id, { technicianId: technician.id }, transaction);
   });
-export const completeTicket = (id: unknown, actor?: { userId: number; technicianId: number }) =>
+interface ClosingActor {
+  userId: number;
+  role: string;
+  sessionHash: string;
+  technicianId?: number;
+}
+export const completeTicket = (id: unknown, actor?: ClosingActor) =>
   withTransaction(async (transaction) => {
     if (actor) {
       const [user] = await database.query<{ rol: string; id_tecnico: number | null; tecnico_estado: string | null }>('SELECT u.rol,u.id_tecnico,(SELECT Estatus_tecnico FROM Tecnicos WHERE ID_Tecnico=u.id_tecnico) AS tecnico_estado FROM usuarios u WHERE u.id=? FOR UPDATE', { replacements: [actor.userId], transaction, type: QueryTypes.SELECT });
-      if (!user || user.rol !== 'tecnico' || user.id_tecnico !== actor.technicianId) throw new BusinessError(403, 'La vinculación de tu cuenta cambió. Inicia sesión nuevamente.');
+      if (!user || user.rol !== actor.role || (actor.role === 'tecnico' && user.id_tecnico !== actor.technicianId))
+        throw new BusinessError(403, 'Tu cuenta cambió. Inicia sesión nuevamente.');
       requireActiveTechnician(user);
+      const [session] = await database.query('SELECT 1 FROM sesiones_usuario WHERE token_hash=? AND id_usuario=? AND segundo_factor=1 AND expira_en>UTC_TIMESTAMP() FOR UPDATE',
+        { replacements: [actor.sessionHash, actor.userId], transaction, type: QueryTypes.SELECT });
+      if (!session) throw new BusinessError(401, 'Debes iniciar sesión.');
     }
     const ticket = await getTicket(id, transaction);
-    if (actor && ticket.technicianId !== actor.technicianId) throw new BusinessError(404, 'Ticket no encontrado');
+    if (actor?.role === 'tecnico' && ticket.technicianId !== actor.technicianId) throw new BusinessError(404, 'Ticket no encontrado');
     if (ticket.status !== 'in_progress') throw new BusinessError(409, 'El ticket debe estar en seguimiento para finalizar');
     const summary = await getAssignmentSummary(ticket, transaction);
     if (!summary.complete)

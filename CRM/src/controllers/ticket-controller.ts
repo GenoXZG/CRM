@@ -1,8 +1,11 @@
+import { safeLocationLink } from '../domain/location';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { QueryTypes } from 'sequelize';
+import { QueryTypes, Transaction } from 'sequelize';
+import { sessionToken, type SessionUser } from '../auth';
+import { tokenHash } from '../auth-challenge';
 import { database } from '../infrastructure/database/connection';
-import { evidenceRoute, maxFileBytes, normalizeEvidence, openEvidence, safeEvidenceName, validatedEvidence, validatedEvidenceType } from '../services/ticket-evidence';
+import { EvidenceBusyError, EvidenceSpaceError, evidenceRoute, maxFileBytes, normalizeEvidence, normalizeLegacyEvidence, openEvidence, requireEvidenceSpace, safeEvidenceName, validatedEvidence, validatedEvidenceType } from '../services/ticket-evidence';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { exportTickets } from '../infrastructure/database/ticket-search-repository';
@@ -79,16 +82,20 @@ export async function createTicket(request: HttpRequest, response: Response) {
 }
 export async function renderTicketDetails(request: HttpRequest, response: Response) {
   try {
-    const [ticket, technicianList] = await Promise.all([
-      ticketService.getTicketDetails(request.params.id, response.locals.technicianScope),
+    const scope: number | undefined = response.locals.technicianScope;
+    const [{ ticket, history }, technicianList] = await Promise.all([
+      database.transaction({ isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ, readOnly: true }, async transaction => {
+        const ticket = await ticketService.getTicketDetails(request.params.id, transaction, scope);
+        return { ticket, history: await ticketHistory(ticket.id, request.query, transaction) };
+      }),
       response.locals.canManage ? technicians.list() : Promise.resolve([]),
     ]);
     const canAssign = response.locals.canManage && (ticket.status === 'waiting' || ticket.status === 'in_progress');
     const [availableEquipment, accessoryList, models] = canAssign ? await Promise.all([getAvailableEquipment(), catalogs.listAccessories(), getEquipmentModels()]) : [[], [], []];
-    const history = await ticketHistory(ticket.id, request.query);
     const historyParams = new URLSearchParams({ returnTo: ticketListReturn(request.query.returnTo), history_size: String(history.size) });
     response.render('detalles_servicio', {
       history,
+      safeMapsHref: safeLocationLink(ticket.locationUrl),
       historyPageUrl: (page: number) => { const params=new URLSearchParams(historyParams); params.set('history_page',String(page)); return `/detalle_ticket/${ticket.id}?${params}#ticket-history`; },
       backToTickets: ticketListReturn(request.query.returnTo),
       canAssign,
@@ -126,7 +133,15 @@ export const updateComments = redirectMutation((id, input) =>
 export const assignTechnician = redirectMutation((id, input) =>
   ticketService.assignTechnician(id, input.ID_tecnico),
 );
-export const completeTicket = redirectMutation((id, _input, response) => ticketService.completeTicket(id, response.locals.technicianScope === undefined ? undefined : { userId: response.locals.currentUser.id_usuario, technicianId: response.locals.technicianScope }));
+export const completeTicket = redirectMutation((id, _input, response) => {
+  const user = response.locals.currentUser as SessionUser | null;
+  const token = sessionToken(response.req);
+  if (!user || !token) throw new BusinessError(401, 'Debes iniciar sesión.');
+  return ticketService.completeTicket(id, {
+    userId: user.id_usuario, role: user.rol, sessionHash: tokenHash(token),
+    technicianId: response.locals.technicianScope,
+  });
+});
 export const reopenTicket = redirectMutation((id) => ticketService.reopenTicket(id));
 export async function requireOpenTicket(
   request: HttpRequest,
@@ -154,6 +169,8 @@ export async function uploadPhotos(request: HttpRequest, response: Response) {
       if (!safeEvidenceName(file.originalname)) throw new BusinessError(400, 'Nombre de archivo inválido.');
       const image = await normalizeEvidence(file.buffer, file);
       ensureConnected();
+      await requireEvidenceSpace(image.buffer.length);
+      ensureConnected();
       const filename = `${randomUUID()}.${image.extension}`;
       const target = path.join(validatedEvidence, filename);
       const handle = await fs.open(target, 'wx', 0o600);
@@ -167,7 +184,9 @@ export async function uploadPhotos(request: HttpRequest, response: Response) {
     committed = true;
     if (!response.destroyed) response.redirect(ticketDetailsDestination(request.params.id!, request.body?.returnTo));
   } catch (error) {
-    failure = error;
+    const code = (error as NodeJS.ErrnoException)?.code;
+    failure = code === 'ENOSPC' || code === 'EDQUOT' ? new EvidenceSpaceError() : error;
+    if (failure instanceof EvidenceSpaceError) console.warn('evidence_storage_unavailable');
   } finally {
     if (!committed) {
       const results = await Promise.allSettled(created.map(target => fs.unlink(target)));
@@ -175,6 +194,7 @@ export async function uploadPhotos(request: HttpRequest, response: Response) {
     }
   }
   if (!committed && !response.destroyed) {
+    if (failure instanceof EvidenceBusyError) response.set('Retry-After', '5');
     if (failure instanceof BusinessError) respondError(response, failure);
     else {
       console.error('Evidence persistence failed');
@@ -197,8 +217,15 @@ export async function serveEvidence(request: Request<{ name: string }>, response
   if (!file) return response.status(404).send('Evidencia no encontrada');
   try {
     if (!file.validated && file.size <= maxFileBytes) {
-      const bytes = await file.handle.readFile();
-      const image = await normalizeEvidence(bytes).catch(() => null);
+      const abort = new AbortController();
+      const onClose = () => abort.abort();
+      response.once('close', onClose);
+      const image = await normalizeLegacyEvidence(async () => {
+        if (response.destroyed) return null;
+        const bytes = await file.handle.readFile({ signal: abort.signal });
+        return response.destroyed ? null : bytes;
+      }).finally(() => response.off('close', onClose));
+      if (response.destroyed) return;
       if (image) return response.type(image.mime).send(image.buffer);
     }
     if (file.validated) response.type(validatedEvidenceType(name));
@@ -211,7 +238,8 @@ export async function serveEvidence(request: Request<{ name: string }>, response
     if (request.method === 'HEAD') return response.end();
     await pipeline(file.handle.createReadStream({ start: 0, autoClose: false }), response);
   } catch (error) {
-    next(error);
+    if (!response.destroyed && error instanceof EvidenceBusyError) response.set('Retry-After', '5');
+    if (!response.destroyed) next(error);
   } finally {
     await file.handle.close();
   }

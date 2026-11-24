@@ -4,7 +4,7 @@ import { serviceTypeToDatabase, ticketStatusToDatabase } from '../infrastructure
 // Quote every cell and neutralize spreadsheet formulas in user-controlled text.
 export function csvCell(value: unknown): string {
   let text = value === null || value === undefined ? '' : String(value);
-  if (/^[\s\uFEFF]*[=+@-]/u.test(text) || /^[\t\r\n]/u.test(text)) text = "'" + text;
+  if (/^[\s\p{Cf}]*[=+@-]/u.test(text.normalize('NFKC')) || /^[\t\r\n]/u.test(text)) text = "'" + text;
   return '"' + text.replace(/"/g, '""') + '"';
 }
 

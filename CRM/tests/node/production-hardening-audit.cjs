@@ -90,7 +90,7 @@ async function checkApplication() {
     assert.equal(state.headers.get('x-content-type-options'), 'nosniff');
     assert.equal(state.headers.get('referrer-policy'), 'strict-origin-when-cross-origin');
     assert.match(state.headers.get('permissions-policy'), /geolocation=\(self\)/);
-    const policyHeader = process.env.CSP_MODE === 'enforce'
+    const policyHeader = (process.env.CSP_MODE || (publicProfile ? 'enforce' : 'report-only')) === 'enforce'
       ? 'content-security-policy' : 'content-security-policy-report-only';
     const policy = state.headers.get(policyHeader);
     assert.match(policy, /script-src 'self' 'nonce-/);
@@ -128,7 +128,8 @@ test('client IP, origin and cookie attributes follow the immediate proxy and dep
   for (const settings of [
     {},
     { TRUSTED_PROXY_IP: '192.0.2.10' },
-    { CRM_DEPLOYMENT: 'public', TRUSTED_PROXY_IP: '127.0.0.1', CSP_MODE: 'enforce' },
+    { CRM_DEPLOYMENT: 'public', TRUSTED_PROXY_IP: '127.0.0.1' },
+    { CRM_DEPLOYMENT: 'public', TRUSTED_PROXY_IP: '127.0.0.1', CSP_MODE: 'report-only' },
     { CRM_DEPLOYMENT: 'test', TRUSTED_PROXY_IP: '::ffff:127.0.0.1' },
     { COOKIE_SECURE: 'true' },
   ]) {

@@ -8,6 +8,13 @@ import { BusinessError } from '../domain/business-error';
 export const maxFiles = 5;
 export const maxFileBytes = 5 * 1024 * 1024;
 export const maxMultipartBytes = 26 * 1024 * 1024;
+export const maxEncodedBytes = maxFileBytes;
+let activeEncodes = 0;
+
+export class EvidenceBusyError extends BusinessError {
+  constructor() { super(503, 'El procesamiento de imágenes está ocupado. Intenta nuevamente.'); }
+}
+
 const maxPixels = 16_000_000;
 const maxDimension = 6000;
 const formats = {
@@ -30,26 +37,63 @@ function detect(data: Buffer) {
   return undefined;
 }
 
-export async function normalizeEvidence(data: Buffer, declared?: { originalname: string; mimetype: string }) {
+async function encodeEvidence(data: Buffer, declared?: { originalname: string; mimetype: string }) {
   const format = detect(data);
   const invalid = () => new BusinessError(415, 'La evidencia debe ser una imagen JPEG, PNG o WebP válida.');
   if (!format) throw invalid();
   const { mime, extension, suffix } = formats[format];
   if (declared && (declared.mimetype !== mime || !suffix.test(declared.originalname))) throw invalid();
+  let buffer: Buffer;
   try {
     const image = sharp(data, { failOn: 'warning', limitInputPixels: maxPixels });
     const { width, height, pages, format: decoded } = await image.metadata();
     if (!width || !height || width > maxDimension || height > maxDimension || (pages ?? 1) > 1 || decoded !== format)
       throw invalid();
-    const buffer = await image.autoOrient().toFormat(format).toBuffer();
-    return { buffer, extension, mime };
+    const oriented = image.autoOrient();
+    buffer = await (format === 'png' ? oriented.png({ compressionLevel: 9 })
+      : format === 'jpeg' ? oriented.jpeg({ quality: 80 }) : oriented.webp({ quality: 80 })).toBuffer();
   } catch {
     throw invalid();
   }
+  if (buffer.length > maxEncodedBytes) throw new BusinessError(413, 'La imagen recodificada supera 5 MiB.');
+  return { buffer, extension, mime };
+}
+
+async function withImageSlot<T>(operation: () => Promise<T>): Promise<T> {
+  if (activeEncodes >= 2) throw new EvidenceBusyError();
+  activeEncodes++;
+  try { return await operation(); }
+  finally { activeEncodes--; }
+}
+
+export function normalizeEvidence(data: Buffer, declared?: { originalname: string; mimetype: string }) {
+  return withImageSlot(() => encodeEvidence(data, declared));
+}
+
+export function normalizeLegacyEvidence(read: () => Promise<Buffer | null>) {
+  return withImageSlot(async () => {
+    const data = await read();
+    if (!data) return null;
+    try { return await encodeEvidence(data); }
+    catch (error) {
+      if (error instanceof BusinessError && (error.status === 413 || error.status === 415)) return null;
+      throw error;
+    }
+  });
 }
 
 export const validatedEvidence = path.join(configuration.evidenceRoot, 'validated');
 export const evidenceRoute = '/uploads/tickets/';
+
+export class EvidenceSpaceError extends BusinessError {
+  constructor() { super(507, 'No hay espacio suficiente para guardar la evidencia.'); }
+}
+
+export async function requireEvidenceSpace(bytes: number) {
+  const { bavail, bsize } = await fs.statfs(validatedEvidence, { bigint: true });
+  const reserved = BigInt(configuration.evidenceMinimumFreeMiB) * 1024n * 1024n;
+  if (bavail * bsize < reserved + BigInt(bytes)) throw new EvidenceSpaceError();
+}
 
 export function safeEvidenceName(name: string) {
   return name.length > 0 && Buffer.byteLength(name) <= 255 && name !== '.' && name !== '..' &&

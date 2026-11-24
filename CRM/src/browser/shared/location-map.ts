@@ -1,3 +1,4 @@
+import { safeMapAttribution } from './map-attribution.js';
 import type * as Leaflet from 'leaflet';
 import { coordinates, coordinatesFromLink, coordinatesLink, isShortMapsLink, type Coordinates } from './location-coordinates.js';
 import { requestJson } from './http.js';
@@ -88,7 +89,7 @@ function initialize(root: HTMLElement) {
     if (!(open instanceof HTMLAnchorElement)) return;
     try {
       const url = new URL(field.value);
-      if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+      if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
       open.href = url.href;
       open.classList.remove('disabled');
       open.removeAttribute('aria-disabled');
@@ -147,7 +148,7 @@ function initialize(root: HTMLElement) {
     const L = window.L;
     if (!L) { status.textContent = 'No se pudo cargar el visor. Puedes capturar las coordenadas o conservar el enlace.'; return; }
     map = L.map(container, { scrollWheelZoom: false }).setView([23.6345, -102.5528], 5);
-    const tiles = L.tileLayer(root.dataset.tileUrl!, { maxZoom: 19, attribution: root.dataset.tileAttribution! }).addTo(map);
+    const tiles = L.tileLayer(root.dataset.tileUrl!, { maxZoom: 19, attribution: safeMapAttribution(root.dataset.tileAttribution ?? '') }).addTo(map);
     tiles.on('tileerror', () => root.querySelector<HTMLElement>('[data-location-tile-error]')!.classList.remove('d-none'));
     if (!readonly) map.on('click', (event: Leaflet.LeafletMouseEvent) => choose(event.latlng));
     renderMarker();
@@ -227,7 +228,7 @@ function initialize(root: HTMLElement) {
     if (field.value.trim() && field.value.trim() !== 'Pendiente') {
       try {
         const url = new URL(field.value);
-        if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+        if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error();
       } catch {
         event.preventDefault();
         field.setCustomValidity('Pega un enlace HTTP/HTTPS válido o selecciona un punto en el mapa.');

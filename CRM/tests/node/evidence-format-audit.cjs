@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const sharp = require('sharp');
 Object.assign(process.env, { NODE_ENV: 'test', DB_NAME: 'evidence_test', DB_USER: 'evidence_test' });
-const { normalizeEvidence, safeEvidenceName } = require('../../dist/services/ticket-evidence');
+const { normalizeEvidence, normalizeLegacyEvidence, maxEncodedBytes, safeEvidenceName } = require('../../dist/services/ticket-evidence');
 
 const image = (width = 3, height = 4) => sharp({ create: { width, height, channels: 3, background: '#123456' } });
 const rejected = error => error.status === 415;
@@ -22,4 +22,39 @@ test('decodes supported formats and rejects truncated, oversized and active inpu
   await assert.rejects(normalizeEvidence(await image(4500, 4000).png().toBuffer()), rejected);
   await assert.rejects(normalizeEvidence(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>')), rejected);
   for (const name of ['../bad.png', 'bad\\name.png', '..', 'a\u0000.png']) assert.equal(safeEvidenceName(name), false);
+});
+
+test('legacy reads and uploads share processing slots and reject oversized output', async () => {
+  const png = await image().png().toBuffer();
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const reads = [normalizeLegacyEvidence(async () => { await gate; return null; }), normalizeLegacyEvidence(async () => { await gate; return png; })];
+  try {
+    await assert.rejects(normalizeEvidence(png), error => error.status === 503);
+    await assert.rejects(normalizeLegacyEvidence(async () => png), error => error.status === 503);
+  } finally { release(); await Promise.all(reads); }
+  assert.equal((await normalizeEvidence(png)).mime, 'image/png');
+  const pixels = require('node:crypto').randomBytes(1500 * 1500 * 3);
+  const large = await sharp(pixels, { raw: { width: 1500, height: 1500, channels: 3 } }).png().toBuffer();
+  assert.ok(large.length > maxEncodedBytes);
+  await assert.rejects(normalizeEvidence(large), error => error.status === 413);
+  assert.equal(await normalizeLegacyEvidence(async () => large), null);
+});
+
+test('disk reserve rejects writes before filesystem exhaustion', async () => {
+  const fs = require('node:fs/promises');
+  const { configuration } = require('../../dist/config');
+  const { requireEvidenceSpace } = require('../../dist/services/ticket-evidence');
+  const statfs = fs.statfs;
+  const reserve = configuration.evidenceMinimumFreeMiB;
+  try {
+    configuration.evidenceMinimumFreeMiB = 128;
+    fs.statfs = async () => ({ bsize: 1024n, bavail: 128n * 1024n });
+    await assert.rejects(requireEvidenceSpace(1024), error => error.status === 507);
+    fs.statfs = async () => ({ bsize: 1024n, bavail: 128n * 1024n + 1n });
+    await requireEvidenceSpace(1024);
+  } finally {
+    fs.statfs = statfs;
+    configuration.evidenceMinimumFreeMiB = reserve;
+  }
 });

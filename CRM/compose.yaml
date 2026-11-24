@@ -2,6 +2,15 @@ name: crm-demo
 services:
   db:
     image: mysql:8.4.6
+    restart: unless-stopped
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       MYSQL_DATABASE: "${DOCKER_DB_NAME:-crm_demo}"
       MYSQL_USER: "${DOCKER_DB_USER:-crm}"
@@ -9,7 +18,7 @@ services:
       MYSQL_ROOT_PASSWORD: "${DOCKER_DB_ROOT_PASSWORD:?Configura DOCKER_DB_ROOT_PASSWORD en .env}"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro,Z
+      - ./docker/mysql/init/001-schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro,z
     healthcheck:
       test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -e "SELECT COUNT(*) FROM Tickets" >/dev/null']
       interval: 5s
@@ -19,6 +28,14 @@ services:
   app:
     build: .
     init: true
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     environment:
       NODE_ENV: production
       CRM_DEPLOYMENT: "${CRM_DEPLOYMENT:-local}"
@@ -37,7 +54,8 @@ services:
       GMAIL_APP_PASSWORD: "${GMAIL_APP_PASSWORD:-}"
       MAIL_TEST_TO: "${MAIL_TEST_TO:-}"
       EVIDENCE_ROOT: /app/evidence
-      CSP_MODE: "${CSP_MODE:-report-only}"
+      CSP_MODE: "${CSP_MODE:-}"
+      EVIDENCE_MIN_FREE_MIB: "${EVIDENCE_MIN_FREE_MIB:-128}"
       MAP_TILE_URL: "${MAP_TILE_URL:-}"
       MAP_TILE_ATTRIBUTION: "${MAP_TILE_ATTRIBUTION:-}"
     ports:

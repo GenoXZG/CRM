@@ -127,6 +127,20 @@ function mail(expectedSubject) {
     await page.locator('.swal2-confirm').click();
     await page.locator('.swal2-popup').waitFor({ state: 'hidden' });
 
+    const attribution = await page.evaluate(async () => {
+      const { safeMapAttribution } = await import('/assets/shared/map-attribution.js');
+      const template = document.createElement('template');
+      template.innerHTML = safeMapAttribution('&copy; <a href="https://tiles.example.test/">Proveedor</a> <a href="https://tiles.example.test/" onclick="alert(1)">Texto</a> <img src="invalid" onerror="alert(1)"><a href="javascript:void(0)">Etiqueta</a>');
+      return {
+        links: Array.from(template.content.querySelectorAll('a'), link => ({ href: link.href, label: link.textContent })),
+        active: template.content.querySelectorAll('[onclick], [onerror], img').length,
+        text: template.content.textContent,
+      };
+    });
+    assert.deepEqual(attribution.links, [{ href: 'https://tiles.example.test/', label: 'Proveedor' }]);
+    assert.equal(attribution.active, 0);
+    assert.match(attribution.text, /©.*Etiqueta/);
+
     const fetchStatus = await page.evaluate(async () => {
       const { postJson } = await import('/assets/shared/http.js');
       return (await postJson('/tickets/resolver_ubicacion', { url: 'https://www.google.com/maps?q=19.4,-99.1' })).success;

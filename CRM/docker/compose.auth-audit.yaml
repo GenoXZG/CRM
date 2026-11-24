@@ -1,8 +1,14 @@
 services:
+  db:
+    environment:
+      CRM_DEPLOYMENT: test
+    volumes:
+      - ./docker/mysql/demo:/opt/crm-demo:ro,z
+      - ./docker/mysql/demo/load-demo.sh:/docker-entrypoint-initdb.d/002-demo.sh:ro,z
   app:
     command: ["node", "/app/mock-auth-mail.cjs"]
     volumes:
-      - ./tests/node/mock-auth-mail.cjs:/app/mock-auth-mail.cjs:ro,Z
+      - ./tests/node/mock-auth-mail.cjs:/app/mock-auth-mail.cjs:ro,z
     ports: !override
       - "127.0.0.1:3031:3030"
     environment:

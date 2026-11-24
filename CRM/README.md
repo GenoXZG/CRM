@@ -71,7 +71,7 @@ docker compose up --build -d --wait
 ## Ejecución local
 
 Preparar una base MySQL y su usuario. Aplicar `docker/mysql/init/001-schema.sql`
-y, opcionalmente, `002-demo.sql`. Copiar `.env.example` a `.env` si todavía no
+y, solo para desarrollo, opcionalmente `docker/mysql/demo/002-demo.sql`. Copiar `.env.example` a `.env` si todavía no
 existe configuración local.
 
 ```bash
@@ -355,38 +355,21 @@ docker compose start
 docker compose down
 ```
 
-`down` conserva los volúmenes. Para eliminar explícitamente los datos y fotografías
-de una demo desechable y recrearla:
+El Compose base aplica solo el esquema al inicializar un volumen vacío. Para
+una demo nueva usa un proyecto de prueba distinto con
+`docker/compose.demo.yaml`. La configuración de auditoría activa los datos
+ficticios en su propio proyecto. El contenido de volúmenes existentes se
+conserva.
 
 ```bash
-docker compose down --volumes
-docker compose up --build -d --wait
+docker compose -p crm-demo-local -f compose.yaml -f docker/compose.demo.yaml up --build -d --wait
 ```
 
-### Reinsertar la demo
-
-`002-demo.sql` solo se ejecuta automáticamente con un volumen vacío. Para volver a
-cargarla en una base ya creada, con las tablas vacías:
-
-```bash
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE" < /docker-entrypoint-initdb.d/002-demo.sql'
-```
-
-El script usa identificadores fijos: si quedan registros previos, MySQL responderá
-`Duplicate entry`. Para vaciar las tablas antes de reinsertar, respetando las
-llaves foráneas (esto elimina también los tickets, porque se borran en cascada con
-sus clientes):
-
-```bash
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "DELETE FROM Cliente; DELETE FROM Tecnicos; DELETE FROM Equipos_catalogo; DELETE FROM Unidades_catalogo; DELETE FROM Accesorios_catalogo;"'
-```
-
-Antes de borrar datos que quieras conservar, haz un respaldo:
-
-```bash
-docker compose exec db sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysqldump -u "$MYSQL_USER" "$MYSQL_DATABASE" > /tmp/respaldo.sql'
-docker cp <contenedor-db>:/tmp/respaldo.sql ./respaldo.sql
-```
+La preparación de una base limpia, las variables, el respaldo, la restauración,
+el rollback y la lista de verificación se mantienen en
+[Preparación de producción](docs/production-readiness.md). La
+[matriz de autorización](docs/security-authorization-matrix.md) incluye los
+resultados de la auditoría final.
 
 ## Asistente de inicio
 
@@ -544,7 +527,7 @@ Puede enviarse `{}` si se configuró `MAIL_TEST_TO`. Asunto y texto son fijos.
 La respuesta exitosa es HTTP 200 con `{success:true, message, data:{id,to,provider}}`
 y `provider: "gmail"`. Significa aceptación por SMTP, no confirmación de entrega
 en la bandeja. Se devuelve 503 si falta configuración y 502 si Gmail rechaza el
-envío. La prueba no agrega validaciones de destinatario ni reintentos automáticos.
+envío. La prueba acepta un destinatario por solicitud y aplica una cuota de tres intentos por cuenta y diez por instancia al minuto.
 
 ## Login y administración de usuarios
 
@@ -1114,7 +1097,7 @@ Durante la ventana de actualización:
 
 ### CSP, encabezados y límites de Apache
 
-`CSP_MODE=report-only` permite revisar avisos en la consola del navegador.
+El perfil público aplica CSP obligatoria por defecto. En una validación controlada, `CSP_MODE=report-only` permite revisar avisos en la consola del navegador.
 Valida las pantallas y flujos con el proxy y dominio definitivos y usa
 `CSP_MODE=enforce` antes de publicar. El código local y los recursos versionados
 de SweetAlert son compatibles con la política. Los scripts externos autorizados

@@ -12,7 +12,7 @@ export function respondError(response: Response, error: unknown): Response {
       : isRecord(error) && typeof error.name === 'string'
         ? constraintStatus[error.name] || 500
         : 500;
-  if (status === 500) console.error(error);
+  if (status === 500) console.error('CRM request failed:', error instanceof Error ? error.name : 'unknown');
   const message =
     error instanceof BusinessError
       ? error.message

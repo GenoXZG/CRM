@@ -106,6 +106,9 @@ eq(evidence.headers.get('x-content-type-options'), 'nosniff', 'no content sniffi
 eq((await req(storedPhoto)).status, 401, 'evidence requires authentication');
 eq((await req('/assets/%2e%2e%2fuploads/tickets/' + storedPhoto.split('/').at(-1), admin)).status, 404, 'static route cannot bypass authorization');
 
+const staleClose = db(`const svc=require('./dist/services/ticket-service');const [admin]=await m.database.query("SELECT id FROM usuarios WHERE correo=?", {replacements:['admin@audit.example']});try{await svc.completeTicket(${ticket},{userId:admin[0].id,role:'admin',sessionHash:'f'.repeat(64)});}catch(err){console.log(err.status);}`);
+eq(staleClose,'401','transaction refuses a revoked or missing session');
+eq(state().Fecha_cierre,null,'stale session leaves ticket unchanged');
 const beforeTime=Date.now();eq((await req('/tickets/finalizar/'+ticket,tech,{})).status,302,'technical closure');const closed=state().Fecha_cierre;ok(closed&&Math.abs(Date.parse(closed)-beforeTime)<15000,'actual UTC closure timestamp');events=history();event=events.find(e=>e.evento==='servicio_finalizado');eq(event.usuario_correo,marker+'tecnico@example.com','technical closure attribution');ok(JSON.stringify(event.cambios).includes('Fecha de cierre'),'closure date audited');count=events.length;eq((await req('/tickets/finalizar/'+ticket,tech,{})).status,409,'duplicate close');eq(history().length,count,'duplicate close not recorded');
 eq((await req('/tickets/reabrir/'+ticket,admin,{})).status,302,'reopen');eq(state().Fecha_cierre,null,'reopen clears current closure');ok(JSON.stringify(history().find(e=>e.evento==='servicio_finalizado').cambios).includes(closed),'old closure retained in history');ok(history().some(e=>e.evento==='ticket_reabierto'),'reopen event');
 // Database audit failure must abort the business change, not silently omit the record.
